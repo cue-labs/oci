@@ -15,6 +15,7 @@ type Interface interface {
 	Writer
 	Reader
 	Deleter
+	Lister
 }
 
 type ReadWriter interface {
@@ -43,7 +44,7 @@ type Writer interface {
 	PushBlobChunked(ctx context.Context, repo string, resumeID string) (BlobWriter, error)
 	MountBlob(ctx context.Context, fromRepo, toRepo string, digest Digest) error
 	PushManifest(ctx context.Context, repo string, desc Descriptor, data []byte) (Descriptor, error)
-	Tag(ctx context.Context, repo string, digest Digest, tag string) error
+	PushTag(ctx context.Context, repo string, desc Descriptor, tag string, data []byte) error
 }
 
 type Deleter interface {
@@ -53,9 +54,9 @@ type Deleter interface {
 }
 
 type Lister interface {
-	Repositories(ctx context.Context) Iter[string]
-	Tags(ctx context.Context, repo string) Iter[string]
-	Referrers(ctx context.Context, repo string, digest Digest, artifactType string) Iter[Descriptor]
+	Repositories(ctx context.Context, startAt string) Iter[string]
+	Tags(ctx context.Context, repo string, startAt string) Iter[string]
+	Referrers(ctx context.Context, repo string, digest Digest, artifactType string, startAt string) Iter[Descriptor]
 }
 
 // BlobWriter provides a handle for inserting data into a blob store.
