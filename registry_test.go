@@ -17,15 +17,14 @@ package ocitestregistry_test
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
 
-	"github.com/rogpeppe/ocitestregistry"
 	"github.com/opencontainers/go-digest"
+	"github.com/rogpeppe/ocitestregistry"
 )
 
 const (
@@ -483,14 +482,9 @@ func TestCalls(t *testing.T) {
 
 	for _, tc := range tcs {
 
-		var logger *log.Logger
 		testf := func(t *testing.T) {
 
-			opts := []ocitestregistry.Option{ocitestregistry.WithReferrersSupport(true)}
-			if logger != nil {
-				opts = append(opts, ocitestregistry.Logger(logger))
-			}
-			r := ocitestregistry.New(opts...)
+			r := ocitestregistry.New(nil)
 			s := httptest.NewServer(r)
 			defer s.Close()
 
@@ -598,7 +592,6 @@ func TestCalls(t *testing.T) {
 			}
 		}
 		t.Run(tc.Description, testf)
-		logger = log.New(io.Discard, "", log.Ldate)
 		t.Run(tc.Description+" - custom log", testf)
 	}
 }

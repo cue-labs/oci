@@ -320,7 +320,6 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 
 			if err = bph.Put(req.Context(), repo, h, vrc); err != nil {
 				if errors.As(err, &hasher.Error{}) {
-					log.Printf("Digest mismatch: %v", err)
 					return regErrDigestMismatch
 				}
 				return regErrInternal(err)
@@ -441,7 +440,6 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 
 		if err := bph.Put(req.Context(), repo, h, vrc); err != nil {
 			if errors.As(err, &hasher.Error{}) {
-				log.Printf("Digest mismatch: %v", err)
 				return regErrDigestMismatch
 			}
 			return regErrInternal(err)

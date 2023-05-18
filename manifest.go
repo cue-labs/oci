@@ -26,10 +26,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rogpeppe/ocitestregistry/hasher"
 	"github.com/opencontainers/go-digest"
 	ocispecroot "github.com/opencontainers/image-spec/specs-go"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/rogpeppe/ocitestregistry/hasher"
 )
 
 var v2 = ocispecroot.Versioned{
@@ -199,7 +199,6 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regErro
 					}
 				} else {
 					// TODO: Probably want to do an existence check for blobs.
-					m.log.Printf("TODO: Check blobs for %q", desc.Digest)
 				}
 			}
 		}
