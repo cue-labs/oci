@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package registry
+package ocitestregistry
 
 import (
 	"bytes"
@@ -27,8 +27,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/google/go-containerregistry/internal/verify"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/rogpeppe/ocitestregistry/hasher"
 )
 
 // Returns whether this url should be handled by the blob handler
@@ -52,7 +51,7 @@ func isBlob(req *http.Request) bool {
 // blob contents.
 type blobHandler interface {
 	// Get gets the blob contents, or errNotFound if the blob wasn't found.
-	Get(ctx context.Context, repo string, h v1.Hash) (io.ReadCloser, error)
+	Get(ctx context.Context, repo string, h hasher.Hash) (io.ReadCloser, error)
 }
 
 // blobStatHandler is an extension interface representing a blob storage
@@ -60,7 +59,7 @@ type blobHandler interface {
 type blobStatHandler interface {
 	// Stat returns the size of the blob, or errNotFound if the blob wasn't
 	// found, or redirectError if the blob can be found elsewhere.
-	Stat(ctx context.Context, repo string, h v1.Hash) (int64, error)
+	Stat(ctx context.Context, repo string, h hasher.Hash) (int64, error)
 }
 
 // blobPutHandler is an extension interface representing a blob storage backend
@@ -72,14 +71,14 @@ type blobPutHandler interface {
 	// as the contents are read, and an error will be returned if these
 	// don't match. Implementations should return that error, or a wrapper
 	// around that error, to return the correct error when these don't match.
-	Put(ctx context.Context, repo string, h v1.Hash, rc io.ReadCloser) error
+	Put(ctx context.Context, repo string, h hasher.Hash, rc io.ReadCloser) error
 }
 
 // blobDeleteHandler is an extension interface representing a blob storage
 // backend that can delete blob contents.
 type blobDeleteHandler interface {
 	// Delete the blob contents.
-	Delete(ctx context.Context, repo string, h v1.Hash) error
+	Delete(ctx context.Context, repo string, h hasher.Hash) error
 }
 
 // redirectError represents a signal that the blob handler doesn't have the blob
@@ -103,7 +102,7 @@ type memHandler struct {
 	lock sync.Mutex
 }
 
-func (m *memHandler) Stat(_ context.Context, _ string, h v1.Hash) (int64, error) {
+func (m *memHandler) Stat(_ context.Context, _ string, h hasher.Hash) (int64, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -113,7 +112,7 @@ func (m *memHandler) Stat(_ context.Context, _ string, h v1.Hash) (int64, error)
 	}
 	return int64(len(b)), nil
 }
-func (m *memHandler) Get(_ context.Context, _ string, h v1.Hash) (io.ReadCloser, error) {
+func (m *memHandler) Get(_ context.Context, _ string, h hasher.Hash) (io.ReadCloser, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -123,7 +122,7 @@ func (m *memHandler) Get(_ context.Context, _ string, h v1.Hash) (io.ReadCloser,
 	}
 	return io.NopCloser(bytes.NewReader(b)), nil
 }
-func (m *memHandler) Put(_ context.Context, _ string, h v1.Hash, rc io.ReadCloser) error {
+func (m *memHandler) Put(_ context.Context, _ string, h hasher.Hash, rc io.ReadCloser) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -135,7 +134,7 @@ func (m *memHandler) Put(_ context.Context, _ string, h v1.Hash, rc io.ReadClose
 	m.m[h.String()] = all
 	return nil
 }
-func (m *memHandler) Delete(_ context.Context, _ string, h v1.Hash) error {
+func (m *memHandler) Delete(_ context.Context, _ string, h hasher.Hash) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -180,7 +179,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 
 	switch req.Method {
 	case http.MethodHead:
-		h, err := v1.NewHash(target)
+		h, err := hasher.NewHash(target)
 		if err != nil {
 			return &regError{
 				Status:  http.StatusBadRequest,
@@ -227,7 +226,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 		return nil
 
 	case http.MethodGet:
-		h, err := v1.NewHash(target)
+		h, err := hasher.NewHash(target)
 		if err != nil {
 			return &regError{
 				Status:  http.StatusBadRequest,
@@ -308,19 +307,19 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 		}
 
 		if digest != "" {
-			h, err := v1.NewHash(digest)
+			h, err := hasher.NewHash(digest)
 			if err != nil {
 				return regErrDigestInvalid
 			}
 
-			vrc, err := verify.ReadCloser(req.Body, req.ContentLength, h)
+			vrc, err := hasher.ReadCloser(req.Body, req.ContentLength, h)
 			if err != nil {
 				return regErrInternal(err)
 			}
 			defer vrc.Close()
 
 			if err = bph.Put(req.Context(), repo, h, vrc); err != nil {
-				if errors.As(err, &verify.Error{}) {
+				if errors.As(err, &hasher.Error{}) {
 					log.Printf("Digest mismatch: %v", err)
 					return regErrDigestMismatch
 				}
@@ -417,7 +416,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 		b.lock.Lock()
 		defer b.lock.Unlock()
 
-		h, err := v1.NewHash(digest)
+		h, err := hasher.NewHash(digest)
 		if err != nil {
 			return &regError{
 				Status:  http.StatusBadRequest,
@@ -429,19 +428,19 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 		defer req.Body.Close()
 		in := io.NopCloser(io.MultiReader(bytes.NewBuffer(b.uploads[target]), req.Body))
 
-		size := int64(verify.SizeUnknown)
+		size := int64(hasher.SizeUnknown)
 		if req.ContentLength > 0 {
 			size = int64(len(b.uploads[target])) + req.ContentLength
 		}
 
-		vrc, err := verify.ReadCloser(in, size, h)
+		vrc, err := hasher.ReadCloser(in, size, h)
 		if err != nil {
 			return regErrInternal(err)
 		}
 		defer vrc.Close()
 
 		if err := bph.Put(req.Context(), repo, h, vrc); err != nil {
-			if errors.As(err, &verify.Error{}) {
+			if errors.As(err, &hasher.Error{}) {
 				log.Printf("Digest mismatch: %v", err)
 				return regErrDigestMismatch
 			}
@@ -459,7 +458,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 			return regErrUnsupported
 		}
 
-		h, err := v1.NewHash(target)
+		h, err := hasher.NewHash(target)
 		if err != nil {
 			return &regError{
 				Status:  http.StatusBadRequest,

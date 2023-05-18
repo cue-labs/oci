@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package registry_test
+package ocitestregistry_test
 
 import (
 	"fmt"
@@ -24,8 +24,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/go-containerregistry/pkg/registry"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/rogpeppe/ocitestregistry"
+	"github.com/opencontainers/go-digest"
 )
 
 const (
@@ -44,11 +44,6 @@ const (
 	]
 }`
 )
-
-func sha256String(s string) string {
-	h, _, _ := v1.SHA256(strings.NewReader(s))
-	return h.Hex
-}
 
 func TestCalls(t *testing.T) {
 	tcs := []struct {
@@ -69,58 +64,58 @@ func TestCalls(t *testing.T) {
 		Want   string // response body to expect
 	}{
 		{
-			Description: "/v2 returns 200",
+			Description: "/v2_returns_200",
 			Method:      "GET",
 			URL:         "/v2",
 			Code:        http.StatusOK,
 			Header:      map[string]string{"Docker-Distribution-API-Version": "registry/2.0"},
 		},
 		{
-			Description: "/v2/ returns 200",
+			Description: "/v2/_returns_200",
 			Method:      "GET",
 			URL:         "/v2/",
 			Code:        http.StatusOK,
 			Header:      map[string]string{"Docker-Distribution-API-Version": "registry/2.0"},
 		},
 		{
-			Description: "/v2/bad returns 404",
+			Description: "/v2/bad_returns_404",
 			Method:      "GET",
 			URL:         "/v2/bad",
 			Code:        http.StatusNotFound,
 			Header:      map[string]string{"Docker-Distribution-API-Version": "registry/2.0"},
 		},
 		{
-			Description: "GET non existent blob",
+			Description: "GET_non_existent_blob",
 			Method:      "GET",
 			URL:         "/v2/foo/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
 			Code:        http.StatusNotFound,
 		},
 		{
-			Description: "HEAD non existent blob",
+			Description: "HEAD_non_existent_blob",
 			Method:      "HEAD",
 			URL:         "/v2/foo/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
 			Code:        http.StatusNotFound,
 		},
 		{
-			Description: "GET bad digest",
+			Description: "GET_bad_digest",
 			Method:      "GET",
 			URL:         "/v2/foo/blobs/sha256:asd",
 			Code:        http.StatusBadRequest,
 		},
 		{
-			Description: "HEAD bad digest",
+			Description: "HEAD_bad_digest",
 			Method:      "HEAD",
 			URL:         "/v2/foo/blobs/sha256:asd",
 			Code:        http.StatusBadRequest,
 		},
 		{
-			Description: "bad blob verb",
+			Description: "bad_blob_verb",
 			Method:      "FOO",
 			URL:         "/v2/foo/blobs/sha256:asd",
 			Code:        http.StatusBadRequest,
 		},
 		{
-			Description: "GET containerless blob",
+			Description: "GET_containerless_blob",
 			Digests:     map[string]string{"sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
@@ -129,7 +124,7 @@ func TestCalls(t *testing.T) {
 			Want:        "foo",
 		},
 		{
-			Description: "GET blob",
+			Description: "GET_blob",
 			Digests:     map[string]string{"sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
@@ -138,7 +133,7 @@ func TestCalls(t *testing.T) {
 			Want:        "foo",
 		},
 		{
-			Description: "HEAD blob",
+			Description: "HEAD_blob",
 			Digests:     map[string]string{"sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae": "foo"},
 			Method:      "HEAD",
 			URL:         "/v2/foo/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
@@ -149,14 +144,14 @@ func TestCalls(t *testing.T) {
 			},
 		},
 		{
-			Description: "DELETE blob",
+			Description: "DELETE_blob",
 			Digests:     map[string]string{"sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae": "foo"},
 			Method:      "DELETE",
 			URL:         "/v2/foo/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
 			Code:        http.StatusAccepted,
 		},
 		{
-			Description: "blob url with no container",
+			Description: "blob_url_with_no_container",
 			Method:      "GET",
 			URL:         "/v2/blobs/sha256:asd",
 			Code:        http.StatusBadRequest,
@@ -176,13 +171,13 @@ func TestCalls(t *testing.T) {
 			Header:      map[string]string{"Range": "0-0"},
 		},
 		{
-			Description: "upload put missing digest",
+			Description: "upload_put_missing_digest",
 			Method:      "PUT",
 			URL:         "/v2/foo/blobs/uploads/1",
 			Code:        http.StatusBadRequest,
 		},
 		{
-			Description: "monolithic upload good digest",
+			Description: "monolithic_upload_good_digest",
 			Method:      "POST",
 			URL:         "/v2/foo/blobs/uploads?digest=sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
 			Code:        http.StatusCreated,
@@ -190,14 +185,14 @@ func TestCalls(t *testing.T) {
 			Header:      map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
 		},
 		{
-			Description: "monolithic upload bad digest",
+			Description: "monolithic_upload_bad_digest",
 			Method:      "POST",
 			URL:         "/v2/foo/blobs/uploads?digest=sha256:fake",
 			Code:        http.StatusBadRequest,
 			Body:        "foo",
 		},
 		{
-			Description: "upload good digest",
+			Description: "upload_good_digest",
 			Method:      "PUT",
 			URL:         "/v2/foo/blobs/uploads/1?digest=sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
 			Code:        http.StatusCreated,
@@ -205,14 +200,14 @@ func TestCalls(t *testing.T) {
 			Header:      map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
 		},
 		{
-			Description: "upload bad digest",
+			Description: "upload_bad_digest",
 			Method:      "PUT",
 			URL:         "/v2/foo/blobs/uploads/1?digest=sha256:baddigest",
 			Code:        http.StatusBadRequest,
 			Body:        "foo",
 		},
 		{
-			Description: "stream upload",
+			Description: "stream_upload",
 			Method:      "PATCH",
 			URL:         "/v2/foo/blobs/uploads/1",
 			Code:        http.StatusNoContent,
@@ -223,7 +218,7 @@ func TestCalls(t *testing.T) {
 			},
 		},
 		{
-			Description: "stream duplicate upload",
+			Description: "stream_duplicate_upload",
 			Method:      "PATCH",
 			URL:         "/v2/foo/blobs/uploads/1",
 			Code:        http.StatusBadRequest,
@@ -231,7 +226,7 @@ func TestCalls(t *testing.T) {
 			BlobStream:  map[string]string{"1": "foo"},
 		},
 		{
-			Description: "stream finish upload",
+			Description: "stream_finish_upload",
 			Method:      "PUT",
 			URL:         "/v2/foo/blobs/uploads/1?digest=sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
 			BlobStream:  map[string]string{"1": "foo"},
@@ -239,33 +234,33 @@ func TestCalls(t *testing.T) {
 			Header:      map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
 		},
 		{
-			Description: "get missing manifest",
+			Description: "get_missing_manifest",
 			Method:      "GET",
 			URL:         "/v2/foo/manifests/latest",
 			Code:        http.StatusNotFound,
 		},
 		{
-			Description: "head missing manifest",
+			Description: "head_missing_manifest",
 			Method:      "HEAD",
 			URL:         "/v2/foo/manifests/latest",
 			Code:        http.StatusNotFound,
 		},
 		{
-			Description: "get missing manifest good container",
+			Description: "get_missing_manifest_good_container",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/manifests/bar",
 			Code:        http.StatusNotFound,
 		},
 		{
-			Description: "head missing manifest good container",
+			Description: "head_missing_manifest_good_container",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo"},
 			Method:      "HEAD",
 			URL:         "/v2/foo/manifests/bar",
 			Code:        http.StatusNotFound,
 		},
 		{
-			Description: "get manifest by tag",
+			Description: "get_manifest_by_tag",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/manifests/latest",
@@ -273,29 +268,29 @@ func TestCalls(t *testing.T) {
 			Want:        "foo",
 		},
 		{
-			Description: "get manifest by digest",
+			Description: "get_manifest_by_digest",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo"},
 			Method:      "GET",
-			URL:         "/v2/foo/manifests/sha256:" + sha256String("foo"),
+			URL:         "/v2/foo/manifests/" + digestOf("foo"),
 			Code:        http.StatusOK,
 			Want:        "foo",
 		},
 		{
-			Description: "head manifest",
+			Description: "head_manifest",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo"},
 			Method:      "HEAD",
 			URL:         "/v2/foo/manifests/latest",
 			Code:        http.StatusOK,
 		},
 		{
-			Description: "create manifest",
+			Description: "create_manifest",
 			Method:      "PUT",
 			URL:         "/v2/foo/manifests/latest",
 			Code:        http.StatusCreated,
 			Body:        "foo",
 		},
 		{
-			Description: "create index",
+			Description: "create_index",
 			Method:      "PUT",
 			URL:         "/v2/foo/manifests/latest",
 			Code:        http.StatusCreated,
@@ -306,7 +301,7 @@ func TestCalls(t *testing.T) {
 			Manifests: map[string]string{"foo/manifests/image": "foo"},
 		},
 		{
-			Description: "create index missing child",
+			Description: "create_index_missing_child",
 			Method:      "PUT",
 			URL:         "/v2/foo/manifests/latest",
 			Code:        http.StatusNotFound,
@@ -316,7 +311,7 @@ func TestCalls(t *testing.T) {
 			},
 		},
 		{
-			Description: "bad index body",
+			Description: "bad_index_body",
 			Method:      "PUT",
 			URL:         "/v2/foo/manifests/latest",
 			Code:        http.StatusBadRequest,
@@ -326,13 +321,13 @@ func TestCalls(t *testing.T) {
 			},
 		},
 		{
-			Description: "bad manifest method",
+			Description: "bad_manifest_method",
 			Method:      "BAR",
 			URL:         "/v2/foo/manifests/latest",
 			Code:        http.StatusBadRequest,
 		},
 		{
-			Description:   "Chunk upload start",
+			Description:   "Chunk_upload_start",
 			Method:        "PATCH",
 			URL:           "/v2/foo/blobs/uploads/1",
 			RequestHeader: map[string]string{"Content-Range": "0-3"},
@@ -344,7 +339,7 @@ func TestCalls(t *testing.T) {
 			},
 		},
 		{
-			Description:   "Chunk upload bad content range",
+			Description:   "Chunk_upload_bad_content_range",
 			Method:        "PATCH",
 			URL:           "/v2/foo/blobs/uploads/1",
 			RequestHeader: map[string]string{"Content-Range": "0-bar"},
@@ -352,7 +347,7 @@ func TestCalls(t *testing.T) {
 			Body:          "foo",
 		},
 		{
-			Description:   "Chunk upload overlaps previous data",
+			Description:   "Chunk_upload_overlaps_previous_data",
 			Method:        "PATCH",
 			URL:           "/v2/foo/blobs/uploads/1",
 			BlobStream:    map[string]string{"1": "foo"},
@@ -361,7 +356,7 @@ func TestCalls(t *testing.T) {
 			Body:          "bar",
 		},
 		{
-			Description:   "Chunk upload after previous data",
+			Description:   "Chunk_upload_after_previous_data",
 			Method:        "PATCH",
 			URL:           "/v2/foo/blobs/uploads/1",
 			BlobStream:    map[string]string{"1": "foo"},
@@ -374,34 +369,34 @@ func TestCalls(t *testing.T) {
 			},
 		},
 		{
-			Description: "DELETE Unknown name",
+			Description: "DELETE_Unknown_name",
 			Method:      "DELETE",
 			URL:         "/v2/test/honk/manifests/latest",
 			Code:        http.StatusNotFound,
 		},
 		{
-			Description: "DELETE Unknown manifest",
+			Description: "DELETE_Unknown_manifest",
 			Manifests:   map[string]string{"honk/manifests/latest": "honk"},
 			Method:      "DELETE",
 			URL:         "/v2/honk/manifests/tag-honk",
 			Code:        http.StatusNotFound,
 		},
 		{
-			Description: "DELETE existing manifest",
+			Description: "DELETE_existing_manifest",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo"},
 			Method:      "DELETE",
 			URL:         "/v2/foo/manifests/latest",
 			Code:        http.StatusAccepted,
 		},
 		{
-			Description: "DELETE existing manifest by digest",
+			Description: "DELETE_existing_manifest_by_digest",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo"},
 			Method:      "DELETE",
-			URL:         "/v2/foo/manifests/sha256:" + sha256String("foo"),
+			URL:         "/v2/foo/manifests/" + digestOf("foo"),
 			Code:        http.StatusAccepted,
 		},
 		{
-			Description: "list tags",
+			Description: "list_tags",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo", "foo/manifests/tag1": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/tags/list?n=1000",
@@ -409,7 +404,7 @@ func TestCalls(t *testing.T) {
 			Want:        `{"name":"foo","tags":["latest","tag1"]}`,
 		},
 		{
-			Description: "limit tags",
+			Description: "limit_tags",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo", "foo/manifests/tag1": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/tags/list?n=1",
@@ -417,7 +412,7 @@ func TestCalls(t *testing.T) {
 			Want:        `{"name":"foo","tags":["latest"]}`,
 		},
 		{
-			Description: "offset tags",
+			Description: "offset_tags",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo", "foo/manifests/tag1": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/tags/list?last=latest",
@@ -425,63 +420,63 @@ func TestCalls(t *testing.T) {
 			Want:        `{"name":"foo","tags":["tag1"]}`,
 		},
 		{
-			Description: "list non existing tags",
+			Description: "list_non_existing_tags",
 			Method:      "GET",
 			URL:         "/v2/foo/tags/list?n=1000",
 			Code:        http.StatusNotFound,
 		},
 		{
-			Description: "list repos",
+			Description: "list_repos",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo", "bar/manifests/latest": "bar"},
 			Method:      "GET",
 			URL:         "/v2/_catalog?n=1000",
 			Code:        http.StatusOK,
 		},
 		{
-			Description: "fetch references",
+			Description: "fetch_references",
 			Method:      "GET",
-			URL:         "/v2/foo/referrers/sha256:" + sha256String("foo"),
+			URL:         "/v2/foo/referrers/" + digestOf("foo"),
 			Code:        http.StatusOK,
 			Manifests: map[string]string{
 				"foo/manifests/image":           "foo",
-				"foo/manifests/points-to-image": "{\"subject\": {\"digest\": \"sha256:" + sha256String("foo") + "\"}}",
+				"foo/manifests/points-to-image": "{\"subject\": {\"digest\": \"" + digestOf("foo") + "\"}}",
 			},
 		},
 		{
-			Description: "fetch references, subject pointing elsewhere",
+			Description: "fetch_references,_subject_pointing_elsewhere",
 			Method:      "GET",
-			URL:         "/v2/foo/referrers/sha256:" + sha256String("foo"),
+			URL:         "/v2/foo/referrers/" + digestOf("foo"),
 			Code:        http.StatusOK,
 			Manifests: map[string]string{
 				"foo/manifests/image":           "foo",
-				"foo/manifests/points-to-image": "{\"subject\": {\"digest\": \"sha256:" + sha256String("nonexistant") + "\"}}",
+				"foo/manifests/points-to-image": "{\"subject\": {\"digest\": \"" + digestOf("nonexistant") + "\"}}",
 			},
 		},
 		{
-			Description: "fetch references, no results",
+			Description: "fetch_references,_no_results",
 			Method:      "GET",
-			URL:         "/v2/foo/referrers/sha256:" + sha256String("foo"),
+			URL:         "/v2/foo/referrers/" + digestOf("foo"),
 			Code:        http.StatusOK,
 			Manifests: map[string]string{
 				"foo/manifests/image": "foo",
 			},
 		},
 		{
-			Description: "fetch references, missing repo",
+			Description: "fetch_references,_missing_repo",
 			Method:      "GET",
-			URL:         "/v2/does-not-exist/referrers/sha256:" + sha256String("foo"),
+			URL:         "/v2/does-not-exist/referrers/" + digestOf("foo"),
 			Code:        http.StatusNotFound,
 		},
 		{
-			Description: "fetch references, bad target (tag vs. digest)",
+			Description: "fetch_references,_bad_target_(tag_vs._digest)",
 			Method:      "GET",
 			URL:         "/v2/foo/referrers/latest",
 			Code:        http.StatusBadRequest,
 		},
 		{
-			Description: "fetch references, bad method",
+			Description: "fetch_references,_bad_method",
 			Method:      "POST",
-			URL:         "/v2/foo/referrers/sha256:" + sha256String("foo"),
+			URL:         "/v2/foo/referrers/" + digestOf("foo"),
 			Code:        http.StatusBadRequest,
 		},
 	}
@@ -491,11 +486,11 @@ func TestCalls(t *testing.T) {
 		var logger *log.Logger
 		testf := func(t *testing.T) {
 
-			opts := []registry.Option{registry.WithReferrersSupport(true)}
+			opts := []ocitestregistry.Option{ocitestregistry.WithReferrersSupport(true)}
 			if logger != nil {
-				opts = append(opts, registry.Logger(logger))
+				opts = append(opts, ocitestregistry.Logger(logger))
 			}
-			r := registry.New(opts...)
+			r := ocitestregistry.New(opts...)
 			s := httptest.NewServer(r)
 			defer s.Close()
 
@@ -606,4 +601,8 @@ func TestCalls(t *testing.T) {
 		logger = log.New(io.Discard, "", log.Ldate)
 		t.Run(tc.Description+" - custom log", testf)
 	}
+}
+
+func digestOf(s string) string {
+	return string(digest.FromString(s))
 }

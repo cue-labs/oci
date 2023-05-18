@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package registry implements a docker V2 registry and the OCI distribution specification.
+// Package ocitestregistry implements a docker V2 registry and the OCI distribution specification.
 //
 // It is designed to be used anywhere a low dependency container registry is needed, with an
 // initial focus on tests.
@@ -21,7 +21,7 @@
 //
 // This is currently a low flightmiles system. It's likely quite safe to use in tests; If you're using it
 // in production, please let us know how and send us CL's for integration tests.
-package registry
+package ocitestregistry
 
 import (
 	"fmt"

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package registry
+package ocitestregistry
 
 import (
 	"bytes"
@@ -26,9 +26,15 @@ import (
 	"strings"
 	"sync"
 
-	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/types"
+	"github.com/rogpeppe/ocitestregistry/hasher"
+	"github.com/opencontainers/go-digest"
+	ocispecroot "github.com/opencontainers/image-spec/specs-go"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
+
+var v2 = ocispecroot.Versioned{
+	SchemaVersion: 2,
+}
 
 type catalog struct {
 	Repos []string `json:"repositories"`
@@ -118,7 +124,7 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regErro
 				Message: "Unknown manifest",
 			}
 		}
-		h, _, _ := v1.SHA256(bytes.NewReader(m.blob))
+		h, _, _ := hasher.SHA256(bytes.NewReader(m.blob))
 		resp.Header().Set("Docker-Content-Digest", h.String())
 		resp.Header().Set("Content-Type", m.contentType)
 		resp.Header().Set("Content-Length", fmt.Sprint(len(m.blob)))
@@ -144,7 +150,7 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regErro
 				Message: "Unknown manifest",
 			}
 		}
-		h, _, _ := v1.SHA256(bytes.NewReader(m.blob))
+		h, _, _ := hasher.SHA256(bytes.NewReader(m.blob))
 		resp.Header().Set("Docker-Content-Digest", h.String())
 		resp.Header().Set("Content-Type", m.contentType)
 		resp.Header().Set("Content-Length", fmt.Sprint(len(m.blob)))
@@ -159,7 +165,7 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regErro
 		}
 		b := &bytes.Buffer{}
 		io.Copy(b, req.Body)
-		h, _, _ := v1.SHA256(bytes.NewReader(b.Bytes()))
+		h, _, _ := hasher.SHA256(bytes.NewReader(b.Bytes()))
 		digest := h.String()
 		mf := manifest{
 			blob:        b.Bytes(),
@@ -170,9 +176,9 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regErro
 		// list's constituent manifests are already uploaded.
 		// This isn't strictly required by the registry API, but some
 		// registries require this.
-		if types.MediaType(mf.contentType).IsIndex() {
-			im, err := v1.ParseIndexManifest(b)
-			if err != nil {
+		if isIndex(mf.contentType) {
+			var im ocispec.Index
+			if err := json.Unmarshal(b.Bytes(), &im); err != nil {
 				return &regError{
 					Status:  http.StatusBadRequest,
 					Code:    "MANIFEST_INVALID",
@@ -180,10 +186,10 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regErro
 				}
 			}
 			for _, desc := range im.Manifests {
-				if !desc.MediaType.IsDistributable() {
+				if !isDistributable(desc.MediaType) {
 					continue
 				}
-				if desc.MediaType.IsIndex() || desc.MediaType.IsImage() {
+				if isIndex(desc.MediaType) || isImage(desc.MediaType) {
 					if _, found := m.manifests[repo][desc.Digest.String()]; !found {
 						return &regError{
 							Status:  http.StatusNotFound,
@@ -367,7 +373,7 @@ func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request)
 	repo := strings.Join(elem[1:len(elem)-2], "/")
 
 	// Validate that incoming target is a valid digest
-	if _, err := v1.NewHash(target); err != nil {
+	if _, err := hasher.NewHash(target); err != nil {
 		return &regError{
 			Status:  http.StatusBadRequest,
 			Code:    "UNSUPPORTED",
@@ -387,20 +393,20 @@ func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request)
 		}
 	}
 
-	im := v1.IndexManifest{
-		SchemaVersion: 2,
-		MediaType:     types.OCIImageIndex,
-		Manifests:     []v1.Descriptor{},
+	im := ocispec.Index{
+		Versioned: v2,
+		MediaType: mediaTypeOCIImageIndex,
+		Manifests: []ocispec.Descriptor{},
 	}
-	for digest, manifest := range digestToManifestMap {
-		h, err := v1.NewHash(digest)
+	for dg, manifest := range digestToManifestMap {
+		h, err := hasher.NewHash(dg)
 		if err != nil {
 			continue
 		}
 		var refPointer struct {
-			Subject *v1.Descriptor `json:"subject"`
+			Subject *ocispec.Descriptor `json:"subject"`
 		}
-		json.Unmarshal(manifest.blob, &refPointer)
+		json.Unmarshal(manifest.blob, &refPointer) // TODO check errors
 		if refPointer.Subject == nil {
 			continue
 		}
@@ -414,11 +420,11 @@ func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request)
 				MediaType string `json:"mediaType"`
 			} `json:"config"`
 		}
-		json.Unmarshal(manifest.blob, &imageAsArtifact)
-		im.Manifests = append(im.Manifests, v1.Descriptor{
-			MediaType:    types.MediaType(manifest.contentType),
+		json.Unmarshal(manifest.blob, &imageAsArtifact) // TODO check errors
+		im.Manifests = append(im.Manifests, ocispec.Descriptor{
+			MediaType:    manifest.contentType,
 			Size:         int64(len(manifest.blob)),
-			Digest:       h,
+			Digest:       digest.Digest(h.String()),
 			ArtifactType: imageAsArtifact.Config.MediaType,
 		})
 	}
