@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	"github.com/opencontainers/go-digest"
-	"github.com/rogpeppe/ocitestregistry"
+	"github.com/rogpeppe/ocitestregistry/ociserver"
 )
 
 const (

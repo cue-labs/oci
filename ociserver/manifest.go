@@ -29,7 +29,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	ocispecroot "github.com/opencontainers/image-spec/specs-go"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/rogpeppe/ocitestregistry/hasher"
+	"github.com/rogpeppe/ocitestregistry/internal/hasher"
 )
 
 var v2 = ocispecroot.Versioned{

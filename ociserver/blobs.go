@@ -27,7 +27,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rogpeppe/ocitestregistry/hasher"
+	"github.com/rogpeppe/ocitestregistry/internal/hasher"
 )
 
 // Returns whether this url should be handled by the blob handler
