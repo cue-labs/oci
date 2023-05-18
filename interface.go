@@ -32,13 +32,17 @@ type Reader interface {
 	GetBlob(ctx context.Context, repo string, digest Digest) (BlobReader, error)
 	GetManifest(ctx context.Context, repo string, digest Digest) (BlobReader, error)
 	GetTag(ctx context.Context, repo string, tagName string) (BlobReader, error)
+	ResolveTag(ctx context.Context, repo string, tagName string) (Descriptor, error)
+
+	// TODO
+	// GetBlobFrom(ctx context.Context, repo string, digest Digest, startAt int64) (BlobReader, error)
 }
 
 type Writer interface {
-	PushBlob(ctx context.Context, repo string, r io.Reader, desc Descriptor) (Descriptor, error)
+	PushBlob(ctx context.Context, repo string, desc Descriptor, r io.Reader) (Descriptor, error)
 	PushBlobChunked(ctx context.Context, repo string, resumeID string) (BlobWriter, error)
-	PushManifest(ctx context.Context, repo string, data []byte, desc Descriptor) (Descriptor, error)
-	MountBlob(ctx context.Context, repo string, fromRepo string, digest Digest) error
+	MountBlob(ctx context.Context, fromRepo, toRepo string, digest Digest) error
+	PushManifest(ctx context.Context, repo string, desc Descriptor, data []byte) (Descriptor, error)
 	Tag(ctx context.Context, repo string, digest Digest, tag string) error
 }
 
@@ -56,8 +60,13 @@ type Lister interface {
 
 // BlobWriter provides a handle for inserting data into a blob store.
 type BlobWriter interface {
-	io.WriteCloser
-	io.ReaderFrom
+	// Write writes more data to the blob. When resuming, the
+	// caller must start writing data from Size bytes into the content.
+	io.Writer
+
+	// Closer closes the writer but does not abort. The blob write
+	// can later be resumed.
+	io.Closer
 
 	// Size returns the number of bytes written to this blob.
 	Size() int64
@@ -86,7 +95,7 @@ type BlobWriter interface {
 
 // BlobReader provides the contents of a given blob or manifest.
 type BlobReader interface {
+	io.ReadCloser
+	// Descriptor returns the descriptor for the blob.
 	Descriptor() Descriptor
-	Open() io.ReadCloser
-	OpenRange(p0, p1 int64) io.ReadCloser
 }
