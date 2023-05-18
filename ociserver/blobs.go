@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ocitestregistry
+package ociregistry
 
 import (
 	"bytes"
@@ -27,7 +27,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rogpeppe/ocitestregistry/internal/hasher"
+	"github.com/rogpeppe/ociregistry/internal/hasher"
 )
 
 // Returns whether this url should be handled by the blob handler

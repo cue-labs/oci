@@ -1,4 +1,4 @@
-module github.com/rogpeppe/ocitestregistry
+module github.com/rogpeppe/ociregistry
 
 go 1.21
 

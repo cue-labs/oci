@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ocitestregistry
+package ociregistry
 
 import (
 	"bytes"
@@ -29,7 +29,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	ocispecroot "github.com/opencontainers/image-spec/specs-go"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/rogpeppe/ocitestregistry/internal/hasher"
+	"github.com/rogpeppe/ociregistry/internal/hasher"
 )
 
 var v2 = ocispecroot.Versioned{
