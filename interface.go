@@ -8,10 +8,6 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-// TODO define a set of known errors:
-// - not found
-// - redirect
-
 // Interface defines a generic interface to a single OCI registry.
 // It does not support cross-registry operations: all methods are
 // directed to the receiver only.
