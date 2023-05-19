@@ -69,7 +69,7 @@ type blobs struct {
 	log  *log.Logger
 }
 
-func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
+func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) error {
 	ctx := req.Context()
 	elem := strings.Split(req.URL.Path, "/")
 	elem = elem[1:]
@@ -78,11 +78,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 	}
 	// Must have a path of form /v2/{name}/blobs/{upload,sha256:}
 	if len(elem) < 4 {
-		return &regError{
-			Status:  http.StatusBadRequest,
-			Code:    "NAME_INVALID",
-			Message: "blobs must be attached to a repo",
-		}
+		return ociregistry.ErrNameInvalid
 	}
 	target := elem[len(elem)-1]
 	service := elem[len(elem)-2]
@@ -95,19 +91,11 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 	case http.MethodHead:
 		_, err := hasher.NewHash(target)
 		if err != nil {
-			return &regError{
-				Status:  http.StatusBadRequest,
-				Code:    "NAME_INVALID",
-				Message: "invalid digest",
-			}
+			return ociregistry.ErrDigestInvalid
 		}
 		desc, err := b.backend.ResolveBlob(ctx, repo, ociregistry.Digest(target))
 		if err != nil {
-			return &regError{
-				Status:  http.StatusNotFound,
-				Code:    "TODO",
-				Message: "cannot resolve digest",
-			}
+			return err
 		}
 		// TODO
 		//		if errors.Is(err, errNotFound) {
@@ -129,20 +117,12 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 	case http.MethodGet:
 		h, err := hasher.NewHash(target)
 		if err != nil {
-			return &regError{
-				Status:  http.StatusBadRequest,
-				Code:    "NAME_INVALID",
-				Message: "invalid digest",
-			}
+			return ociregistry.ErrDigestInvalid
 		}
 
 		blob, err := b.backend.GetBlob(ctx, repo, ociregistry.Digest(target))
 		if err != nil {
-			return &regError{
-				Status:  http.StatusNotFound,
-				Code:    "TODO",
-				Message: "cannot get blob",
-			}
+			return err
 		}
 		defer blob.Close()
 		desc := blob.Descriptor()
@@ -172,16 +152,12 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 		// It is weird that this is "target" instead of "service", but
 		// that's how the index math works out above.
 		if target != "uploads" {
-			return &regError{
-				Status:  http.StatusBadRequest,
-				Code:    "METHOD_UNKNOWN",
-				Message: fmt.Sprintf("POST to /blobs must be followed by /uploads, got %s", target),
-			}
+			return badAPIUseError("POST to /blobs must be followed by /uploads, got %s", target)
 		}
 
 		if digest != "" {
 			if !isDigest(string(digest)) {
-				return regErrDigestInvalid
+				return ociregistry.ErrDigestInvalid
 			}
 			// TODO check that Content-Type is application/octet-stream?
 			mediaType := "application/octet-stream"
@@ -192,7 +168,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 				Digest:    digest,
 			}, req.Body)
 			if err != nil {
-				return errTODOf("%v", err)
+				return err
 			}
 			resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
 			resp.WriteHeader(http.StatusCreated)
@@ -200,7 +176,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 		}
 		w, err := b.backend.PushBlobChunked(ctx, repo, "")
 		if err != nil {
-			return errTODO()
+			return err
 		}
 		log.Printf("started initial PushBlobChunked (id %q)", w.ID())
 		// TODO how can we make it so that the backend can return a location that isn't
@@ -213,26 +189,20 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 
 	case http.MethodPatch:
 		if service != "uploads" {
-			return &regError{
-				Status:  http.StatusBadRequest,
-				Code:    "METHOD_UNKNOWN",
-				Message: fmt.Sprintf("PATCH to /blobs must be followed by /uploads, got %s", service),
-			}
+			return badAPIUseError("PATCH to /blobs must be followed by /uploads, got %s", service)
 		}
 
 		if contentRange != "" {
-			return errTODO()
+			return fmt.Errorf("TODO")
 			//			start, end := 0, 0
 			//			if _, err := fmt.Sscanf(contentRange, "%d-%d", &start, &end); err != nil {
-			//				return &regError{
-			//					Status:  http.StatusRequestedRangeNotSatisfiable,
-			//					Code:    "BLOB_UPLOAD_UNKNOWN",
-			//					Message: "We don't understand your Content-Range",
-			//				}
+			//				return withHTTPCode(http.StatusRequestedRangeNotSatisfiable, badAPIUseError("We don't understand your Content-Range"))
 			//			}
 			//			b.lock.Lock()
 			//			defer b.lock.Unlock()
 			//			if start != len(b.uploads[target]) {
+			//				return fmt.Errorf("content range noyt
+			//				return withHTTPCode(http.StatusRequestedRangeNotSatisfiable, badAPIUseError("Your content range doesn't match what we have"))
 			//				return &regError{
 			//					Status:  http.StatusRequestedRangeNotSatisfiable,
 			//					Code:    "BLOB_UPLOAD_UNKNOWN",
@@ -250,7 +220,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 		id := target
 		w, err := b.backend.PushBlobChunked(ctx, repo, id)
 		if err != nil {
-			return errTODOf("%v", err)
+			return err
 		}
 
 		resp.Header().Set("Location", "/"+path.Join("v2", path.Join(elem[1:len(elem)-3]...), "blobs/uploads", id))
@@ -260,42 +230,30 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 
 	case http.MethodPut:
 		if service != "uploads" {
-			return &regError{
-				Status:  http.StatusBadRequest,
-				Code:    "METHOD_UNKNOWN",
-				Message: fmt.Sprintf("PUT to /blobs must be followed by /uploads, got %s", service),
-			}
+			return badAPIUseError("PUT to /blobs must be followed by /uploads, got %s", service)
 		}
 
 		if digest == "" {
-			return &regError{
-				Status:  http.StatusBadRequest,
-				Code:    "DIGEST_INVALID",
-				Message: "digest not specified",
-			}
+			return ociregistry.ErrDigestInvalid
 		}
 
 		location := target
 		w, err := b.backend.PushBlobChunked(ctx, repo, location)
 		if err != nil {
-			return errTODOf("%v; location %q; url %v", err, location, req.URL)
+			return err
 		}
 		defer w.Close()
 
 		_, err = hasher.NewHash(string(digest))
 		if err != nil {
-			return &regError{
-				Status:  http.StatusBadRequest,
-				Code:    "NAME_INVALID",
-				Message: "invalid digest",
-			}
+			return ociregistry.ErrDigestInvalid
 		}
 		if _, err := io.Copy(w, req.Body); err != nil {
-			return errTODO()
+			return fmt.Errorf("failed to copy data: %v", err)
 		}
 		digest, err := w.Commit(ctx, digest)
 		if err != nil {
-			return errTODO()
+			return err
 		}
 		resp.Header().Set("Docker-Content-Digest", string(digest))
 		resp.WriteHeader(http.StatusCreated)
@@ -304,23 +262,15 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 	case http.MethodDelete:
 		_, err := hasher.NewHash(target)
 		if err != nil {
-			return &regError{
-				Status:  http.StatusBadRequest,
-				Code:    "NAME_INVALID",
-				Message: "invalid digest",
-			}
+			return ociregistry.ErrDigestInvalid
 		}
 		if err := b.backend.DeleteBlob(ctx, repo, ociregistry.Digest(target)); err != nil {
-			return errTODOf("%v", err)
+			return err
 		}
 		resp.WriteHeader(http.StatusAccepted)
 		return nil
 
 	default:
-		return &regError{
-			Status:  http.StatusBadRequest,
-			Code:    "METHOD_UNKNOWN",
-			Message: "We don't understand your method + url",
-		}
+		return errMethodNotAllowed
 	}
 }

@@ -22,7 +22,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -90,7 +89,7 @@ func isReferrers(req *http.Request) bool {
 
 // https://github.com/opencontainers/distribution-spec/blob/master/spec.md#pulling-an-image-manifest
 // https://github.com/opencontainers/distribution-spec/blob/master/spec.md#pushing-an-image
-func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regError {
+func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) error {
 	ctx := req.Context()
 	elem := strings.Split(req.URL.Path, "/")
 	elem = elem[1:]
@@ -107,10 +106,10 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regErro
 		case isTag(target):
 			r, err = m.backend.GetTag(ctx, repo, target)
 		default:
-			return errTODO()
+			return ociregistry.ErrDigestInvalid
 		}
 		if err != nil {
-			return errTODOf("%v", err)
+			return err
 		}
 		desc := r.Descriptor()
 		resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
@@ -129,10 +128,10 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regErro
 		case isTag(target):
 			desc, err = m.backend.ResolveTag(ctx, repo, target)
 		default:
-			return errTODO()
+			return ociregistry.ErrDigestInvalid
 		}
 		if err != nil {
-			return errTODO()
+			return err
 		}
 		resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
 		resp.Header().Set("Content-Type", desc.MediaType)
@@ -143,28 +142,28 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regErro
 	case http.MethodPut:
 		mediaType := req.Header.Get("Content-Type")
 		if mediaType == "" {
-			return errTODO()
+			return badAPIUseError("no media type provided for PUT")
 		}
 		// TODO size limit
 		data, err := ioutil.ReadAll(req.Body)
 		if err != nil {
-			return errTODO()
+			return fmt.Errorf("cannot read content: %v", err)
 		}
 		dig := digest.FromBytes(data)
 		var tag string
 		switch {
 		case isDigest(target):
 			if ociregistry.Digest(target) != dig {
-				return errTODO()
+				return ociregistry.ErrDigestInvalid
 			}
 		case isTag(target):
 			tag = target
 		default:
-			return errTODO()
+			return ociregistry.ErrDigestInvalid
 		}
 		desc, err := m.backend.PushManifest(ctx, repo, tag, data, mediaType)
 		if err != nil {
-			return errTODO()
+			return err
 		}
 		// TODO OCI-Subject header?
 		resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
@@ -179,24 +178,20 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regErro
 		case isTag(target):
 			err = m.backend.DeleteTag(ctx, repo, target)
 		default:
-			return errTODO()
+			return ociregistry.ErrDigestInvalid
 		}
 		if err != nil {
-			return errTODOf("%v", err)
+			return err
 		}
 		resp.WriteHeader(http.StatusAccepted)
 		return nil
 
 	default:
-		return &regError{
-			Status:  http.StatusBadRequest,
-			Code:    "METHOD_UNKNOWN",
-			Message: "We don't understand your method + url",
-		}
+		return errMethodNotAllowed
 	}
 }
 
-func (m *manifests) handleTags(resp http.ResponseWriter, req *http.Request) *regError {
+func (m *manifests) handleTags(resp http.ResponseWriter, req *http.Request) error {
 	ctx := req.Context()
 	elem := strings.Split(req.URL.Path, "/")
 	elem = elem[1:]
@@ -208,7 +203,7 @@ func (m *manifests) handleTags(resp http.ResponseWriter, req *http.Request) *reg
 		// all tags every time.
 		tags, err := ociregistry.All(m.backend.Tags(ctx, repo))
 		if err != nil {
-			return errTODOf("%v", err)
+			return err
 		}
 		sort.Strings(tags)
 
@@ -226,11 +221,7 @@ func (m *manifests) handleTags(resp http.ResponseWriter, req *http.Request) *reg
 		// Limit using n query parameter.
 		if ns := req.URL.Query().Get("n"); ns != "" {
 			if n, err := strconv.Atoi(ns); err != nil {
-				return &regError{
-					Status:  http.StatusBadRequest,
-					Code:    "BAD_REQUEST",
-					Message: fmt.Sprintf("parsing n: %v", err),
-				}
+				return ociregistry.NewError(ociregistry.ErrUnsupported.Code(), "invalid value for query parameter n", nil)
 			} else if n < len(tags) {
 				tags = tags[:n]
 			}
@@ -248,14 +239,10 @@ func (m *manifests) handleTags(resp http.ResponseWriter, req *http.Request) *reg
 		return nil
 	}
 
-	return &regError{
-		Status:  http.StatusBadRequest,
-		Code:    "METHOD_UNKNOWN",
-		Message: "We don't understand your method + url",
-	}
+	return errMethodNotAllowed
 }
 
-func (m *manifests) handleCatalog(resp http.ResponseWriter, req *http.Request) *regError {
+func (m *manifests) handleCatalog(resp http.ResponseWriter, req *http.Request) error {
 	ctx := req.Context()
 	query := req.URL.Query()
 	nStr := query.Get("n")
@@ -267,7 +254,7 @@ func (m *manifests) handleCatalog(resp http.ResponseWriter, req *http.Request) *
 	if req.Method == "GET" {
 		repos, err := ociregistry.All(m.backend.Repositories(ctx))
 		if err != nil {
-			return errTODO()
+			return err
 		}
 		// TODO: implement pagination
 		if len(repos) > n {
@@ -277,7 +264,7 @@ func (m *manifests) handleCatalog(resp http.ResponseWriter, req *http.Request) *
 			Repos: repos,
 		})
 		if err != nil {
-			return errTODO()
+			return err
 		}
 		resp.Header().Set("Content-Length", fmt.Sprint(len(msg)))
 		resp.WriteHeader(http.StatusOK)
@@ -285,24 +272,16 @@ func (m *manifests) handleCatalog(resp http.ResponseWriter, req *http.Request) *
 		return nil
 	}
 
-	return &regError{
-		Status:  http.StatusBadRequest,
-		Code:    "METHOD_UNKNOWN",
-		Message: "We don't understand your method + url",
-	}
+	return errMethodNotAllowed
 }
 
 // TODO: implement handling of artifactType querystring
-func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request) *regError {
+func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request) error {
 	ctx := req.Context()
 
 	// Ensure this is a GET request
 	if req.Method != "GET" {
-		return &regError{
-			Status:  http.StatusBadRequest,
-			Code:    "METHOD_UNKNOWN",
-			Message: "We don't understand your method + url",
-		}
+		return errMethodNotAllowed
 	}
 
 	elem := strings.Split(req.URL.Path, "/")
@@ -312,11 +291,7 @@ func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request)
 
 	// Validate that incoming target is a valid digest
 	if !isDigest(target) {
-		return &regError{
-			Status:  http.StatusBadRequest,
-			Code:    "UNSUPPORTED",
-			Message: "Target must be a valid digest",
-		}
+		return ociregistry.ErrDigestInvalid
 	}
 	im := &ocispec.Index{
 		Versioned: v2,
@@ -333,51 +308,16 @@ func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request)
 		im.Manifests = append(im.Manifests, desc)
 	}
 	if err := it.Error(); err != nil {
-		return errTODOf("%v", err)
+		return err
 	}
 	msg, err := json.Marshal(im)
 	if err != nil {
-		return errTODO()
+		return err
 	}
 	resp.Header().Set("Content-Length", fmt.Sprint(len(msg)))
 	resp.WriteHeader(http.StatusOK)
 	resp.Write(msg)
 	return nil
-}
-
-func errTODO() *regError {
-	return &regError{
-		Status:  http.StatusInternalServerError,
-		Code:    "TODO",
-		Message: "TODO " + callers(3),
-	}
-}
-
-func errTODOf(f string, a ...any) *regError {
-	return &regError{
-		Status:  http.StatusInternalServerError,
-		Code:    "TODO",
-		Message: fmt.Sprintf("TODO (%s) %s", fmt.Sprintf(f, a...), callers(3)),
-	}
-}
-
-func callers(n int) string {
-	pc := make([]uintptr, n)
-	n = runtime.Callers(3, pc)
-	if n == 0 {
-		return "no callers!"
-	}
-	pc = pc[:n]
-	frames := runtime.CallersFrames(pc)
-	var buf strings.Builder
-	for {
-		frame, more := frames.Next()
-		fmt.Fprintf(&buf, "%s:%d", frame.File, frame.Line)
-		if !more {
-			return buf.String()
-		}
-		fmt.Fprintf(&buf, ", ")
-	}
 }
 
 func isDigest(d string) bool {

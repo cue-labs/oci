@@ -33,27 +33,45 @@ type (
 
 type Reader interface {
 	// GetBlob returns the content of the blob with the given digest.
+	// Errors:
+	// - ErrNameUnknown when the repository is not present.
+	// - ErrBlobUnknown when the blob is not present in the repository.
 	GetBlob(ctx context.Context, repo string, digest Digest) (BlobReader, error)
 
 	// TODO
 	// GetBlobFrom(ctx context.Context, repo string, digest Digest, startAt int64) (BlobReader, error)
 
 	// GetManifest returns the contents of the manifest with the given digest.
+	// Errors:
+	// - ErrNameUnknown when the repository is not present.
+	// - ErrManifestUnknown when the blob is not present in the repository.
 	GetManifest(ctx context.Context, repo string, digest Digest) (BlobReader, error)
 
 	// GetTag returns the contents of the manifest with the given tag.
+	// Errors:
+	// - ErrNameUnknown when the repository is not present.
+	// - ErrManifestUnknown when the tag is not present in the repository.
 	GetTag(ctx context.Context, repo string, tagName string) (BlobReader, error)
 
 	// ResolveDigest returns the descriptor for a given blob.
 	// Only the MediaType, Digest and Size fields will be filled out.
+	// Errors:
+	// - ErrNameUnknown when the repository is not present.
+	// - ErrBlobUnknown when the blob is not present in the repository.
 	ResolveBlob(ctx context.Context, repo string, digest Digest) (Descriptor, error)
 
 	// ResolveManifest returns the descriptor for a given maniifest.
 	// Only the MediaType, Digest and Size fields will be filled out.
+	// Errors:
+	// - ErrNameUnknown when the repository is not present.
+	// - ErrManifestUnknown when the blob is not present in the repository.
 	ResolveManifest(ctx context.Context, repo string, digest Digest) (Descriptor, error)
 
 	// ResolveTag returns the descriptor for a given tag.
 	// Only the MediaType, Digest and Size fields will be filled out.
+	// Errors:
+	// - ErrNameUnknown when the repository is not present.
+	// - ErrManifestUnknown when the blob is not present in the repository.
 	ResolveTag(ctx context.Context, repo string, tagName string) (Descriptor, error)
 }
 
@@ -62,6 +80,11 @@ type Writer interface {
 	// PushBlob pushes a blob described by desc to the given repository, reading content from r.
 	// Only the desc.Digest and desc.Size fields are used.
 	// It returns desc with Digest set to the canonical digest for the blob.
+	// Errors:
+	// - ErrNameUnknown when the repository is not present.
+	// - ErrNameInvalid when the repository name is not valid.
+	// - ErrDigestInvalid when desc.Digest does not match the content.
+	// - ErrSizeInvalid when desc.Size does not match the content length.
 	PushBlob(ctx context.Context, repo string, desc Descriptor, r io.Reader) (Descriptor, error)
 
 	// PushBlobChunked starts to push a blob to the given repository.

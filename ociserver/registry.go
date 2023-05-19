@@ -37,8 +37,7 @@ type registry struct {
 
 // https://docs.docker.com/registry/spec/api/#api-version-check
 // https://github.com/opencontainers/distribution-spec/blob/master/spec.md#api-version-check
-func (r *registry) v2(resp http.ResponseWriter, req *http.Request) *regError {
-
+func (r *registry) v2(resp http.ResponseWriter, req *http.Request) error {
 	if isBlob(req) {
 		return r.blobs.handle(resp, req)
 	}
@@ -56,11 +55,7 @@ func (r *registry) v2(resp http.ResponseWriter, req *http.Request) *regError {
 	}
 	resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
 	if req.URL.Path != "/v2/" && req.URL.Path != "/v2" {
-		return &regError{
-			Status:  http.StatusNotFound,
-			Code:    "METHOD_UNKNOWN",
-			Message: "We don't understand your method + url",
-		}
+		return ociregistry.NewError(ociregistry.ErrNameUnknown.Code(), "unknown URL path", nil)
 	}
 	resp.WriteHeader(200)
 	return nil
@@ -68,7 +63,7 @@ func (r *registry) v2(resp http.ResponseWriter, req *http.Request) *regError {
 
 func (r *registry) root(resp http.ResponseWriter, req *http.Request) {
 	if rerr := r.v2(resp, req); rerr != nil {
-		rerr.Write(resp)
+		writeError(resp, rerr)
 		return
 	}
 }

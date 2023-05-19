@@ -16,64 +16,95 @@ package ociserver
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
+
+	"github.com/rogpeppe/ociregistry"
 )
 
-type regError struct {
-	Status  int
-	Code    string
-	Message string
+var errMethodNotAllowed = withHTTPCode(http.StatusMethodNotAllowed, badAPIUseError("Unrecognised method"))
+
+type wireError struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+	Detail  any    `json:"detail"`
 }
 
-func (r *regError) Write(resp http.ResponseWriter) error {
-	resp.WriteHeader(r.Status)
-
-	type err struct {
-		Code    string `json:"code"`
-		Message string `json:"message"`
-	}
-	type wrap struct {
-		Errors []err `json:"errors"`
-	}
-	return json.NewEncoder(resp).Encode(wrap{
-		Errors: []err{
-			{
-				Code:    r.Code,
-				Message: r.Message,
-			},
-		},
-	})
+type wireErrors struct {
+	Errors []wireError `json:"errors"`
 }
 
-// regErrInternal returns an internal server error.
-func regErrInternal(err error) *regError {
-	return &regError{
-		Status:  http.StatusInternalServerError,
-		Code:    "INTERNAL_SERVER_ERROR",
+func writeError(resp http.ResponseWriter, err error) {
+	e := wireError{
 		Message: err.Error(),
 	}
+	var ociErr ociregistry.Error
+	if errors.As(err, &ociErr) {
+		e.Code = ociErr.Code()
+		e.Detail = ociErr.Detail()
+	} else {
+		// TODO This is contrary to spec, but what else should we do?
+		e.Code = "INTERNAL_SERVER_ERROR"
+	}
+	httpStatus := http.StatusInternalServerError
+	var statusErr *httpStatusError
+	if errors.As(err, &statusErr) {
+		httpStatus = statusErr.status
+	} else if status, ok := errorStatuses[e.Code]; ok {
+		httpStatus = status
+	}
+	resp.WriteHeader(httpStatus)
+
+	data, err := json.Marshal(wireErrors{
+		Errors: []wireError{e},
+	})
+	if err != nil {
+		// TODO log
+	}
+	resp.Write(data)
 }
 
-var regErrBlobUnknown = &regError{
-	Status:  http.StatusNotFound,
-	Code:    "BLOB_UNKNOWN",
-	Message: "Unknown blob",
+var errorStatuses = map[string]int{
+	ociregistry.ErrBlobUnknown.Code():         http.StatusNotFound,
+	ociregistry.ErrBlobUploadInvalid.Code():   http.StatusBadRequest,
+	ociregistry.ErrBlobUploadUnknown.Code():   http.StatusNotFound,
+	ociregistry.ErrDigestInvalid.Code():       http.StatusBadRequest,
+	ociregistry.ErrManifestBlobUnknown.Code(): http.StatusNotFound,
+	ociregistry.ErrManifestInvalid.Code():     http.StatusBadRequest,
+	ociregistry.ErrManifestUnknown.Code():     http.StatusNotFound,
+	ociregistry.ErrNameInvalid.Code():         http.StatusBadRequest,
+	ociregistry.ErrNameUnknown.Code():         http.StatusNotFound,
+	ociregistry.ErrSizeInvalid.Code():         http.StatusBadRequest,
+	ociregistry.ErrUnauthorized.Code():        http.StatusUnauthorized,
+	ociregistry.ErrDenied.Code():              http.StatusForbidden,
+	ociregistry.ErrUnsupported.Code():         http.StatusMethodNotAllowed,
+	ociregistry.ErrTooManyRequests.Code():     http.StatusTooManyRequests,
 }
 
-var regErrUnsupported = &regError{
-	Status:  http.StatusMethodNotAllowed,
-	Code:    "UNSUPPORTED",
-	Message: "Unsupported operation",
+func badAPIUseError(f string, a ...any) error {
+	return ociregistry.NewError(ociregistry.ErrUnsupported.Code(), fmt.Sprintf(f, a...), nil)
 }
 
-var regErrDigestMismatch = &regError{
-	Status:  http.StatusBadRequest,
-	Code:    "DIGEST_INVALID",
-	Message: "digest does not match contents",
+func withHTTPCode(status int, err error) error {
+	if err == nil {
+		panic("expected error to wrap")
+	}
+	return &httpStatusError{
+		err:    err,
+		status: status,
+	}
 }
 
-var regErrDigestInvalid = &regError{
-	Status:  http.StatusBadRequest,
-	Code:    "NAME_INVALID",
-	Message: "invalid digest",
+type httpStatusError  struct {
+	err    error
+	status int
+}
+
+func (e *httpStatusError) Unwrap() error {
+	return e.err
+}
+
+func (e *httpStatusError) Error() string {
+	return e.err.Error()
 }

@@ -2,65 +2,63 @@ package ociregistry
 
 // TODO how to cope with redirects, if at all?
 
+// NewError returns a new error with the given code, message and detail.
+func NewError(code string, msg string, detail any) Error {
+	return &registryError{
+		code:    code,
+		message: msg,
+		detail:  detail,
+	}
+}
+
+// Error represents an OCI registry error. The set of codes is defined
+// in the [distribution specification].
+//
+// [distribution specification]: https://github.com/opencontainers/distribution-spec/blob/main/spec.md#error-codes
+type Error interface {
+	// error.Error provides the error message.
+	error
+
+	// Code returns the error code. See
+	Code() string
+
+	// Detail returns any detail to be associated with the error; it should
+	// be JSON-marshable.
+	Detail() any
+}
+
+// The following values represent the known error codes.
+var (
+	ErrBlobUnknown         = NewError("blob unknown to registry", "BLOB_UNKNOWN", nil)
+	ErrBlobUploadInvalid   = NewError("blob upload invalid", "BLOB_UPLOAD_INVALID", nil)
+	ErrBlobUploadUnknown   = NewError("blob upload unknown to registry", "BLOB_UPLOAD_UNKNOWN", nil)
+	ErrDigestInvalid       = NewError("provided digest did not match uploaded content", "DIGEST_INVALID", nil)
+	ErrManifestBlobUnknown = NewError("manifest references a manifest or blob unknown to registry", "MANIFEST_BLOB_UNKNOWN", nil)
+	ErrManifestInvalid     = NewError("manifest invalid", "MANIFEST_INVALID", nil)
+	ErrManifestUnknown     = NewError("manifest unknown to registry", "MANIFEST_UNKNOWN", nil)
+	ErrNameInvalid         = NewError("invalid repository name", "NAME_INVALID", nil)
+	ErrNameUnknown         = NewError("repository name not known to registry", "NAME_UNKNOWN", nil)
+	ErrSizeInvalid         = NewError("provided length did not match content length", "SIZE_INVALID", nil)
+	ErrUnauthorized        = NewError("authentication required", "UNAUTHORIZED", nil)
+	ErrDenied              = NewError("requested access to the resource is denied", "DENIED", nil)
+	ErrUnsupported         = NewError("the operation is unsupported", "UNSUPPORTED", nil)
+	ErrTooManyRequests     = NewError("too many requests", "TOOMANYREQUESTS", nil)
+)
+
 type registryError struct {
-	Code_   string `json:"code"`
-	Message string `json:"message"`
-	Detail  any    `json:"detail"`
-	// httpStatusCode holds the conventional HTTP status code
-	// associated with the error.
-	httpCode int `json:"-"`
+	code    string
+	message string
+	detail  any
 }
 
 func (e *registryError) Code() string {
-	return e.Code_
+	return e.code
 }
 
 func (e *registryError) Error() string {
-	return e.Message
+	return e.message
 }
 
-func NewError(code string, msg string, detail any) Error {
-	return &registryError{
-		Code_:   code,
-		Message: msg,
-		Detail:  detail,
-	}
+func (e *registryError) Detail() any {
+	return e.detail
 }
-
-type Error interface {
-	error
-	// Code returns the error code for the error.
-	Code() string
-}
-
-type ErrorCode struct {
-	code string
-}
-
-func newErrorCode(code string, msg string, httpCode int) Error {
-	return &registryError{
-		Code_:    code,
-		Message:  msg,
-		httpCode: httpCode,
-	}
-}
-
-// The following errors correspond to error codes in the API.
-// See https://github.com/opencontainers/distribution-spec/blob/main/spec.md#error-codes
-//
-var (
-	ErrBlobUnknown         = newErrorCode("blob unknown to registry", "BLOB_UNKNOWN", 404)
-	ErrBlobUploadInvalid   = newErrorCode("blob upload invalid", "BLOB_UPLOAD_INVALID", 400)
-	ErrBlobUploadUnknown   = newErrorCode("blob upload unknown to registry", "BLOB_UPLOAD_UNKNOWN", 404)
-	ErrDigestInvalid       = newErrorCode("provided digest did not match uploaded content", "DIGEST_INVALID", 400)
-	ErrManifestBlobUnknown = newErrorCode("manifest references a manifest or blob unknown to registry", "MANIFEST_BLOB_UNKNOWN", 404)
-	ErrManifestInvalid     = newErrorCode("manifest invalid", "MANIFEST_INVALID", 400)
-	ErrManifestUnknown     = newErrorCode("manifest unknown to registry", "MANIFEST_UNKNOWN", 404)
-	ErrNameInvalid         = newErrorCode("invalid repository name", "NAME_INVALID", 400)
-	ErrNameUnknown         = newErrorCode("repository name not known to registry", "NAME_UNKNOWN", 404)
-	ErrSizeInvalid         = newErrorCode("provided length did not match content length", "SIZE_INVALID", 400)
-	ErrUnauthorized        = newErrorCode("authentication required", "UNAUTHORIZED", 401)
-	ErrDenied              = newErrorCode("requested access to the resource is denied", "DENIED", 403)
-	ErrUnsupported         = newErrorCode("the operation is unsupported", "UNSUPPORTED", 400)
-	ErrTooManyRequests     = newErrorCode("too many requests", "TOOMANYREQUESTS", 429)
-)
