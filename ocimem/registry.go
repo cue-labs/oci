@@ -40,18 +40,40 @@ func New() *Registry {
 	return &Registry{}
 }
 
-var noRepo = new(repository)
-
-func (r *Registry) repo(repoName string) *repository {
+func (r *Registry) repo(repoName string) (*repository, error) {
 	if repo, ok := r.repos[repoName]; ok {
-		return repo
+		return repo, nil
 	}
-	return noRepo
+	return nil, ociregistry.ErrNameUnknown
+}
+
+func (r *Registry) manifestForDigest(repoName string, dig ociregistry.Digest) (*blob, error) {
+	repo, err := r.repo(repoName)
+	if err != nil {
+		return nil, err
+	}
+	b := repo.manifests[dig]
+	if b == nil {
+		return nil, ociregistry.ErrManifestUnknown
+	}
+	return b, nil
+}
+
+func (r *Registry) blobForDigest(repoName string, dig ociregistry.Digest) (*blob, error) {
+	repo, err := r.repo(repoName)
+	if err != nil {
+		return nil, err
+	}
+	b := repo.blobs[dig]
+	if b == nil {
+		return nil, ociregistry.ErrBlobUnknown
+	}
+	return b, nil
 }
 
 func (r *Registry) makeRepo(repoName string) (*repository, error) {
 	if !isValidRepoName(repoName) {
-		return nil, fmt.Errorf("invalid repository name %q", repoName)
+		return nil, ociregistry.ErrNameInvalid
 	}
 	if r.repos == nil {
 		r.repos = make(map[string]*repository)

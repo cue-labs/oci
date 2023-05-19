@@ -60,9 +60,9 @@ func (r *Registry) MountBlob(ctx context.Context, fromRepo, toRepo string, dig o
 	if err != nil {
 		return err
 	}
-	b := r.repo(fromRepo).blobs[dig]
-	if b == nil {
-		return fmt.Errorf("no such blob")
+	b, err := r.blobForDigest(fromRepo, dig)
+	if err != nil {
+		return err
 	}
 	rto.blobs[dig] = b
 	return nil
@@ -105,7 +105,10 @@ func (r *Registry) PushTag(ctx context.Context, repoName string, desc ociregistr
 	if !isValidTag(tag) {
 		return fmt.Errorf("invalid tag")
 	}
-	repo := r.repo(repoName)
+	repo, err := r.repo(repoName)
+	if err != nil {
+		return err
+	}
 	var b *blob
 	if data == nil {
 		b = repo.manifests[desc.Digest]
@@ -144,7 +147,10 @@ func (r *Registry) checkManifest(repoName string, mediaType string, data []byte)
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
-	repo := r.repo(repoName)
+	repo, err := r.repo(repoName)
+	if err != nil {
+		return err
+	}
 	for i, layer := range m.Layers {
 		if err := CheckDescriptor(layer, nil); err != nil {
 			return fmt.Errorf("bad layer %d: %v", i, err)

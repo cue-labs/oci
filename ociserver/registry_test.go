@@ -112,7 +112,7 @@ func TestCalls(t *testing.T) {
 			Description: "bad_blob_verb",
 			Method:      "FOO",
 			URL:         "/v2/foo/blobs/sha256:asd",
-			Code:        http.StatusBadRequest,
+			Code:        http.StatusMethodNotAllowed,
 		},
 		{
 			Description: "GET_containerless_blob",
