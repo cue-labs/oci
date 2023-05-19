@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/rogpeppe/ociregistry"
 )
@@ -65,18 +66,34 @@ func (r *Registry) MountBlob(ctx context.Context, fromRepo, toRepo string, dig o
 	return nil
 }
 
-func (r *Registry) PushManifest(ctx context.Context, repoName string, desc ociregistry.Descriptor, data []byte) (ociregistry.Descriptor, error) {
+func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string, data []byte, mediaType string) (ociregistry.Descriptor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	repo, err := r.makeRepo(repoName)
 	if err != nil {
 		return ociregistry.Descriptor{}, err
 	}
-	if err := CheckDescriptor(desc, data); err != nil {
-		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor: %v", err)
+	if mediaType == "" {
+		return ociregistry.Descriptor{}, fmt.Errorf("empty media type")
 	}
-	repo.manifests[desc.Digest] = &blob{desc.MediaType, data}
+	if tag != "" && !isValidTag(tag) {
+		return ociregistry.Descriptor{}, fmt.Errorf("invalid tag")
+	}
+	// make a copy of the data to avoid potential corruption.
+	data = append([]byte(nil), data...)
+	dig := digest.FromBytes(data)
+
+	desc := ociregistry.Descriptor{
+		Digest:    dig,
+		MediaType: mediaType,
+		Size:      int64(len(data)),
+	}
+
 	// TODO check that all the layers in the manifest point to valid blobs.
+	repo.manifests[dig] = &blob{mediaType, data}
+	if tag != "" {
+		repo.tags[tag] = desc
+	}
 	return desc, nil
 }
 

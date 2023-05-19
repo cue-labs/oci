@@ -103,28 +103,23 @@ func (b *Buffer) ID() string {
 }
 
 // Commit implements [ociregistry.BlobWriter.Commit].
-func (b *Buffer) Commit(ctx context.Context, desc ociregistry.Descriptor) (_ ociregistry.Descriptor, err error) {
+func (b *Buffer) Commit(ctx context.Context, dig ociregistry.Digest) (_ ociregistry.Digest, err error) {
 	if b.commitErr != nil {
-		return ociregistry.Descriptor{}, b.commitErr
+		return "", b.commitErr
 	}
 	defer func() {
 		if err != nil {
 			b.commitErr = err
 		}
 	}()
-	if desc.Digest == "" {
-		return ociregistry.Descriptor{}, fmt.Errorf("no digest provided to Commit")
+	if digest.FromBytes(b.buf) != dig {
+		return "", fmt.Errorf("digest mismatch")
 	}
-	if digest.FromBytes(b.buf) != desc.Digest {
-		return ociregistry.Descriptor{}, fmt.Errorf("digest mismatch")
+	b.desc = ociregistry.Descriptor{
+		MediaType: "application/octet-stream",
+		Digest:    dig,
+		Size:      b.Size(),
 	}
-	if desc.Size != int64(len(b.buf)) {
-		return ociregistry.Descriptor{}, fmt.Errorf("size mismatch")
-	}
-	b.desc = desc
 	b.committed = true
-	if desc.MediaType == "" {
-		desc.MediaType = "application/octet-stream"
-	}
-	return desc, nil
+	return dig, nil
 }

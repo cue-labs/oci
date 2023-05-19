@@ -21,10 +21,12 @@
 //
 // This is currently a low flightmiles system. It's likely quite safe to use in tests; If you're using it
 // in production, please let us know how and send us CL's for integration tests.
-package ociregistry
+package ociserver
 
 import (
 	"net/http"
+
+	"github.com/rogpeppe/ociregistry"
 )
 
 type registry struct {
@@ -78,21 +80,22 @@ type Options struct {
 	DisableReferrersAPI bool
 }
 
-// New returns a handler which implements the docker registry protocol.
+// New returns a handler which implements the docker registry protocol
+// by making calls to the underlying registry backend r.
+//
 // If opts is nil, it's equivalent to passing new(Options).
 //
-// It should be registered at the site root.
-func New(opts *Options) http.Handler {
+// The returned handler should be registered at the site root.
+func New(backend ociregistry.Interface, opts *Options) http.Handler {
 	if opts == nil {
 		opts = new(Options)
 	}
 	r := &registry{
 		blobs: blobs{
-			blobHandler: &memHandler{m: map[string][]byte{}},
-			uploads:     map[string][]byte{},
+			backend: backend,
 		},
 		manifests: manifests{
-			manifests: map[string]map[string]manifest{},
+			backend: backend,
 		},
 		referrersEnabled: !opts.DisableReferrersAPI,
 	}

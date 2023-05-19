@@ -7,15 +7,15 @@ import (
 	"github.com/rogpeppe/ociregistry"
 )
 
-func (r *Registry) Repositories(ctx context.Context, startAt string) ociregistry.Iter[string] {
+func (r *Registry) Repositories(ctx context.Context) ociregistry.Iter[string] {
 	return errIter[string]{fmt.Errorf("Repositories TODO")}
 }
 
-func (r *Registry) Tags(ctx context.Context, repo string, startAt string) ociregistry.Iter[string] {
+func (r *Registry) Tags(ctx context.Context, repo string) ociregistry.Iter[string] {
 	return errIter[string]{fmt.Errorf("Tags TODO")}
 }
 
-func (r *Registry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string, startAt string) ociregistry.Iter[ociregistry.Descriptor] {
+func (r *Registry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) ociregistry.Iter[ociregistry.Descriptor] {
 	return errIter[ociregistry.Descriptor]{fmt.Errorf("Referrers TODO")}
 }
 

@@ -29,6 +29,16 @@ func (r *Registry) GetManifest(ctx context.Context, repoName string, dig ociregi
 	return NewBytesReader(b.data, b.descriptor()), nil
 }
 
+func (r *Registry) GetTag(ctx context.Context, repoName string, tagName string) (ociregistry.BlobReader, error) {
+	desc, err := r.ResolveTag(ctx, repoName, tagName)
+	if err != nil {
+		return nil, err
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.GetManifest(ctx, repoName, desc.Digest)
+}
+
 func (r *Registry) ResolveTag(ctx context.Context, repoName string, tagName string) (ociregistry.Descriptor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -39,12 +49,22 @@ func (r *Registry) ResolveTag(ctx context.Context, repoName string, tagName stri
 	return desc, nil
 }
 
-func (r *Registry) GetTag(ctx context.Context, repoName string, tagName string) (ociregistry.BlobReader, error) {
-	desc, err := r.ResolveTag(ctx, repoName, tagName)
-	if err != nil {
-		return nil, err
-	}
+func (r *Registry) ResolveBlob(ctx context.Context, repoName string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return r.GetManifest(ctx, repoName, desc.Digest)
+	b, ok := r.repo(repoName).blobs[digest]
+	if !ok {
+		return ociregistry.Descriptor{}, fmt.Errorf("no such digest")
+	}
+	return b.descriptor(), nil
+}
+
+func (r *Registry) ResolveManifest(ctx context.Context, repoName string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	b, ok := r.repo(repoName).manifests[digest]
+	if !ok {
+		return ociregistry.Descriptor{}, fmt.Errorf("no such digest")
+	}
+	return b.descriptor(), nil
 }

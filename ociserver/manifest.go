@@ -12,24 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ociregistry
+package ociserver
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"io/ioutil"
 	"net/http"
+	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/opencontainers/go-digest"
 	ocispecroot "github.com/opencontainers/image-spec/specs-go"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/rogpeppe/ociregistry/internal/hasher"
+	"github.com/rogpeppe/ociregistry"
 )
 
 var v2 = ocispecroot.Versioned{
@@ -45,16 +46,8 @@ type listTags struct {
 	Tags []string `json:"tags"`
 }
 
-type manifest struct {
-	contentType string
-	blob        []byte
-}
-
 type manifests struct {
-	// maps repo -> manifest tag/digest -> manifest
-	manifests map[string]map[string]manifest
-	lock      sync.Mutex
-	log       *log.Logger
+	backend ociregistry.Interface
 }
 
 func isManifest(req *http.Request) bool {
@@ -98,6 +91,7 @@ func isReferrers(req *http.Request) bool {
 // https://github.com/opencontainers/distribution-spec/blob/master/spec.md#pulling-an-image-manifest
 // https://github.com/opencontainers/distribution-spec/blob/master/spec.md#pushing-an-image
 func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regError {
+	ctx := req.Context()
 	elem := strings.Split(req.URL.Path, "/")
 	elem = elem[1:]
 	target := elem[len(elem)-1]
@@ -105,133 +99,91 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regErro
 
 	switch req.Method {
 	case http.MethodGet:
-		m.lock.Lock()
-		defer m.lock.Unlock()
-
-		c, ok := m.manifests[repo]
-		if !ok {
-			return &regError{
-				Status:  http.StatusNotFound,
-				Code:    "NAME_UNKNOWN",
-				Message: "Unknown name",
-			}
+		var r ociregistry.BlobReader
+		var err error
+		switch {
+		case isDigest(target):
+			r, err = m.backend.GetManifest(ctx, repo, ociregistry.Digest(target))
+		case isTag(target):
+			r, err = m.backend.GetTag(ctx, repo, target)
+		default:
+			return errTODO()
 		}
-		m, ok := c[target]
-		if !ok {
-			return &regError{
-				Status:  http.StatusNotFound,
-				Code:    "MANIFEST_UNKNOWN",
-				Message: "Unknown manifest",
-			}
+		if err != nil {
+			return errTODO()
 		}
-		h, _, _ := hasher.SHA256(bytes.NewReader(m.blob))
-		resp.Header().Set("Docker-Content-Digest", h.String())
-		resp.Header().Set("Content-Type", m.contentType)
-		resp.Header().Set("Content-Length", fmt.Sprint(len(m.blob)))
+		desc := r.Descriptor()
+		resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
+		resp.Header().Set("Content-Type", desc.MediaType)
+		resp.Header().Set("Content-Length", fmt.Sprint(desc.Size))
 		resp.WriteHeader(http.StatusOK)
-		io.Copy(resp, bytes.NewReader(m.blob))
+		io.Copy(resp, r)
 		return nil
 
 	case http.MethodHead:
-		m.lock.Lock()
-		defer m.lock.Unlock()
-		if _, ok := m.manifests[repo]; !ok {
-			return &regError{
-				Status:  http.StatusNotFound,
-				Code:    "NAME_UNKNOWN",
-				Message: "Unknown name",
-			}
+		var desc ociregistry.Descriptor
+		var err error
+		switch {
+		case isDigest(target):
+			desc, err = m.backend.ResolveManifest(ctx, repo, ociregistry.Digest(target))
+		case isTag(target):
+			desc, err = m.backend.ResolveTag(ctx, repo, target)
+		default:
+			return errTODO()
 		}
-		m, ok := m.manifests[repo][target]
-		if !ok {
-			return &regError{
-				Status:  http.StatusNotFound,
-				Code:    "MANIFEST_UNKNOWN",
-				Message: "Unknown manifest",
-			}
+		if err != nil {
+			return errTODO()
 		}
-		h, _, _ := hasher.SHA256(bytes.NewReader(m.blob))
-		resp.Header().Set("Docker-Content-Digest", h.String())
-		resp.Header().Set("Content-Type", m.contentType)
-		resp.Header().Set("Content-Length", fmt.Sprint(len(m.blob)))
+		resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
+		resp.Header().Set("Content-Type", desc.MediaType)
+		resp.Header().Set("Content-Length", fmt.Sprint(desc.Size))
 		resp.WriteHeader(http.StatusOK)
 		return nil
 
 	case http.MethodPut:
-		m.lock.Lock()
-		defer m.lock.Unlock()
-		if _, ok := m.manifests[repo]; !ok {
-			m.manifests[repo] = map[string]manifest{}
+		mediaType := req.Header.Get("Content-Type")
+		if mediaType == "" {
+			return errTODO()
 		}
-		b := &bytes.Buffer{}
-		io.Copy(b, req.Body)
-		h, _, _ := hasher.SHA256(bytes.NewReader(b.Bytes()))
-		digest := h.String()
-		mf := manifest{
-			blob:        b.Bytes(),
-			contentType: req.Header.Get("Content-Type"),
+		// TODO size limit
+		data, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			return errTODO()
 		}
-
-		// If the manifest is a manifest list, check that the manifest
-		// list's constituent manifests are already uploaded.
-		// This isn't strictly required by the registry API, but some
-		// registries require this.
-		if isIndex(mf.contentType) {
-			var im ocispec.Index
-			if err := json.Unmarshal(b.Bytes(), &im); err != nil {
-				return &regError{
-					Status:  http.StatusBadRequest,
-					Code:    "MANIFEST_INVALID",
-					Message: err.Error(),
-				}
+		dig := digest.FromBytes(data)
+		var tag string
+		switch {
+		case isDigest(target):
+			if ociregistry.Digest(target) != dig {
+				return errTODO()
 			}
-			for _, desc := range im.Manifests {
-				if !isDistributable(desc.MediaType) {
-					continue
-				}
-				if isIndex(desc.MediaType) || isImage(desc.MediaType) {
-					if _, found := m.manifests[repo][desc.Digest.String()]; !found {
-						return &regError{
-							Status:  http.StatusNotFound,
-							Code:    "MANIFEST_UNKNOWN",
-							Message: fmt.Sprintf("Sub-manifest %q not found", desc.Digest),
-						}
-					}
-				} else {
-					// TODO: Probably want to do an existence check for blobs.
-				}
-			}
+		case isTag(target):
+			tag = target
+		default:
+			return errTODO()
 		}
-
-		// Allow future references by target (tag) and immutable digest.
-		// See https://docs.docker.com/engine/reference/commandline/pull/#pull-an-image-by-digest-immutable-identifier.
-		m.manifests[repo][target] = mf
-		m.manifests[repo][digest] = mf
-		resp.Header().Set("Docker-Content-Digest", digest)
+		desc, err := m.backend.PushManifest(ctx, repo, tag, data, mediaType)
+		if err != nil {
+			return errTODO()
+		}
+		// TODO OCI-Subject header?
+		resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
 		resp.WriteHeader(http.StatusCreated)
 		return nil
 
 	case http.MethodDelete:
-		m.lock.Lock()
-		defer m.lock.Unlock()
-		if _, ok := m.manifests[repo]; !ok {
-			return &regError{
-				Status:  http.StatusNotFound,
-				Code:    "NAME_UNKNOWN",
-				Message: "Unknown name",
-			}
+		var err error
+		switch {
+		case isDigest(target):
+			err = m.backend.DeleteManifest(ctx, repo, ociregistry.Digest(target))
+		case isTag(target):
+			err = m.backend.DeleteTag(ctx, repo, target)
+		default:
+			return errTODO()
 		}
-
-		_, ok := m.manifests[repo][target]
-		if !ok {
-			return &regError{
-				Status:  http.StatusNotFound,
-				Code:    "MANIFEST_UNKNOWN",
-				Message: "Unknown manifest",
-			}
+		if err != nil {
+			return errTODO()
 		}
-
-		delete(m.manifests[repo], target)
 		resp.WriteHeader(http.StatusAccepted)
 		return nil
 
@@ -245,28 +197,18 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regErro
 }
 
 func (m *manifests) handleTags(resp http.ResponseWriter, req *http.Request) *regError {
+	ctx := req.Context()
 	elem := strings.Split(req.URL.Path, "/")
 	elem = elem[1:]
 	repo := strings.Join(elem[1:len(elem)-2], "/")
 
 	if req.Method == "GET" {
-		m.lock.Lock()
-		defer m.lock.Unlock()
-
-		c, ok := m.manifests[repo]
-		if !ok {
-			return &regError{
-				Status:  http.StatusNotFound,
-				Code:    "NAME_UNKNOWN",
-				Message: "Unknown name",
-			}
-		}
-
-		var tags []string
-		for tag := range c {
-			if !strings.Contains(tag, "sha256:") {
-				tags = append(tags, tag)
-			}
+		// TODO we should be able to tell the backend to
+		// start from a particular position to avoid fetching
+		// all tags every time.
+		tags, err := ociregistry.All(m.backend.Tags(ctx, repo))
+		if err != nil {
+			return errTODO()
 		}
 		sort.Strings(tags)
 
@@ -314,6 +256,7 @@ func (m *manifests) handleTags(resp http.ResponseWriter, req *http.Request) *reg
 }
 
 func (m *manifests) handleCatalog(resp http.ResponseWriter, req *http.Request) *regError {
+	ctx := req.Context()
 	query := req.URL.Query()
 	nStr := query.Get("n")
 	n := 10000
@@ -322,26 +265,20 @@ func (m *manifests) handleCatalog(resp http.ResponseWriter, req *http.Request) *
 	}
 
 	if req.Method == "GET" {
-		m.lock.Lock()
-		defer m.lock.Unlock()
-
-		var repos []string
-		countRepos := 0
+		repos, err := ociregistry.All(m.backend.Repositories(ctx))
+		if err != nil {
+			return errTODO()
+		}
 		// TODO: implement pagination
-		for key := range m.manifests {
-			if countRepos >= n {
-				break
-			}
-			countRepos++
-
-			repos = append(repos, key)
+		if len(repos) > n {
+			repos = repos[:n]
 		}
-
-		repositoriesToList := catalog{
+		msg, err := json.Marshal(catalog{
 			Repos: repos,
+		})
+		if err != nil {
+			return errTODO()
 		}
-
-		msg, _ := json.Marshal(repositoriesToList)
 		resp.Header().Set("Content-Length", fmt.Sprint(len(msg)))
 		resp.WriteHeader(http.StatusOK)
 		io.Copy(resp, bytes.NewReader([]byte(msg)))
@@ -357,6 +294,8 @@ func (m *manifests) handleCatalog(resp http.ResponseWriter, req *http.Request) *
 
 // TODO: implement handling of artifactType querystring
 func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request) *regError {
+	ctx := req.Context()
+
 	// Ensure this is a GET request
 	if req.Method != "GET" {
 		return &regError{
@@ -372,64 +311,82 @@ func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request)
 	repo := strings.Join(elem[1:len(elem)-2], "/")
 
 	// Validate that incoming target is a valid digest
-	if _, err := hasher.NewHash(target); err != nil {
+	if !isDigest(target) {
 		return &regError{
 			Status:  http.StatusBadRequest,
 			Code:    "UNSUPPORTED",
 			Message: "Target must be a valid digest",
 		}
 	}
-
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	digestToManifestMap, repoExists := m.manifests[repo]
-	if !repoExists {
-		return &regError{
-			Status:  http.StatusNotFound,
-			Code:    "NAME_UNKNOWN",
-			Message: "Unknown name",
-		}
-	}
-
-	im := ocispec.Index{
+	im := &ocispec.Index{
 		Versioned: v2,
 		MediaType: mediaTypeOCIImageIndex,
-		Manifests: []ocispec.Descriptor{},
 	}
-	for dg, manifest := range digestToManifestMap {
-		h, err := hasher.NewHash(dg)
-		if err != nil {
-			continue
+
+	// TODO support artifactType filtering
+	it := m.backend.Referrers(ctx, repo, ociregistry.Digest(target), "")
+	for {
+		desc, ok := it.Next()
+		if !ok {
+			break
 		}
-		var refPointer struct {
-			Subject *ocispec.Descriptor `json:"subject"`
-		}
-		json.Unmarshal(manifest.blob, &refPointer) // TODO check errors
-		if refPointer.Subject == nil {
-			continue
-		}
-		referenceDigest := refPointer.Subject.Digest
-		if referenceDigest.String() != target {
-			continue
-		}
-		// At this point, we know the current digest references the target
-		var imageAsArtifact struct {
-			Config struct {
-				MediaType string `json:"mediaType"`
-			} `json:"config"`
-		}
-		json.Unmarshal(manifest.blob, &imageAsArtifact) // TODO check errors
-		im.Manifests = append(im.Manifests, ocispec.Descriptor{
-			MediaType:    manifest.contentType,
-			Size:         int64(len(manifest.blob)),
-			Digest:       digest.Digest(h.String()),
-			ArtifactType: imageAsArtifact.Config.MediaType,
-		})
+		im.Manifests = append(im.Manifests, desc)
 	}
-	msg, _ := json.Marshal(&im)
+	if err := it.Error(); err != nil {
+		return errTODO()
+	}
+	msg, err := json.Marshal(im)
+	if err != nil {
+		return errTODO()
+	}
 	resp.Header().Set("Content-Length", fmt.Sprint(len(msg)))
 	resp.WriteHeader(http.StatusOK)
-	io.Copy(resp, bytes.NewReader([]byte(msg)))
+	resp.Write(msg)
 	return nil
 }
+
+func errTODO() *regError {
+	return &regError{
+		Status:  http.StatusInternalServerError,
+		Code:    "TODO",
+		Message: "TODO " + callers(3),
+	}
+}
+
+func errTODOf(f string, a ...any) *regError {
+	return &regError{
+		Status:  http.StatusInternalServerError,
+		Code:    "TODO",
+		Message: fmt.Sprintf("TODO (%s) %s", fmt.Sprintf(f, a...), callers(3)),
+	}
+}
+
+func callers(n int) string {
+	pc := make([]uintptr, n)
+	n = runtime.Callers(3, pc)
+	if n == 0 {
+		return "no callers!"
+	}
+	pc = pc[:n]
+	frames := runtime.CallersFrames(pc)
+	var buf strings.Builder
+	for {
+		frame, more := frames.Next()
+		fmt.Fprintf(&buf, "%s:%d", frame.File, frame.Line)
+		if !more {
+			return buf.String()
+		}
+		fmt.Fprintf(&buf, ", ")
+	}
+}
+
+func isDigest(d string) bool {
+	_, err := digest.Parse(d)
+	return err == nil
+}
+
+func isTag(tag string) bool {
+	return tagPattern.MatchString(tag)
+}
+
+var tagPattern = regexp.MustCompile(`^[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}$`)

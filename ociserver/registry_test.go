@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ociregistry_test
+package ociserver_test
 
 import (
 	"fmt"
@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/opencontainers/go-digest"
+	"github.com/rogpeppe/ociregistry/ocimem"
 	"github.com/rogpeppe/ociregistry/ociserver"
 )
 
@@ -484,7 +485,7 @@ func TestCalls(t *testing.T) {
 
 		testf := func(t *testing.T) {
 
-			r := ociregistry.New(nil)
+			r := ociserver.New(ocimem.New(), nil)
 			s := httptest.NewServer(r)
 			defer s.Close()
 
