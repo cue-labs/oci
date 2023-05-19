@@ -180,27 +180,19 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 		}
 
 		if digest != "" {
-			h, err := hasher.NewHash(string(digest))
-			if err != nil {
+			if !isDigest(string(digest)) {
 				return regErrDigestInvalid
 			}
-
-			vrc, err := hasher.ReadCloser(req.Body, req.ContentLength, h)
-			if err != nil {
-				return regErrInternal(err)
-			}
-			defer vrc.Close()
+			// TODO check that Content-Type is application/octet-stream?
+			mediaType := "application/octet-stream"
 
 			desc, err := b.backend.PushBlob(req.Context(), repo, ociregistry.Descriptor{
-				MediaType: req.Header.Get("Content-Type"),
+				MediaType: mediaType,
 				Size:      req.ContentLength,
 				Digest:    digest,
-			}, vrc)
+			}, req.Body)
 			if err != nil {
-				if errors.As(err, &hasher.Error{}) {
-					return regErrDigestMismatch
-				}
-				return regErrInternal(err)
+				return errTODOf("%v", err)
 			}
 			resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
 			resp.WriteHeader(http.StatusCreated)
@@ -210,7 +202,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 		if err != nil {
 			return errTODO()
 		}
-
+		log.Printf("started initial PushBlobChunked (id %q)", w.ID())
 		// TODO how can we make it so that the backend can return a location that isn't
 		// in the registry?
 		resp.Header().Set("Location", "/"+path.Join("v2", path.Join(elem[1:len(elem)-2]...), "blobs/uploads", w.ID()))
@@ -258,7 +250,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 		id := target
 		w, err := b.backend.PushBlobChunked(ctx, repo, id)
 		if err != nil {
-			return errTODO()
+			return errTODOf("%v", err)
 		}
 
 		resp.Header().Set("Location", "/"+path.Join("v2", path.Join(elem[1:len(elem)-3]...), "blobs/uploads", id))
@@ -319,7 +311,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) *regError {
 			}
 		}
 		if err := b.backend.DeleteBlob(ctx, repo, ociregistry.Digest(target)); err != nil {
-			return errTODO()
+			return errTODOf("%v", err)
 		}
 		resp.WriteHeader(http.StatusAccepted)
 		return nil

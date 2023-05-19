@@ -34,8 +34,6 @@ func (r *Registry) GetTag(ctx context.Context, repoName string, tagName string) 
 	if err != nil {
 		return nil, err
 	}
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	return r.GetManifest(ctx, repoName, desc.Digest)
 }
 

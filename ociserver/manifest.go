@@ -110,7 +110,7 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regErro
 			return errTODO()
 		}
 		if err != nil {
-			return errTODO()
+			return errTODOf("%v", err)
 		}
 		desc := r.Descriptor()
 		resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
@@ -182,7 +182,7 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) *regErro
 			return errTODO()
 		}
 		if err != nil {
-			return errTODO()
+			return errTODOf("%v", err)
 		}
 		resp.WriteHeader(http.StatusAccepted)
 		return nil
@@ -208,7 +208,7 @@ func (m *manifests) handleTags(resp http.ResponseWriter, req *http.Request) *reg
 		// all tags every time.
 		tags, err := ociregistry.All(m.backend.Tags(ctx, repo))
 		if err != nil {
-			return errTODO()
+			return errTODOf("%v", err)
 		}
 		sort.Strings(tags)
 
@@ -333,7 +333,7 @@ func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request)
 		im.Manifests = append(im.Manifests, desc)
 	}
 	if err := it.Error(); err != nil {
-		return errTODO()
+		return errTODOf("%v", err)
 	}
 	msg, err := json.Marshal(im)
 	if err != nil {

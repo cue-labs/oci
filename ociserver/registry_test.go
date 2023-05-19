@@ -490,15 +490,8 @@ func TestCalls(t *testing.T) {
 			defer s.Close()
 
 			for manifest, contents := range tc.Manifests {
-				u, err := url.Parse(s.URL + "/v2/" + manifest)
-				if err != nil {
-					t.Fatalf("Error parsing %q: %v", s.URL+"/v2", err)
-				}
-				req := &http.Request{
-					Method: "PUT",
-					URL:    u,
-					Body:   io.NopCloser(strings.NewReader(contents)),
-				}
+				req, _ := http.NewRequest("PUT", s.URL+"/v2/"+manifest, strings.NewReader(contents))
+				req.Header.Set("Content-Type", "application/octet-stream") // TODO better media type
 				t.Log(req.Method, req.URL)
 				resp, err := s.Client().Do(req)
 				if err != nil {
@@ -512,15 +505,12 @@ func TestCalls(t *testing.T) {
 			}
 
 			for digest, contents := range tc.Digests {
-				u, err := url.Parse(fmt.Sprintf("%s/v2/foo/blobs/uploads/1?digest=%s", s.URL, digest))
-				if err != nil {
-					t.Fatalf("Error parsing %q: %v", s.URL+tc.URL, err)
-				}
-				req := &http.Request{
-					Method: "PUT",
-					URL:    u,
-					Body:   io.NopCloser(strings.NewReader(contents)),
-				}
+				req, _ := http.NewRequest(
+					"POST",
+					fmt.Sprintf("%s/v2/foo/blobs/uploads/?digest=%s", s.URL, digest),
+					strings.NewReader(contents),
+				)
+				req.Header.Set("Content-Length", fmt.Sprint(len(contents))) // TODO better media type
 				t.Log(req.Method, req.URL)
 				resp, err := s.Client().Do(req)
 				if err != nil {
@@ -559,15 +549,15 @@ func TestCalls(t *testing.T) {
 				t.Fatalf("Error parsing %q: %v", s.URL+tc.URL, err)
 			}
 			req := &http.Request{
-				Method: tc.Method,
-				URL:    u,
-				Body:   io.NopCloser(strings.NewReader(tc.Body)),
-				Header: map[string][]string{},
+				Method:        tc.Method,
+				URL:           u,
+				Body:          io.NopCloser(strings.NewReader(tc.Body)),
+				ContentLength: int64(len(tc.Body)),
+				Header:        map[string][]string{},
 			}
 			for k, v := range tc.RequestHeader {
 				req.Header.Set(k, v)
 			}
-			t.Log(req.Method, req.URL)
 			resp, err := s.Client().Do(req)
 			if err != nil {
 				t.Fatalf("Error getting %q: %v", tc.URL, err)
@@ -578,7 +568,7 @@ func TestCalls(t *testing.T) {
 				t.Errorf("Reading response body: %v", err)
 			}
 			if resp.StatusCode != tc.Code {
-				t.Errorf("Incorrect status code, got %d, want %d; body: %s", resp.StatusCode, tc.Code, body)
+				t.Fatalf("Incorrect status code, got %d, want %d; body: %s", resp.StatusCode, tc.Code, body)
 			}
 
 			for k, v := range tc.Header {

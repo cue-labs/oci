@@ -33,22 +33,24 @@ func (r *Registry) PushBlob(ctx context.Context, repoName string, desc ociregist
 }
 
 func (r *Registry) PushBlobChunked(ctx context.Context, repoName string, resumeID string) (ociregistry.BlobWriter, error) {
-	if resumeID != "" {
-		return nil, fmt.Errorf("TODO support resuming")
-	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	repo, err := r.makeRepo(repoName)
 	if err != nil {
 		return nil, err
 	}
-	return NewBuffer(func(b *Buffer) error {
+	if b := repo.uploads[resumeID]; b != nil {
+		return b, nil
+	}
+	b := NewBuffer(func(b *Buffer) error {
 		r.mu.Lock()
 		defer r.mu.Unlock()
 		desc, data, _ := b.GetBlob()
 		repo.blobs[desc.Digest] = &blob{desc.MediaType, data}
 		return nil
-	}), nil
+	})
+	repo.uploads[b.ID()] = b
+	return b, nil
 }
 
 func (r *Registry) MountBlob(ctx context.Context, fromRepo, toRepo string, dig ociregistry.Digest) error {

@@ -20,6 +20,7 @@ type repository struct {
 	tags      map[string]ociregistry.Descriptor
 	manifests map[ociregistry.Digest]*blob
 	blobs     map[ociregistry.Digest]*blob
+	uploads   map[string]*Buffer
 }
 
 type blob struct {
@@ -62,6 +63,7 @@ func (r *Registry) makeRepo(repoName string) (*repository, error) {
 		tags:      make(map[string]ociregistry.Descriptor),
 		manifests: make(map[digest.Digest]*blob),
 		blobs:     make(map[digest.Digest]*blob),
+		uploads:   make(map[string]*Buffer),
 	}
 	r.repos[repoName] = repo
 	return repo, nil

@@ -102,6 +102,7 @@ type Deleter interface {
 }
 
 // Lister defines registry operations that enumerate objects within the registry.
+// TODO support resumption from a given point.
 type Lister interface {
 	// Repositories returns an iterator that can be used to iterate over all the repositories
 	// in the registry.
