@@ -50,6 +50,8 @@ func TestCalls(t *testing.T) {
 		Description string
 
 		// Request / setup
+		Method        string
+		Body          string // request body to send
 		URL           string
 		Digests       map[string]string
 		Manifests     map[string]string
@@ -57,88 +59,86 @@ func TestCalls(t *testing.T) {
 		RequestHeader map[string]string
 
 		// Response
-		Code   int
-		Header map[string]string
-		Method string
-		Body   string // request body to send
-		Want   string // response body to expect
+		WantCode   int
+		WantHeader map[string]string
+		WantBody   string // response body to expect
 	}{
 		{
 			Description: "/v2_returns_200",
 			Method:      "GET",
 			URL:         "/v2",
-			Code:        http.StatusOK,
-			Header:      map[string]string{"Docker-Distribution-API-Version": "registry/2.0"},
+			WantCode:    http.StatusOK,
+			WantHeader:  map[string]string{"Docker-Distribution-API-Version": "registry/2.0"},
 		},
 		{
 			Description: "/v2/_returns_200",
 			Method:      "GET",
 			URL:         "/v2/",
-			Code:        http.StatusOK,
-			Header:      map[string]string{"Docker-Distribution-API-Version": "registry/2.0"},
+			WantCode:    http.StatusOK,
+			WantHeader:  map[string]string{"Docker-Distribution-API-Version": "registry/2.0"},
 		},
 		{
 			Description: "/v2/bad_returns_404",
 			Method:      "GET",
 			URL:         "/v2/bad",
-			Code:        http.StatusNotFound,
-			Header:      map[string]string{"Docker-Distribution-API-Version": "registry/2.0"},
+			WantCode:    http.StatusNotFound,
+			WantHeader:  map[string]string{"Docker-Distribution-API-Version": "registry/2.0"},
 		},
 		{
 			Description: "GET_non_existent_blob",
 			Method:      "GET",
 			URL:         "/v2/foo/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
-			Code:        http.StatusNotFound,
+			WantCode:    http.StatusNotFound,
 		},
 		{
 			Description: "HEAD_non_existent_blob",
 			Method:      "HEAD",
 			URL:         "/v2/foo/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
-			Code:        http.StatusNotFound,
+			WantCode:    http.StatusNotFound,
 		},
 		{
 			Description: "GET_bad_digest",
 			Method:      "GET",
 			URL:         "/v2/foo/blobs/sha256:asd",
-			Code:        http.StatusBadRequest,
+			WantCode:    http.StatusBadRequest,
 		},
 		{
 			Description: "HEAD_bad_digest",
 			Method:      "HEAD",
 			URL:         "/v2/foo/blobs/sha256:asd",
-			Code:        http.StatusBadRequest,
+			WantCode:    http.StatusBadRequest,
 		},
 		{
 			Description: "bad_blob_verb",
 			Method:      "FOO",
 			URL:         "/v2/foo/blobs/sha256:asd",
-			Code:        http.StatusMethodNotAllowed,
+			WantCode:    http.StatusMethodNotAllowed,
 		},
 		{
 			Description: "GET_containerless_blob",
 			Digests:     map[string]string{"sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
-			Code:        http.StatusOK,
-			Header:      map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
-			Want:        "foo",
+			WantCode:    http.StatusOK,
+			WantHeader:  map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
+			WantBody:    "foo",
 		},
 		{
 			Description: "GET_blob",
 			Digests:     map[string]string{"sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
-			Code:        http.StatusOK,
-			Header:      map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
-			Want:        "foo",
+			WantCode:    http.StatusOK,
+			WantHeader:  map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
+			WantBody:    "foo",
 		},
 		{
 			Description: "HEAD_blob",
 			Digests:     map[string]string{"sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae": "foo"},
 			Method:      "HEAD",
 			URL:         "/v2/foo/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
-			Code:        http.StatusOK,
-			Header: map[string]string{
+			WantCode:    http.StatusOK,
+			WantHeader: map[string]string{
 				"Content-Length":        "3",
 				"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
 			},
@@ -148,71 +148,71 @@ func TestCalls(t *testing.T) {
 			Digests:     map[string]string{"sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae": "foo"},
 			Method:      "DELETE",
 			URL:         "/v2/foo/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
-			Code:        http.StatusAccepted,
+			WantCode:    http.StatusAccepted,
 		},
 		{
 			Description: "blob_url_with_no_container",
 			Method:      "GET",
 			URL:         "/v2/blobs/sha256:asd",
-			Code:        http.StatusBadRequest,
+			WantCode:    http.StatusBadRequest,
 		},
 		{
 			Description: "uploadurl",
 			Method:      "POST",
 			URL:         "/v2/foo/blobs/uploads",
-			Code:        http.StatusAccepted,
-			Header:      map[string]string{"Range": "0-0"},
+			WantCode:    http.StatusAccepted,
+			WantHeader:  map[string]string{"Range": "0-0"},
 		},
 		{
 			Description: "uploadurl",
 			Method:      "POST",
 			URL:         "/v2/foo/blobs/uploads/",
-			Code:        http.StatusAccepted,
-			Header:      map[string]string{"Range": "0-0"},
+			WantCode:    http.StatusAccepted,
+			WantHeader:  map[string]string{"Range": "0-0"},
 		},
 		{
 			Description: "upload_put_missing_digest",
 			Method:      "PUT",
 			URL:         "/v2/foo/blobs/uploads/1",
-			Code:        http.StatusBadRequest,
+			WantCode:    http.StatusBadRequest,
 		},
 		{
 			Description: "monolithic_upload_good_digest",
 			Method:      "POST",
 			URL:         "/v2/foo/blobs/uploads?digest=sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
-			Code:        http.StatusCreated,
+			WantCode:    http.StatusCreated,
 			Body:        "foo",
-			Header:      map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
+			WantHeader:  map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
 		},
 		{
 			Description: "monolithic_upload_bad_digest",
 			Method:      "POST",
 			URL:         "/v2/foo/blobs/uploads?digest=sha256:fake",
-			Code:        http.StatusBadRequest,
+			WantCode:    http.StatusBadRequest,
 			Body:        "foo",
 		},
 		{
 			Description: "upload_good_digest",
 			Method:      "PUT",
 			URL:         "/v2/foo/blobs/uploads/1?digest=sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
-			Code:        http.StatusCreated,
+			WantCode:    http.StatusCreated,
 			Body:        "foo",
-			Header:      map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
+			WantHeader:  map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
 		},
 		{
 			Description: "upload_bad_digest",
 			Method:      "PUT",
 			URL:         "/v2/foo/blobs/uploads/1?digest=sha256:baddigest",
-			Code:        http.StatusBadRequest,
+			WantCode:    http.StatusBadRequest,
 			Body:        "foo",
 		},
 		{
 			Description: "stream_upload",
 			Method:      "PATCH",
 			URL:         "/v2/foo/blobs/uploads/1",
-			Code:        http.StatusNoContent,
+			WantCode:    http.StatusNoContent,
 			Body:        "foo",
-			Header: map[string]string{
+			WantHeader: map[string]string{
 				"Range":    "0-2",
 				"Location": "/v2/foo/blobs/uploads/1",
 			},
@@ -221,7 +221,7 @@ func TestCalls(t *testing.T) {
 			Description: "stream_duplicate_upload",
 			Method:      "PATCH",
 			URL:         "/v2/foo/blobs/uploads/1",
-			Code:        http.StatusBadRequest,
+			WantCode:    http.StatusBadRequest,
 			Body:        "foo",
 			BlobStream:  map[string]string{"1": "foo"},
 		},
@@ -230,70 +230,70 @@ func TestCalls(t *testing.T) {
 			Method:      "PUT",
 			URL:         "/v2/foo/blobs/uploads/1?digest=sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
 			BlobStream:  map[string]string{"1": "foo"},
-			Code:        http.StatusCreated,
-			Header:      map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
+			WantCode:    http.StatusCreated,
+			WantHeader:  map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
 		},
 		{
 			Description: "get_missing_manifest",
 			Method:      "GET",
 			URL:         "/v2/foo/manifests/latest",
-			Code:        http.StatusNotFound,
+			WantCode:    http.StatusNotFound,
 		},
 		{
 			Description: "head_missing_manifest",
 			Method:      "HEAD",
 			URL:         "/v2/foo/manifests/latest",
-			Code:        http.StatusNotFound,
+			WantCode:    http.StatusNotFound,
 		},
 		{
 			Description: "get_missing_manifest_good_container",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/manifests/bar",
-			Code:        http.StatusNotFound,
+			WantCode:    http.StatusNotFound,
 		},
 		{
 			Description: "head_missing_manifest_good_container",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo"},
 			Method:      "HEAD",
 			URL:         "/v2/foo/manifests/bar",
-			Code:        http.StatusNotFound,
+			WantCode:    http.StatusNotFound,
 		},
 		{
 			Description: "get_manifest_by_tag",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/manifests/latest",
-			Code:        http.StatusOK,
-			Want:        "foo",
+			WantCode:    http.StatusOK,
+			WantBody:    "foo",
 		},
 		{
 			Description: "get_manifest_by_digest",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/manifests/" + digestOf("foo"),
-			Code:        http.StatusOK,
-			Want:        "foo",
+			WantCode:    http.StatusOK,
+			WantBody:    "foo",
 		},
 		{
 			Description: "head_manifest",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo"},
 			Method:      "HEAD",
 			URL:         "/v2/foo/manifests/latest",
-			Code:        http.StatusOK,
+			WantCode:    http.StatusOK,
 		},
 		{
 			Description: "create_manifest",
 			Method:      "PUT",
 			URL:         "/v2/foo/manifests/latest",
-			Code:        http.StatusCreated,
+			WantCode:    http.StatusCreated,
 			Body:        "foo",
 		},
 		{
 			Description: "create_index",
 			Method:      "PUT",
 			URL:         "/v2/foo/manifests/latest",
-			Code:        http.StatusCreated,
+			WantCode:    http.StatusCreated,
 			Body:        weirdIndex,
 			RequestHeader: map[string]string{
 				"Content-Type": "application/vnd.oci.image.index.v1+json",
@@ -304,7 +304,7 @@ func TestCalls(t *testing.T) {
 			Description: "create_index_missing_child",
 			Method:      "PUT",
 			URL:         "/v2/foo/manifests/latest",
-			Code:        http.StatusNotFound,
+			WantCode:    http.StatusNotFound,
 			Body:        weirdIndex,
 			RequestHeader: map[string]string{
 				"Content-Type": "application/vnd.oci.image.index.v1+json",
@@ -314,7 +314,7 @@ func TestCalls(t *testing.T) {
 			Description: "bad_index_body",
 			Method:      "PUT",
 			URL:         "/v2/foo/manifests/latest",
-			Code:        http.StatusBadRequest,
+			WantCode:    http.StatusBadRequest,
 			Body:        "foo",
 			RequestHeader: map[string]string{
 				"Content-Type": "application/vnd.oci.image.index.v1+json",
@@ -324,16 +324,16 @@ func TestCalls(t *testing.T) {
 			Description: "bad_manifest_method",
 			Method:      "BAR",
 			URL:         "/v2/foo/manifests/latest",
-			Code:        http.StatusBadRequest,
+			WantCode:    http.StatusBadRequest,
 		},
 		{
 			Description:   "Chunk_upload_start",
 			Method:        "PATCH",
 			URL:           "/v2/foo/blobs/uploads/1",
 			RequestHeader: map[string]string{"Content-Range": "0-3"},
-			Code:          http.StatusNoContent,
+			WantCode:      http.StatusNoContent,
 			Body:          "foo",
-			Header: map[string]string{
+			WantHeader: map[string]string{
 				"Range":    "0-2",
 				"Location": "/v2/foo/blobs/uploads/1",
 			},
@@ -343,7 +343,7 @@ func TestCalls(t *testing.T) {
 			Method:        "PATCH",
 			URL:           "/v2/foo/blobs/uploads/1",
 			RequestHeader: map[string]string{"Content-Range": "0-bar"},
-			Code:          http.StatusRequestedRangeNotSatisfiable,
+			WantCode:      http.StatusRequestedRangeNotSatisfiable,
 			Body:          "foo",
 		},
 		{
@@ -352,7 +352,7 @@ func TestCalls(t *testing.T) {
 			URL:           "/v2/foo/blobs/uploads/1",
 			BlobStream:    map[string]string{"1": "foo"},
 			RequestHeader: map[string]string{"Content-Range": "2-5"},
-			Code:          http.StatusRequestedRangeNotSatisfiable,
+			WantCode:      http.StatusRequestedRangeNotSatisfiable,
 			Body:          "bar",
 		},
 		{
@@ -361,9 +361,9 @@ func TestCalls(t *testing.T) {
 			URL:           "/v2/foo/blobs/uploads/1",
 			BlobStream:    map[string]string{"1": "foo"},
 			RequestHeader: map[string]string{"Content-Range": "3-6"},
-			Code:          http.StatusNoContent,
+			WantCode:      http.StatusNoContent,
 			Body:          "bar",
-			Header: map[string]string{
+			WantHeader: map[string]string{
 				"Range":    "0-5",
 				"Location": "/v2/foo/blobs/uploads/1",
 			},
@@ -372,71 +372,71 @@ func TestCalls(t *testing.T) {
 			Description: "DELETE_Unknown_name",
 			Method:      "DELETE",
 			URL:         "/v2/test/honk/manifests/latest",
-			Code:        http.StatusNotFound,
+			WantCode:    http.StatusNotFound,
 		},
 		{
 			Description: "DELETE_Unknown_manifest",
 			Manifests:   map[string]string{"honk/manifests/latest": "honk"},
 			Method:      "DELETE",
 			URL:         "/v2/honk/manifests/tag-honk",
-			Code:        http.StatusNotFound,
+			WantCode:    http.StatusNotFound,
 		},
 		{
 			Description: "DELETE_existing_manifest",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo"},
 			Method:      "DELETE",
 			URL:         "/v2/foo/manifests/latest",
-			Code:        http.StatusAccepted,
+			WantCode:    http.StatusAccepted,
 		},
 		{
 			Description: "DELETE_existing_manifest_by_digest",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo"},
 			Method:      "DELETE",
 			URL:         "/v2/foo/manifests/" + digestOf("foo"),
-			Code:        http.StatusAccepted,
+			WantCode:    http.StatusAccepted,
 		},
 		{
 			Description: "list_tags",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo", "foo/manifests/tag1": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/tags/list?n=1000",
-			Code:        http.StatusOK,
-			Want:        `{"name":"foo","tags":["latest","tag1"]}`,
+			WantCode:    http.StatusOK,
+			WantBody:    `{"name":"foo","tags":["latest","tag1"]}`,
 		},
 		{
 			Description: "limit_tags",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo", "foo/manifests/tag1": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/tags/list?n=1",
-			Code:        http.StatusOK,
-			Want:        `{"name":"foo","tags":["latest"]}`,
+			WantCode:    http.StatusOK,
+			WantBody:    `{"name":"foo","tags":["latest"]}`,
 		},
 		{
 			Description: "offset_tags",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo", "foo/manifests/tag1": "foo"},
 			Method:      "GET",
 			URL:         "/v2/foo/tags/list?last=latest",
-			Code:        http.StatusOK,
-			Want:        `{"name":"foo","tags":["tag1"]}`,
+			WantCode:    http.StatusOK,
+			WantBody:    `{"name":"foo","tags":["tag1"]}`,
 		},
 		{
 			Description: "list_non_existing_tags",
 			Method:      "GET",
 			URL:         "/v2/foo/tags/list?n=1000",
-			Code:        http.StatusNotFound,
+			WantCode:    http.StatusNotFound,
 		},
 		{
 			Description: "list_repos",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo", "bar/manifests/latest": "bar"},
 			Method:      "GET",
 			URL:         "/v2/_catalog?n=1000",
-			Code:        http.StatusOK,
+			WantCode:    http.StatusOK,
 		},
 		{
 			Description: "fetch_references",
 			Method:      "GET",
 			URL:         "/v2/foo/referrers/" + digestOf("foo"),
-			Code:        http.StatusOK,
+			WantCode:    http.StatusOK,
 			Manifests: map[string]string{
 				"foo/manifests/image":           "foo",
 				"foo/manifests/points-to-image": "{\"subject\": {\"digest\": \"" + digestOf("foo") + "\"}}",
@@ -446,7 +446,7 @@ func TestCalls(t *testing.T) {
 			Description: "fetch_references,_subject_pointing_elsewhere",
 			Method:      "GET",
 			URL:         "/v2/foo/referrers/" + digestOf("foo"),
-			Code:        http.StatusOK,
+			WantCode:    http.StatusOK,
 			Manifests: map[string]string{
 				"foo/manifests/image":           "foo",
 				"foo/manifests/points-to-image": "{\"subject\": {\"digest\": \"" + digestOf("nonexistant") + "\"}}",
@@ -456,7 +456,7 @@ func TestCalls(t *testing.T) {
 			Description: "fetch_references,_no_results",
 			Method:      "GET",
 			URL:         "/v2/foo/referrers/" + digestOf("foo"),
-			Code:        http.StatusOK,
+			WantCode:    http.StatusOK,
 			Manifests: map[string]string{
 				"foo/manifests/image": "foo",
 			},
@@ -465,19 +465,19 @@ func TestCalls(t *testing.T) {
 			Description: "fetch_references,_missing_repo",
 			Method:      "GET",
 			URL:         "/v2/does-not-exist/referrers/" + digestOf("foo"),
-			Code:        http.StatusNotFound,
+			WantCode:    http.StatusNotFound,
 		},
 		{
 			Description: "fetch_references,_bad_target_(tag_vs._digest)",
 			Method:      "GET",
 			URL:         "/v2/foo/referrers/latest",
-			Code:        http.StatusBadRequest,
+			WantCode:    http.StatusBadRequest,
 		},
 		{
 			Description: "fetch_references,_bad_method",
 			Method:      "POST",
 			URL:         "/v2/foo/referrers/" + digestOf("foo"),
-			Code:        http.StatusBadRequest,
+			WantCode:    http.StatusBadRequest,
 		},
 	}
 
@@ -567,19 +567,19 @@ func TestCalls(t *testing.T) {
 			if err != nil {
 				t.Errorf("Reading response body: %v", err)
 			}
-			if resp.StatusCode != tc.Code {
-				t.Fatalf("Incorrect status code, got %d, want %d; body: %s", resp.StatusCode, tc.Code, body)
+			if resp.StatusCode != tc.WantCode {
+				t.Fatalf("Incorrect status code, got %d, want %d; body: %s", resp.StatusCode, tc.WantCode, body)
 			}
 
-			for k, v := range tc.Header {
+			for k, v := range tc.WantHeader {
 				r := resp.Header.Get(k)
 				if r != v {
 					t.Errorf("Incorrect header %q received, got %q, want %q", k, r, v)
 				}
 			}
 
-			if tc.Want != "" && string(body) != tc.Want {
-				t.Errorf("Incorrect response body, got %q, want %q", body, tc.Want)
+			if tc.WantBody != "" && string(body) != tc.WantBody {
+				t.Errorf("Incorrect response body, got %q, want %q", body, tc.WantBody)
 			}
 		}
 		t.Run(tc.Description, testf)
