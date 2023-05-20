@@ -583,7 +583,6 @@ func TestCalls(t *testing.T) {
 			}
 		}
 		t.Run(tc.Description, testf)
-		t.Run(tc.Description+" - custom log", testf)
 	}
 }
 

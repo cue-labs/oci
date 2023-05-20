@@ -26,6 +26,7 @@ type repository struct {
 type blob struct {
 	mediaType string
 	data      []byte
+	subject   digest.Digest
 }
 
 func (b *blob) descriptor() ociregistry.Descriptor {
