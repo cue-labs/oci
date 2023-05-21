@@ -55,7 +55,7 @@ func (r *registry) v2(resp http.ResponseWriter, req *http.Request) error {
 	}
 	resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
 	if req.URL.Path != "/v2/" && req.URL.Path != "/v2" {
-		return ociregistry.NewError(ociregistry.ErrNameUnknown.Code(), "unknown URL path", nil)
+		return ociregistry.NewError("unknown URL path", ociregistry.ErrNameUnknown.Code(), nil)
 	}
 	resp.WriteHeader(200)
 	return nil

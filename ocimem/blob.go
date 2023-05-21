@@ -56,9 +56,13 @@ type Buffer struct {
 // when [Buffer.Commit] is invoked successfully.
 ///
 // It's OK to call methods concurrently on a buffer.
-func NewBuffer(commit func(b *Buffer) error) *Buffer {
+func NewBuffer(commit func(b *Buffer) error, uuid string) *Buffer {
+	if uuid == "" {
+		uuid = newUUID()
+	}
 	return &Buffer{
 		commit: commit,
+		uuid:   uuid,
 	}
 }
 
@@ -101,18 +105,17 @@ func (b *Buffer) Write(data []byte) (int, error) {
 	return len(data), nil
 }
 
+func newUUID() string {
+	buf := make([]byte, 32)
+	if _, err := rand.Read(buf); err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("%x", buf)
+}
+
 // ID implements [ociregistry.BlobWriter.ID] by returning a randomly
 // allocated hex UUID.
 func (b *Buffer) ID() string {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	if b.uuid == "" {
-		buf := make([]byte, 32)
-		if _, err := rand.Read(buf); err != nil {
-			panic(err)
-		}
-		b.uuid = fmt.Sprintf("%x", buf)
-	}
 	return b.uuid
 }
 
@@ -146,7 +149,7 @@ func (b *Buffer) checkCommit(dig ociregistry.Digest) (err error) {
 		}
 	}()
 	if digest.FromBytes(b.buf) != dig {
-		return fmt.Errorf("digest mismatch")
+		return fmt.Errorf("digest mismatch %p (sha256(%q) != %s): %w", b, b.buf, dig, ociregistry.ErrDigestInvalid)
 	}
 	b.desc = ociregistry.Descriptor{
 		MediaType: "application/octet-stream",

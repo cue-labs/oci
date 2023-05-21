@@ -142,8 +142,9 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) error {
 	case http.MethodPut:
 		mediaType := req.Header.Get("Content-Type")
 		if mediaType == "" {
-			return badAPIUseError("no media type provided for PUT")
+			mediaType = "application/octet-stream"
 		}
+		// TODO check that the media type is valid?
 		// TODO size limit
 		data, err := ioutil.ReadAll(req.Body)
 		if err != nil {
@@ -221,7 +222,7 @@ func (m *manifests) handleTags(resp http.ResponseWriter, req *http.Request) erro
 		// Limit using n query parameter.
 		if ns := req.URL.Query().Get("n"); ns != "" {
 			if n, err := strconv.Atoi(ns); err != nil {
-				return ociregistry.NewError(ociregistry.ErrUnsupported.Code(), "invalid value for query parameter n", nil)
+				return ociregistry.NewError("invalid value for query parameter n", ociregistry.ErrUnsupported.Code(), nil)
 			} else if n < len(tags) {
 				tags = tags[:n]
 			}

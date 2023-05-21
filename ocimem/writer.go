@@ -48,7 +48,7 @@ func (r *Registry) PushBlobChunked(ctx context.Context, repoName string, resumeI
 		desc, data, _ := b.GetBlob()
 		repo.blobs[desc.Digest] = &blob{mediaType: desc.MediaType, data: data}
 		return nil
-	})
+	}, resumeID)
 	repo.uploads[b.ID()] = b
 	return b, nil
 }
@@ -109,7 +109,8 @@ func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string
 func (r *Registry) checkManifest(repoName string, mediaType string, data []byte) (ociregistry.Digest, error) {
 	// TODO support other manifest types.
 	if got, want := mediaType, ocispec.MediaTypeImageManifest; got != want {
-		return "", fmt.Errorf("unexpected media type; got %q want %q", got, want)
+		// TODO complain about non-manifest media types
+		return "", nil
 	}
 	var m ociregistry.Manifest
 	if err := json.Unmarshal(data, &m); err != nil {

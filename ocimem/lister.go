@@ -74,5 +74,5 @@ func stringLess(s1, s2 string) bool {
 }
 
 func descriptorLess(d1, d2 ociregistry.Descriptor) bool {
-		return d1.Digest < d2.Digest
-	}
+	return d1.Digest < d2.Digest
+}

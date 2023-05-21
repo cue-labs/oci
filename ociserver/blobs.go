@@ -70,6 +70,7 @@ type blobs struct {
 }
 
 func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) error {
+	log.Printf("in blobs.handle %v %v", req.Method, req.URL)
 	ctx := req.Context()
 	elem := strings.Split(req.URL.Path, "/")
 	elem = elem[1:]
@@ -188,43 +189,39 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request) error {
 		return nil
 
 	case http.MethodPatch:
+		log.Printf("in PATCH; contentRange: %q", contentRange)
 		if service != "uploads" {
 			return badAPIUseError("PATCH to /blobs must be followed by /uploads, got %s", service)
 		}
 
+		// TODO technically it seems like there should always be
+		// a content range for a PATCH request but the existing tests
+		// seem to be lax about it, and we can just assume for the
+		// first patch that the range is 0-(contentLength-1)
+		start := int64(0)
 		if contentRange != "" {
-			return fmt.Errorf("TODO")
-			//			start, end := 0, 0
-			//			if _, err := fmt.Sscanf(contentRange, "%d-%d", &start, &end); err != nil {
-			//				return withHTTPCode(http.StatusRequestedRangeNotSatisfiable, badAPIUseError("We don't understand your Content-Range"))
-			//			}
-			//			b.lock.Lock()
-			//			defer b.lock.Unlock()
-			//			if start != len(b.uploads[target]) {
-			//				return fmt.Errorf("content range noyt
-			//				return withHTTPCode(http.StatusRequestedRangeNotSatisfiable, badAPIUseError("Your content range doesn't match what we have"))
-			//				return &regError{
-			//					Status:  http.StatusRequestedRangeNotSatisfiable,
-			//					Code:    "BLOB_UPLOAD_UNKNOWN",
-			//					Message: "Your content range doesn't match what we have",
-			//				}
-			//			}
-			//			l := bytes.NewBuffer(b.uploads[target])
-			//			io.Copy(l, req.Body)
-			//			b.uploads[target] = l.Bytes()
-			//			resp.Header().Set("Location", "/"+path.Join("v2", path.Join(elem[1:len(elem)-3]...), "blobs/uploads", target))
-			//			resp.Header().Set("Range", fmt.Sprintf("0-%d", len(l.Bytes())-1))
-			//			resp.WriteHeader(http.StatusNoContent)
-			//			return nil
+			var end int64
+			if n, err := fmt.Sscanf(contentRange, "%d-%d", &start, &end); err != nil || n != 2 {
+				return badAPIUseError("We don't understand your Content-Range")
+			}
 		}
-		id := target
-		w, err := b.backend.PushBlobChunked(ctx, repo, id)
+		w, err := b.backend.PushBlobChunked(ctx, repo, target)
 		if err != nil {
 			return err
 		}
-
-		resp.Header().Set("Location", "/"+path.Join("v2", path.Join(elem[1:len(elem)-3]...), "blobs/uploads", id))
-		resp.Header().Set("Range", fmt.Sprintf("0-%d", w.Size()))
+		defer w.Close()
+		// TODO this is potentially racy if multiple clients are doing this concurrently.
+		// Perhaps the PushBlobChunked call should take a "startAt" parameter?
+		if start != w.Size() {
+			return fmt.Errorf("write at invalid starting point %d; actual start %d: %w", start, w.Size(), withHTTPCode(http.StatusRequestedRangeNotSatisfiable, ociregistry.ErrBlobUploadInvalid))
+		}
+		if n, err := io.Copy(w, req.Body); err != nil {
+			return fmt.Errorf("cannot copy blob data: %v", err)
+		} else {
+			log.Printf("copied %d bytes to blob", n)
+		}
+		resp.Header().Set("Location", "/"+path.Join("v2", path.Join(elem[1:len(elem)-3]...), "blobs/uploads", target))
+		resp.Header().Set("Range", fmt.Sprintf("0-%d", w.Size()-1))
 		resp.WriteHeader(http.StatusNoContent)
 		return nil
 

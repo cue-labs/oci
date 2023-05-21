@@ -78,12 +78,12 @@ var errorStatuses = map[string]int{
 	ociregistry.ErrSizeInvalid.Code():         http.StatusBadRequest,
 	ociregistry.ErrUnauthorized.Code():        http.StatusUnauthorized,
 	ociregistry.ErrDenied.Code():              http.StatusForbidden,
-	ociregistry.ErrUnsupported.Code():         http.StatusMethodNotAllowed,
+	ociregistry.ErrUnsupported.Code():         http.StatusBadRequest,
 	ociregistry.ErrTooManyRequests.Code():     http.StatusTooManyRequests,
 }
 
 func badAPIUseError(f string, a ...any) error {
-	return ociregistry.NewError(ociregistry.ErrUnsupported.Code(), fmt.Sprintf(f, a...), nil)
+	return ociregistry.NewError(fmt.Sprintf(f, a...), ociregistry.ErrUnsupported.Code(), nil)
 }
 
 func withHTTPCode(status int, err error) error {
@@ -96,7 +96,7 @@ func withHTTPCode(status int, err error) error {
 	}
 }
 
-type httpStatusError  struct {
+type httpStatusError struct {
 	err    error
 	status int
 }

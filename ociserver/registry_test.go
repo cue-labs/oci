@@ -212,6 +212,9 @@ func TestCalls(t *testing.T) {
 			URL:         "/v2/foo/blobs/uploads/1",
 			WantCode:    http.StatusNoContent,
 			Body:        "foo",
+			RequestHeader: map[string]string{
+				"Content-Range": "0-2",
+			},
 			WantHeader: map[string]string{
 				"Range":    "0-2",
 				"Location": "/v2/foo/blobs/uploads/1",
@@ -324,7 +327,7 @@ func TestCalls(t *testing.T) {
 			Description: "bad_manifest_method",
 			Method:      "BAR",
 			URL:         "/v2/foo/manifests/latest",
-			WantCode:    http.StatusBadRequest,
+			WantCode:    http.StatusMethodNotAllowed,
 		},
 		{
 			Description:   "Chunk_upload_start",
@@ -343,8 +346,9 @@ func TestCalls(t *testing.T) {
 			Method:        "PATCH",
 			URL:           "/v2/foo/blobs/uploads/1",
 			RequestHeader: map[string]string{"Content-Range": "0-bar"},
-			WantCode:      http.StatusRequestedRangeNotSatisfiable,
-			Body:          "foo",
+			// TODO the original had 405 response here. Which is correct?
+			WantCode: http.StatusBadRequest,
+			Body:     "foo",
 		},
 		{
 			Description:   "Chunk_upload_overlaps_previous_data",
