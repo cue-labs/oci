@@ -1,14 +1,16 @@
-# `pkg/registry`
+# `ociregistry`
 
-This package implements a Docker v2 registry and the OCI distribution specification.
+In the top level package (`ociregistry`) this module defines a Go interface that encapsulates the operations provided by an OCI
+registry.
 
-It is designed to be used anywhere a low dependency container registry is needed, with an initial focus on tests.
+It also provides a lightweight in-memory implementation of that interface (`ocimem`)
+and an HTTP server that implements the [OCI registry protocol](https://github.com/opencontainers/distribution-spec/blob/main/spec.md) on top of it.
 
-Its goal is to be standards compliant and its strictness will increase over time.
+The server currently passes the [conformance tests](https://pkg.go.dev/github.com/opencontainers/distribution-spec/conformance).
 
-This is currently a low flightmiles system. It's likely quite safe to use in tests; If you're using it in production, please let us know how and send us PRs for integration tests.
+That said, it is in total flux at the moment! Do not use it as a dependency, as the API is changing hourly.
 
-Before sending a PR, understand that the expectation of this package is that it remain free of extraneous dependencies.
-This means that we expect `pkg/registry` to only have dependencies on Go's standard library, and other packages in `go-containerregistry`.
+The aim, however, is to provide an ergonomic interface for defining and layering
+OCI registry implementations.
 
-You may be asked to change your code to reduce dependencies, and your PR might be rejected if this is deemed impossible.
+The code was originally derived from the [go-containerregistry registry](https://pkg.go.dev/github.com/google/go-containerregistry/pkg/registry], but has considerably diverged since then.
