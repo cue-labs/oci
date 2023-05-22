@@ -24,6 +24,7 @@
 package ociserver
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/rogpeppe/ociregistry"
@@ -35,36 +36,39 @@ type registry struct {
 	referrersEnabled bool
 }
 
-// https://docs.docker.com/registry/spec/api/#api-version-check
-// https://github.com/opencontainers/distribution-spec/blob/master/spec.md#api-version-check
-func (r *registry) v2(resp http.ResponseWriter, req *http.Request) error {
-	if isBlob(req) {
-		return r.blobs.handle(resp, req)
-	}
-	if isManifest(req) {
-		return r.manifests.handle(resp, req)
-	}
-	if isTags(req) {
-		return r.manifests.handleTags(resp, req)
-	}
-	if isCatalog(req) {
-		return r.manifests.handleCatalog(resp, req)
-	}
-	if r.referrersEnabled && isReferrers(req) {
-		return r.manifests.handleReferrers(resp, req)
-	}
-	resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
-	if req.URL.Path != "/v2/" && req.URL.Path != "/v2" {
-		return ociregistry.NewError("unknown URL path", ociregistry.ErrNameUnknown.Code(), nil)
-	}
-	resp.WriteHeader(200)
-	return nil
-}
-
-func (r *registry) root(resp http.ResponseWriter, req *http.Request) {
+func (r *registry) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	if rerr := r.v2(resp, req); rerr != nil {
 		writeError(resp, rerr)
 		return
+	}
+}
+
+// https://docs.docker.com/registry/spec/api/#api-version-check
+// https://github.com/opencontainers/distribution-spec/blob/master/spec.md#api-version-check
+func (r *registry) v2(resp http.ResponseWriter, req *http.Request) error {
+	log.Printf("registry.v2 %v %s {", req.Method, req.URL)
+	defer log.Printf("}")
+
+	rreq, err := parseRequest(req)
+	if err != nil {
+		return err
+	}
+	switch rreq.kind & reqKindMask {
+	case reqBlobKinds:
+		return r.blobs.handle(resp, req, rreq)
+	case reqManifestKinds:
+		return r.manifests.handle(resp, req)
+	case reqTagKinds:
+		return r.manifests.handleTags(resp, req)
+	case reqReferrerKinds:
+		if !r.referrersEnabled {
+			return errNotFound
+		}
+		return r.manifests.handleReferrers(resp, req)
+	default:
+		// ping
+		resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
+		return nil
 	}
 }
 
@@ -85,7 +89,7 @@ func New(backend ociregistry.Interface, opts *Options) http.Handler {
 	if opts == nil {
 		opts = new(Options)
 	}
-	r := &registry{
+	return &registry{
 		blobs: blobs{
 			backend: backend,
 		},
@@ -94,5 +98,4 @@ func New(backend ociregistry.Interface, opts *Options) http.Handler {
 		},
 		referrersEnabled: !opts.DisableReferrersAPI,
 	}
-	return http.HandlerFunc(r.root)
 }

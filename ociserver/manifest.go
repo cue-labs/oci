@@ -21,7 +21,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -49,44 +48,6 @@ type manifests struct {
 	backend ociregistry.Interface
 }
 
-func isManifest(req *http.Request) bool {
-	elems := strings.Split(req.URL.Path, "/")
-	elems = elems[1:]
-	if len(elems) < 4 {
-		return false
-	}
-	return elems[len(elems)-2] == "manifests"
-}
-
-func isTags(req *http.Request) bool {
-	elems := strings.Split(req.URL.Path, "/")
-	elems = elems[1:]
-	if len(elems) < 4 {
-		return false
-	}
-	return elems[len(elems)-2] == "tags"
-}
-
-func isCatalog(req *http.Request) bool {
-	elems := strings.Split(req.URL.Path, "/")
-	elems = elems[1:]
-	if len(elems) < 2 {
-		return false
-	}
-
-	return elems[len(elems)-1] == "_catalog"
-}
-
-// Returns whether this url should be handled by the referrers handler
-func isReferrers(req *http.Request) bool {
-	elems := strings.Split(req.URL.Path, "/")
-	elems = elems[1:]
-	if len(elems) < 4 {
-		return false
-	}
-	return elems[len(elems)-2] == "referrers"
-}
-
 // https://github.com/opencontainers/distribution-spec/blob/master/spec.md#pulling-an-image-manifest
 // https://github.com/opencontainers/distribution-spec/blob/master/spec.md#pushing-an-image
 func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) error {
@@ -101,9 +62,9 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) error {
 		var r ociregistry.BlobReader
 		var err error
 		switch {
-		case isDigest(target):
+		case isValidDigest(target):
 			r, err = m.backend.GetManifest(ctx, repo, ociregistry.Digest(target))
-		case isTag(target):
+		case isValidTag(target):
 			r, err = m.backend.GetTag(ctx, repo, target)
 		default:
 			return ociregistry.ErrDigestInvalid
@@ -123,9 +84,9 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) error {
 		var desc ociregistry.Descriptor
 		var err error
 		switch {
-		case isDigest(target):
+		case isValidDigest(target):
 			desc, err = m.backend.ResolveManifest(ctx, repo, ociregistry.Digest(target))
-		case isTag(target):
+		case isValidTag(target):
 			desc, err = m.backend.ResolveTag(ctx, repo, target)
 		default:
 			return ociregistry.ErrDigestInvalid
@@ -153,11 +114,11 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) error {
 		dig := digest.FromBytes(data)
 		var tag string
 		switch {
-		case isDigest(target):
+		case isValidDigest(target):
 			if ociregistry.Digest(target) != dig {
 				return ociregistry.ErrDigestInvalid
 			}
-		case isTag(target):
+		case isValidTag(target):
 			tag = target
 		default:
 			return ociregistry.ErrDigestInvalid
@@ -174,9 +135,9 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) error {
 	case http.MethodDelete:
 		var err error
 		switch {
-		case isDigest(target):
+		case isValidDigest(target):
 			err = m.backend.DeleteManifest(ctx, repo, ociregistry.Digest(target))
-		case isTag(target):
+		case isValidTag(target):
 			err = m.backend.DeleteTag(ctx, repo, target)
 		default:
 			return ociregistry.ErrDigestInvalid
@@ -291,7 +252,7 @@ func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request)
 	repo := strings.Join(elem[1:len(elem)-2], "/")
 
 	// Validate that incoming target is a valid digest
-	if !isDigest(target) {
+	if !isValidDigest(target) {
 		return ociregistry.ErrDigestInvalid
 	}
 	im := &ocispec.Index{
@@ -320,14 +281,3 @@ func (m *manifests) handleReferrers(resp http.ResponseWriter, req *http.Request)
 	resp.Write(msg)
 	return nil
 }
-
-func isDigest(d string) bool {
-	_, err := digest.Parse(d)
-	return err == nil
-}
-
-func isTag(tag string) bool {
-	return tagPattern.MatchString(tag)
-}
-
-var tagPattern = regexp.MustCompile(`^[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}$`)
