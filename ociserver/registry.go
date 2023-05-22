@@ -30,6 +30,8 @@ import (
 	"github.com/rogpeppe/ociregistry"
 )
 
+const debug = false
+
 type registry struct {
 	blobs            blobs
 	manifests        manifests
@@ -46,15 +48,16 @@ func (r *registry) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 // https://docs.docker.com/registry/spec/api/#api-version-check
 // https://github.com/opencontainers/distribution-spec/blob/master/spec.md#api-version-check
 func (r *registry) v2(resp http.ResponseWriter, req *http.Request) (_err error) {
-	log.Printf("registry.v2 %v %s {", req.Method, req.URL)
-	defer func() {
-		if _err != nil {
-			log.Printf("} -> %v", _err)
-		} else {
-			log.Printf("}")
-		}
-	}()
-
+	if debug {
+		log.Printf("registry.v2 %v %s {", req.Method, req.URL)
+		defer func() {
+			if _err != nil {
+				log.Printf("} -> %v", _err)
+			} else {
+				log.Printf("}")
+			}
+		}()
+	}
 	rreq, err := parseRequest(req)
 	if err != nil {
 		resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")

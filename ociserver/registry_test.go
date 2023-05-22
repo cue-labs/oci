@@ -212,7 +212,7 @@ func TestCalls(t *testing.T) {
 			Description: "stream_upload",
 			Method:      "PATCH",
 			URL:         "/v2/foo/blobs/uploads/1",
-			WantCode:    http.StatusNoContent,
+			WantCode:    http.StatusAccepted,
 			Body:        "foo",
 			RequestHeader: map[string]string{
 				"Content-Range": "0-2",
@@ -339,7 +339,7 @@ func TestCalls(t *testing.T) {
 			Method:        "PATCH",
 			URL:           "/v2/foo/blobs/uploads/1",
 			RequestHeader: map[string]string{"Content-Range": "0-3"},
-			WantCode:      http.StatusNoContent,
+			WantCode:      http.StatusAccepted,
 			Body:          "foo",
 			WantHeader: map[string]string{
 				"Range":    "0-2",
@@ -370,7 +370,7 @@ func TestCalls(t *testing.T) {
 			URL:           "/v2/foo/blobs/uploads/1",
 			BlobStream:    map[string]string{"1": "foo"},
 			RequestHeader: map[string]string{"Content-Range": "3-6"},
-			WantCode:      http.StatusNoContent,
+			WantCode:      http.StatusAccepted,
 			Body:          "bar",
 			WantHeader: map[string]string{
 				"Range":    "0-5",
@@ -549,7 +549,7 @@ func TestCalls(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Error streaming blob: %v", err)
 				}
-				if resp.StatusCode != http.StatusNoContent {
+				if resp.StatusCode != http.StatusAccepted {
 					body, _ := io.ReadAll(resp.Body)
 					t.Fatalf("Error streaming blob: %d %s", resp.StatusCode, body)
 				}
