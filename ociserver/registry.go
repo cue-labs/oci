@@ -24,6 +24,7 @@
 package ociserver
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -33,9 +34,28 @@ import (
 const debug = false
 
 type registry struct {
-	blobs            blobs
-	manifests        manifests
+	backend          ociregistry.Interface
 	referrersEnabled bool
+}
+
+var handlers = []func(r *registry, ctx context.Context, w http.ResponseWriter, req *http.Request, rreq *registryRequest) error{
+	reqPing:               (*registry).handlePing,
+	reqBlobGet:            (*registry).handleBlobGet,
+	reqBlobHead:           (*registry).handleBlobHead,
+	reqBlobDelete:         (*registry).handleBlobDelete,
+	reqBlobStartUpload:    (*registry).handleBlobStartUpload,
+	reqBlobUploadBlob:     (*registry).handleBlobUploadBlob,
+	reqBlobMount:          (*registry).handleBlobMount,
+	reqBlobUploadInfo:     (*registry).handleBlobUploadInfo,
+	reqBlobUploadChunk:    (*registry).handleBlobUploadChunk,
+	reqBlobCompleteUpload: (*registry).handleBlobCompleteUpload,
+	reqManifestGet:        (*registry).handleManifestGet,
+	reqManifestHead:       (*registry).handleManifestHead,
+	reqManifestPut:        (*registry).handleManifestPut,
+	reqManifestDelete:     (*registry).handleManifestDelete,
+	reqTagsList:           (*registry).handleTagsList,
+	reqReferrersList:      (*registry).handleReferrersList,
+	reqCatalogList:        (*registry).handleCatalogList,
 }
 
 func (r *registry) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
@@ -63,26 +83,13 @@ func (r *registry) v2(resp http.ResponseWriter, req *http.Request) (_err error) 
 		resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
 		return err
 	}
-	switch rreq.kind & reqKindMask {
-	case reqBlobKinds:
-		return r.blobs.handle(resp, req, rreq)
-	case reqManifestKinds:
-		return r.manifests.handle(resp, req, rreq)
-	case reqTagKinds:
-		return r.manifests.handleTags(resp, req, rreq)
-	case reqReferrerKinds:
-		if !r.referrersEnabled {
-			return errNotFound
-		}
-		return r.manifests.handleReferrers(resp, req, rreq)
-	case reqCatalogKinds:
-		return r.manifests.handleCatalog(resp, req, rreq)
-	case reqPing:
-		resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
-		return nil
-	default:
-		return errNotFound
-	}
+	handle := handlers[rreq.kind]
+	return handle(r, req.Context(), resp, req, rreq)
+}
+
+func (r *registry) handlePing(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
+	resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
+	return nil
 }
 
 // Options holds options for the server.
@@ -103,12 +110,7 @@ func New(backend ociregistry.Interface, opts *Options) http.Handler {
 		opts = new(Options)
 	}
 	return &registry{
-		blobs: blobs{
-			backend: backend,
-		},
-		manifests: manifests{
-			backend: backend,
-		},
+		backend:          backend,
 		referrersEnabled: !opts.DisableReferrersAPI,
 	}
 }

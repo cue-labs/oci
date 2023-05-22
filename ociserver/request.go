@@ -74,18 +74,6 @@ type registryRequest struct {
 
 type requestKind int
 
-// The following constants represent classes of request. Each is dealt with in its own
-// handler.
-const (
-	reqBlobKinds requestKind = (iota + 1) << 10
-	reqManifestKinds
-	reqTagKinds
-	reqReferrerKinds
-	reqCatalogKinds
-
-	reqKindMask = 0xff << 10
-)
-
 const (
 	// end-1	GET	/v2/	200	404/401
 	reqPing = requestKind(iota)
@@ -93,7 +81,7 @@ const (
 	// Blob-related endpoints
 
 	// end-2	GET	/v2/<name>/blobs/<digest>	200	404
-	reqBlobGet = iota + reqBlobKinds
+	reqBlobGet
 
 	// end-2	HEAD	/v2/<name>/blobs/<digest>	200	404
 	reqBlobHead
@@ -122,7 +110,7 @@ const (
 	// Manifest-related endpoints
 
 	// end-3	GET	/v2/<name>/manifests/<tagOrDigest>	200	404
-	reqManifestGet = iota + reqManifestKinds
+	reqManifestGet
 
 	// end-3	HEAD	/v2/<name>/manifests/<tagOrDigest>	200	404
 	reqManifestHead
@@ -137,16 +125,15 @@ const (
 
 	// end-8a	GET	/v2/<name>/tags/list	200	404
 	// end-8b	GET	/v2/<name>/tags/list?n=<integer>&last=<integer>	200	404
-	reqTagsList = iota + reqTagKinds
+	reqTagsList
 
 	// Referrer-related endpoints
 
 	// end-12a	GET	/v2/<name>/referrers/<digest>	200	404/400
-	reqReferrersList = iota + reqReferrerKinds
+	reqReferrersList
 
-	// Catalog endpoints
-	// (out-of-spec)
-	reqCatalogList = iota + reqCatalogKinds
+	// Catalog endpoints (out-of-spec)
+	reqCatalogList
 )
 
 func parseRequest(req *http.Request) (*registryRequest, error) {
