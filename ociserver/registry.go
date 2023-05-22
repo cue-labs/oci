@@ -45,19 +45,26 @@ func (r *registry) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 
 // https://docs.docker.com/registry/spec/api/#api-version-check
 // https://github.com/opencontainers/distribution-spec/blob/master/spec.md#api-version-check
-func (r *registry) v2(resp http.ResponseWriter, req *http.Request) error {
+func (r *registry) v2(resp http.ResponseWriter, req *http.Request) (_err error) {
 	log.Printf("registry.v2 %v %s {", req.Method, req.URL)
-	defer log.Printf("}")
+	defer func() {
+		if _err != nil {
+			log.Printf("} -> %v", _err)
+		} else {
+			log.Printf("}")
+		}
+	}()
 
 	rreq, err := parseRequest(req)
 	if err != nil {
+		resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
 		return err
 	}
 	switch rreq.kind & reqKindMask {
 	case reqBlobKinds:
 		return r.blobs.handle(resp, req, rreq)
 	case reqManifestKinds:
-		return r.manifests.handle(resp, req)
+		return r.manifests.handle(resp, req, rreq)
 	case reqTagKinds:
 		return r.manifests.handleTags(resp, req)
 	case reqReferrerKinds:

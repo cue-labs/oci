@@ -59,6 +59,66 @@ var parseRequestTests = []struct {
 		repo:     "somerepo",
 		uploadID: "blahblah",
 	},
+}, {
+	testName: "uploadChunk",
+	method:   "PATCH",
+	url:      "/v2/somerepo/blobs/uploads/blahblah",
+	wantRequest: &registryRequest{
+		kind:     reqBlobUploadChunk,
+		repo:     "somerepo",
+		uploadID: "blahblah",
+	},
+}, {
+	testName:  "badlyFormedUploadDigest",
+	method:    "POST",
+	url:       "/v2/foo/blobs/uploads?digest=sha256:fake",
+	wantError: "badly formed digest",
+}, {
+	testName: "getUploadInfo",
+	method:   "GET",
+	url:      "/v2/myorg/myrepo/blobs/uploads/c659529df24a1878f6df8d93c652280235a50b95e862d8e5cb566ee5b9ed6386",
+	wantRequest: &registryRequest{
+		kind:     reqBlobUploadInfo,
+		repo:     "myorg/myrepo",
+		uploadID: "c659529df24a1878f6df8d93c652280235a50b95e862d8e5cb566ee5b9ed6386",
+	},
+}, {
+	testName: "mount",
+	method:   "POST",
+	url:      "/v2/x/y/blobs/uploads/?mount=sha256:c659529df24a1878f6df8d93c652280235a50b95e862d8e5cb566ee5b9ed6386&from=somewhere/other",
+	wantRequest: &registryRequest{
+		kind:     reqBlobMount,
+		repo:     "x/y",
+		digest:   "sha256:c659529df24a1878f6df8d93c652280235a50b95e862d8e5cb566ee5b9ed6386",
+		fromRepo: "somewhere/other",
+	},
+}, {
+	testName: "mount2",
+	method:   "POST",
+	url:      "/v2/myorg/other/blobs/uploads/?from=myorg%2Fmyrepo&mount=sha256%3Ad647b322fff1e9dcb828ee67a6c6d1ed0ceef760988fdf54f9cfdeb96186e001",
+	wantRequest: &registryRequest{
+		kind:     reqBlobMount,
+		repo:     "myorg/other",
+		digest:   "sha256:d647b322fff1e9dcb828ee67a6c6d1ed0ceef760988fdf54f9cfdeb96186e001",
+		fromRepo: "myorg/myrepo",
+	},
+}, {
+	testName: "mountWithNoFrom",
+	method:   "POST",
+	url:      "/v2/x/y/blobs/uploads/?mount=sha256:c659529df24a1878f6df8d93c652280235a50b95e862d8e5cb566ee5b9ed6386",
+	wantRequest: &registryRequest{
+		kind: reqBlobStartUpload,
+		repo: "x/y",
+	},
+}, {
+	testName: "manifestHead",
+	method:   "HEAD",
+	url:      "/v2/myorg/myrepo/manifests/sha256:681aef2367e055f33cb8a6ab9c3090931f6eefd0c3ef15c6e4a79bdadfdb8982",
+	wantRequest: &registryRequest{
+		kind:   reqManifestHead,
+		repo:   "myorg/myrepo",
+		digest: "sha256:681aef2367e055f33cb8a6ab9c3090931f6eefd0c3ef15c6e4a79bdadfdb8982",
+	},
 }}
 
 func TestParseRequest(t *testing.T) {

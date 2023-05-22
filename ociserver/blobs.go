@@ -73,6 +73,7 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request, rreq *regist
 			return err
 		}
 		resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
+		resp.Header().Set("Location", "/v2/"+rreq.repo+"/blobs/"+string(desc.Digest))
 		resp.WriteHeader(http.StatusCreated)
 		return nil
 
@@ -82,12 +83,26 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request, rreq *regist
 			return err
 		}
 		defer w.Close()
-		log.Printf("started initial PushBlobChunked (id %q)", w.ID())
 		// TODO how can we make it so that the backend can return a location that isn't
 		// in the registry?
 		resp.Header().Set("Location", "/v2/"+rreq.repo+"/blobs/uploads/"+w.ID())
 		resp.Header().Set("Range", "0-0")
 		resp.WriteHeader(http.StatusAccepted)
+		return nil
+
+	case reqBlobUploadInfo:
+		w, err := b.backend.PushBlobChunked(ctx, rreq.repo, rreq.uploadID)
+		if err != nil {
+			return err
+		}
+		defer w.Close()
+		resp.Header().Set("Location", "/v2/"+rreq.repo+"/blobs/uploads/"+w.ID())
+		max := w.Size() - 1
+		if max == 0 {
+			max = 0
+		}
+		resp.Header().Set("Range", fmt.Sprintf("0-%d", max))
+		resp.WriteHeader(http.StatusNoContent)
 		return nil
 
 	case reqBlobUploadChunk:
@@ -113,15 +128,13 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request, rreq *regist
 		if start != w.Size() {
 			return fmt.Errorf("write at invalid starting point %d; actual start %d: %w", start, w.Size(), withHTTPCode(http.StatusRequestedRangeNotSatisfiable, ociregistry.ErrBlobUploadInvalid))
 		}
-		if n, err := io.Copy(w, req.Body); err != nil {
+		if _, err := io.Copy(w, req.Body); err != nil {
 			return fmt.Errorf("cannot copy blob data: %v", err)
-		} else {
-			log.Printf("copied %d bytes to blob", n)
 		}
 
 		resp.Header().Set("Location", "/v2/"+rreq.repo+"/blobs/uploads/"+rreq.uploadID)
 		resp.Header().Set("Range", fmt.Sprintf("0-%d", w.Size()-1))
-		resp.WriteHeader(http.StatusNoContent)
+		resp.WriteHeader(http.StatusAccepted)
 		return nil
 
 	case reqBlobCompleteUpload:
@@ -139,6 +152,15 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request, rreq *regist
 			return err
 		}
 		resp.Header().Set("Docker-Content-Digest", string(digest))
+		resp.Header().Set("Location", "/v2/"+rreq.repo+"/blobs/"+string(digest))
+		resp.WriteHeader(http.StatusCreated)
+		return nil
+
+	case reqBlobMount:
+		if err := b.backend.MountBlob(ctx, rreq.fromRepo, rreq.repo, ociregistry.Digest(rreq.digest)); err != nil {
+			return err
+		}
+		resp.Header().Set("Location", "/v2/"+rreq.repo+"/blobs/"+rreq.digest)
 		resp.WriteHeader(http.StatusCreated)
 		return nil
 

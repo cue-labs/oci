@@ -5,13 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/rogpeppe/ociregistry"
-
-	"github.com/rogpeppe/misc/runtime/debug"
 )
 
 // This file implements the ociregistry.Writer methods.
@@ -42,7 +39,6 @@ func (r *Registry) PushBlobChunked(ctx context.Context, repoName string, resumeI
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("in PushBlobChunked; repo for %s is %p; callers %s", repoName, repo, debug.Callers(0, 20))
 	if b := repo.uploads[resumeID]; b != nil {
 		return b, nil
 	}
@@ -51,7 +47,6 @@ func (r *Registry) PushBlobChunked(ctx context.Context, repoName string, resumeI
 		defer r.mu.Unlock()
 		desc, data, _ := b.GetBlob()
 		repo.blobs[desc.Digest] = &blob{mediaType: desc.MediaType, data: data}
-		log.Printf("%p commited blob; repo %s(%p); digest %s", r, repoName, repo, desc.Digest)
 		return nil
 	}, resumeID)
 	repo.uploads[b.ID()] = b
@@ -125,14 +120,12 @@ func (r *Registry) checkManifest(repoName string, mediaType string, data []byte)
 	if err != nil {
 		return "", err
 	}
-	log.Printf("in checkManifest; repo for %q -> %p", repoName, repo)
 	for i, layer := range m.Layers {
 		if err := CheckDescriptor(layer, nil); err != nil {
 			return "", fmt.Errorf("bad layer %d: %v", i, err)
 		}
 		if repo.blobs[layer.Digest] == nil {
-			log.Printf("blob for layer not found in repo %p; all blobs: %v", repo, mapKeys(repo.blobs))
-			return "", fmt.Errorf("%p blob for layer %d not found; repo %s; digest %s", r, i, repoName, layer.Digest)
+			return "", fmt.Errorf("blob for layer %d not found; repo %s; digest %s", i, repoName, layer.Digest)
 		}
 	}
 	if err := CheckDescriptor(m.Config, nil); err != nil {

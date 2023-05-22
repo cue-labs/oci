@@ -16,7 +16,7 @@ import (
 type requestKind int
 
 const (
-	reqBlobKinds requestKind = iota << 10
+	reqBlobKinds requestKind = (iota + 1) << 10
 	reqManifestKinds
 	reqTagKinds
 	reqReferrerKinds
@@ -111,21 +111,33 @@ func parseRequest(req *http.Request) (*registryRequest, error) {
 		rreq.kind = reqCatalogList
 		return &rreq, nil
 	}
-	if path, ok := strings.CutSuffix(path, "/blobs/uploads/"); ok {
-		rreq.repo = path
+	uploadPath, ok := strings.CutSuffix(path, "/blobs/uploads/")
+	if !ok {
+		uploadPath, ok = strings.CutSuffix(path, "/blobs/uploads")
+	}
+	if ok {
+		rreq.repo = uploadPath
 		if !isValidRepoName(rreq.repo) {
 			return nil, ociregistry.ErrNameInvalid
 		}
+		if req.Method != "POST" {
+			return nil, errMethodNotAllowed
+		}
 		if d := urlq.Get("mount"); d != "" {
 			// end-11
-			if req.Method != "POST" {
-				return nil, errMethodNotAllowed
-			}
 			rreq.digest = d
 			if !isValidDigest(rreq.digest) {
 				return nil, ociregistry.ErrDigestInvalid
 			}
 			rreq.fromRepo = urlq.Get("from")
+			if rreq.fromRepo == "" {
+				// There's no "from" argument so fall back to
+				// a regular chunked upload.
+				rreq.kind = reqBlobStartUpload
+				// TODO does the "mount" query argument actually take effect in some way?
+				rreq.digest = ""
+				return &rreq, nil
+			}
 			if !isValidRepoName(rreq.fromRepo) {
 				return nil, ociregistry.ErrNameInvalid
 			}
@@ -134,17 +146,14 @@ func parseRequest(req *http.Request) (*registryRequest, error) {
 		}
 		if d := urlq.Get("digest"); d != "" {
 			// end-4b
-			if req.Method != "POST" {
-				return nil, errMethodNotAllowed
-			}
 			rreq.digest = d
+			if !isValidDigest(d) {
+				return nil, errBadlyFormedDigest
+			}
 			rreq.kind = reqBlobUploadBlob
 			return &rreq, nil
 		}
 		// end-4a
-		if req.Method != "POST" {
-			return nil, errMethodNotAllowed
-		}
 		rreq.kind = reqBlobStartUpload
 		return &rreq, nil
 	}
@@ -190,6 +199,9 @@ func parseRequest(req *http.Request) (*registryRequest, error) {
 		// which is something that some registries (e.g. docker) use.
 		// Do we need to do that?
 		rreq.uploadID = last
+		if rreq.uploadID == "" {
+			return nil, errNotFound
+		}
 		switch req.Method {
 		case "GET":
 			rreq.kind = reqBlobUploadInfo

@@ -98,6 +98,7 @@ type Writer interface {
 	// in toRepo.
 	//
 	// This avoids the need to pull content down from fromRepo only to push it to r.
+	// TODO this should return the canonical digest.
 	MountBlob(ctx context.Context, fromRepo, toRepo string, digest Digest) error
 
 	// PushManifest pushes a manifest with the given media type and contents.

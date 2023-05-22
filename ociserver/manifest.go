@@ -50,24 +50,17 @@ type manifests struct {
 
 // https://github.com/opencontainers/distribution-spec/blob/master/spec.md#pulling-an-image-manifest
 // https://github.com/opencontainers/distribution-spec/blob/master/spec.md#pushing-an-image
-func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) error {
+func (m *manifests) handle(resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
 	ctx := req.Context()
-	elem := strings.Split(req.URL.Path, "/")
-	elem = elem[1:]
-	target := elem[len(elem)-1]
-	repo := strings.Join(elem[1:len(elem)-2], "/")
 
-	switch req.Method {
-	case http.MethodGet:
+	switch rreq.kind {
+	case reqManifestGet:
 		var r ociregistry.BlobReader
 		var err error
-		switch {
-		case isValidDigest(target):
-			r, err = m.backend.GetManifest(ctx, repo, ociregistry.Digest(target))
-		case isValidTag(target):
-			r, err = m.backend.GetTag(ctx, repo, target)
-		default:
-			return ociregistry.ErrDigestInvalid
+		if rreq.tag != "" {
+			r, err = m.backend.GetTag(ctx, rreq.repo, rreq.tag)
+		} else {
+			r, err = m.backend.GetManifest(ctx, rreq.repo, ociregistry.Digest(rreq.digest))
 		}
 		if err != nil {
 			return err
@@ -80,16 +73,13 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) error {
 		io.Copy(resp, r)
 		return nil
 
-	case http.MethodHead:
+	case reqManifestHead:
 		var desc ociregistry.Descriptor
 		var err error
-		switch {
-		case isValidDigest(target):
-			desc, err = m.backend.ResolveManifest(ctx, repo, ociregistry.Digest(target))
-		case isValidTag(target):
-			desc, err = m.backend.ResolveTag(ctx, repo, target)
-		default:
-			return ociregistry.ErrDigestInvalid
+		if rreq.tag != "" {
+			desc, err = m.backend.ResolveTag(ctx, rreq.repo, rreq.tag)
+		} else {
+			desc, err = m.backend.ResolveManifest(ctx, rreq.repo, ociregistry.Digest(rreq.digest))
 		}
 		if err != nil {
 			return err
@@ -100,7 +90,7 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) error {
 		resp.WriteHeader(http.StatusOK)
 		return nil
 
-	case http.MethodPut:
+	case reqManifestPut:
 		mediaType := req.Header.Get("Content-Type")
 		if mediaType == "" {
 			mediaType = "application/octet-stream"
@@ -113,34 +103,29 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request) error {
 		}
 		dig := digest.FromBytes(data)
 		var tag string
-		switch {
-		case isValidDigest(target):
-			if ociregistry.Digest(target) != dig {
+		if rreq.tag != "" {
+			tag = rreq.tag
+		} else {
+			if ociregistry.Digest(rreq.digest) != dig {
 				return ociregistry.ErrDigestInvalid
 			}
-		case isValidTag(target):
-			tag = target
-		default:
-			return ociregistry.ErrDigestInvalid
 		}
-		desc, err := m.backend.PushManifest(ctx, repo, tag, data, mediaType)
+		desc, err := m.backend.PushManifest(ctx, rreq.repo, tag, data, mediaType)
 		if err != nil {
 			return err
 		}
 		// TODO OCI-Subject header?
 		resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
+		resp.Header().Set("Location", "/v2/"+rreq.repo+"/manifests/"+string(desc.Digest))
 		resp.WriteHeader(http.StatusCreated)
 		return nil
 
-	case http.MethodDelete:
+	case reqManifestDelete:
 		var err error
-		switch {
-		case isValidDigest(target):
-			err = m.backend.DeleteManifest(ctx, repo, ociregistry.Digest(target))
-		case isValidTag(target):
-			err = m.backend.DeleteTag(ctx, repo, target)
-		default:
-			return ociregistry.ErrDigestInvalid
+		if rreq.tag != "" {
+			err = m.backend.DeleteTag(ctx, rreq.repo, rreq.tag)
+		} else {
+			err = m.backend.DeleteManifest(ctx, rreq.repo, ociregistry.Digest(rreq.digest))
 		}
 		if err != nil {
 			return err
