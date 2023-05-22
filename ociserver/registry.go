@@ -69,12 +69,12 @@ func (r *registry) v2(resp http.ResponseWriter, req *http.Request) (_err error) 
 	case reqManifestKinds:
 		return r.manifests.handle(resp, req, rreq)
 	case reqTagKinds:
-		return r.manifests.handleTags(resp, req)
+		return r.manifests.handleTags(resp, req, rreq)
 	case reqReferrerKinds:
 		if !r.referrersEnabled {
 			return errNotFound
 		}
-		return r.manifests.handleReferrers(resp, req)
+		return r.manifests.handleReferrers(resp, req, rreq)
 	default:
 		// ping
 		resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")

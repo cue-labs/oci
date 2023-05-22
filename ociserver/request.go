@@ -13,8 +13,69 @@ import (
 	"github.com/rogpeppe/ociregistry"
 )
 
+type registryRequest struct {
+	kind requestKind
+
+	// repo holds the repository name. Valid for all request kinds
+	// except reqCatalogList and reqPing.
+	repo string
+
+	// digest holds the digest being used in the request.
+	// Valid for:
+	//	reqBlobMount
+	//	reqBlobUploadBlob
+	//	reqBlobGet
+	//	reqBlobHead
+	//	reqBlobDelete
+	//	reqBlobCompleteUpload
+	//	reqReferrersList
+	//
+	// Valid for these manifest requests when they're referring to a digest
+	// rather than a tag:
+	//	reqManifestGet
+	//	reqManifestHead
+	//	reqManifestPut
+	//	reqManifestDelete
+	digest string
+
+	// tag holds the tag being used in the request. Valid for
+	// these manifest requests when they're referring to a tag:
+	//	reqManifestGet
+	//	reqManifestHead
+	//	reqManifestPut
+	//	reqManifestDelete
+	tag string
+
+	// fromRepo holds the repository name to mount from
+	// for reqBlobMount.
+	fromRepo string
+
+	// uploadID holds the upload identifier as used for
+	// chunked uploads.
+	// Valid for:
+	//	reqBlobUploadInfo
+	//	reqBlobUploadChunk
+	uploadID string
+
+	// listN holds the maximum count for listing.
+	// It's -1 to specify that all items should be returned.
+	//
+	// Valid for:
+	//	reqTagsList
+	listN int
+
+	// listLast holds the item to start just after
+	// when listing.
+	//
+	// Valid for:
+	//	reqTagsList
+	listLast string
+}
+
 type requestKind int
 
+// The following constants represent classes of request. Each is dealt with in its own
+// handler.
 const (
 	reqBlobKinds requestKind = (iota + 1) << 10
 	reqManifestKinds
@@ -282,19 +343,6 @@ func parseRequest(req *http.Request) (*registryRequest, error) {
 		return &rreq, nil
 	}
 	return nil, errNotFound
-}
-
-type registryRequest struct {
-	kind requestKind
-
-	repo     string
-	fromRepo string
-	digest   string
-	tag      string
-	uploadID string
-
-	listN    int
-	listLast string
 }
 
 func cutLast(s, sep string) (before, after string, found bool) {

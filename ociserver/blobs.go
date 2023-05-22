@@ -170,8 +170,6 @@ func (b *blobs) handle(resp http.ResponseWriter, req *http.Request, rreq *regist
 		}
 		resp.WriteHeader(http.StatusAccepted)
 		return nil
-
-	default:
-		return errMethodNotAllowed
 	}
+	panic("unreachable")
 }
