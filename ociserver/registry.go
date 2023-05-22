@@ -75,10 +75,13 @@ func (r *registry) v2(resp http.ResponseWriter, req *http.Request) (_err error) 
 			return errNotFound
 		}
 		return r.manifests.handleReferrers(resp, req, rreq)
-	default:
-		// ping
+	case reqCatalogKinds:
+		return r.manifests.handleCatalog(resp, req, rreq)
+	case reqPing:
 		resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
 		return nil
+	default:
+		return errNotFound
 	}
 }
 

@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"sort"
 	"strconv"
@@ -96,7 +95,7 @@ func (m *manifests) handle(resp http.ResponseWriter, req *http.Request, rreq *re
 		}
 		// TODO check that the media type is valid?
 		// TODO size limit
-		data, err := ioutil.ReadAll(req.Body)
+		data, err := io.ReadAll(req.Body)
 		if err != nil {
 			return fmt.Errorf("cannot read content: %v", err)
 		}

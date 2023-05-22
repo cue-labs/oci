@@ -139,11 +139,3 @@ func (r *Registry) checkManifest(repoName string, mediaType string, data []byte)
 	}
 	return "", nil
 }
-
-func mapKeys[K comparable, V any](m map[K]V) []K {
-	ks := make([]K, 0, len(m))
-	for k := range m {
-		ks = append(ks, k)
-	}
-	return ks
-}

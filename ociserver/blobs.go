@@ -17,9 +17,7 @@ package ociserver
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"sync"
 
 	"github.com/rogpeppe/ociregistry"
 )
@@ -27,9 +25,6 @@ import (
 // blobs
 type blobs struct {
 	backend ociregistry.Interface
-
-	lock sync.Mutex
-	log  *log.Logger
 }
 
 func (b *blobs) handle(resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
