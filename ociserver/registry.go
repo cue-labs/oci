@@ -25,10 +25,12 @@ package ociserver
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 
 	"github.com/rogpeppe/ociregistry"
+	"github.com/rogpeppe/ociregistry/internal/ocirequest"
 )
 
 const debug = false
@@ -38,24 +40,24 @@ type registry struct {
 	referrersEnabled bool
 }
 
-var handlers = []func(r *registry, ctx context.Context, w http.ResponseWriter, req *http.Request, rreq *registryRequest) error{
-	reqPing:               (*registry).handlePing,
-	reqBlobGet:            (*registry).handleBlobGet,
-	reqBlobHead:           (*registry).handleBlobHead,
-	reqBlobDelete:         (*registry).handleBlobDelete,
-	reqBlobStartUpload:    (*registry).handleBlobStartUpload,
-	reqBlobUploadBlob:     (*registry).handleBlobUploadBlob,
-	reqBlobMount:          (*registry).handleBlobMount,
-	reqBlobUploadInfo:     (*registry).handleBlobUploadInfo,
-	reqBlobUploadChunk:    (*registry).handleBlobUploadChunk,
-	reqBlobCompleteUpload: (*registry).handleBlobCompleteUpload,
-	reqManifestGet:        (*registry).handleManifestGet,
-	reqManifestHead:       (*registry).handleManifestHead,
-	reqManifestPut:        (*registry).handleManifestPut,
-	reqManifestDelete:     (*registry).handleManifestDelete,
-	reqTagsList:           (*registry).handleTagsList,
-	reqReferrersList:      (*registry).handleReferrersList,
-	reqCatalogList:        (*registry).handleCatalogList,
+var handlers = []func(r *registry, ctx context.Context, w http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error{
+	ocirequest.ReqPing:               (*registry).handlePing,
+	ocirequest.ReqBlobGet:            (*registry).handleBlobGet,
+	ocirequest.ReqBlobHead:           (*registry).handleBlobHead,
+	ocirequest.ReqBlobDelete:         (*registry).handleBlobDelete,
+	ocirequest.ReqBlobStartUpload:    (*registry).handleBlobStartUpload,
+	ocirequest.ReqBlobUploadBlob:     (*registry).handleBlobUploadBlob,
+	ocirequest.ReqBlobMount:          (*registry).handleBlobMount,
+	ocirequest.ReqBlobUploadInfo:     (*registry).handleBlobUploadInfo,
+	ocirequest.ReqBlobUploadChunk:    (*registry).handleBlobUploadChunk,
+	ocirequest.ReqBlobCompleteUpload: (*registry).handleBlobCompleteUpload,
+	ocirequest.ReqManifestGet:        (*registry).handleManifestGet,
+	ocirequest.ReqManifestHead:       (*registry).handleManifestHead,
+	ocirequest.ReqManifestPut:        (*registry).handleManifestPut,
+	ocirequest.ReqManifestDelete:     (*registry).handleManifestDelete,
+	ocirequest.ReqTagsList:           (*registry).handleTagsList,
+	ocirequest.ReqReferrersList:      (*registry).handleReferrersList,
+	ocirequest.ReqCatalogList:        (*registry).handleCatalogList,
 }
 
 func (r *registry) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
@@ -78,16 +80,44 @@ func (r *registry) v2(resp http.ResponseWriter, req *http.Request) (_err error) 
 			}
 		}()
 	}
-	rreq, err := parseRequest(req)
+
+	rreq, err := ocirequest.Parse(req.Method, req.URL)
 	if err != nil {
 		resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
-		return err
+		return handlerErrorForRequestParseError(err)
 	}
-	handle := handlers[rreq.kind]
+	handle := handlers[rreq.Kind]
 	return handle(r, req.Context(), resp, req, rreq)
 }
 
-func (r *registry) handlePing(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
+// ParseError represents an error that can happen when parsing.
+// The Err field holds one of the possible error values below.
+type ParseError struct {
+	error
+}
+
+func handlerErrorForRequestParseError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var perr *ocirequest.ParseError
+	if !errors.As(err, &perr) {
+		return err
+	}
+	switch perr.Err {
+	case ocirequest.ErrNotFound:
+		return withHTTPCode(http.StatusNotFound, err)
+	case ocirequest.ErrBadlyFormedDigest:
+		return withHTTPCode(http.StatusBadRequest, err)
+	case ocirequest.ErrMethodNotAllowed:
+		return withHTTPCode(http.StatusMethodNotAllowed, err)
+	case ocirequest.ErrBadRequest:
+		return withHTTPCode(http.StatusBadRequest, err)
+	}
+	return err
+}
+
+func (r *registry) handlePing(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
 	return nil
 }

@@ -21,10 +21,11 @@ import (
 	"net/http"
 
 	"github.com/rogpeppe/ociregistry"
+	"github.com/rogpeppe/ociregistry/internal/ocirequest"
 )
 
-func (r *registry) handleBlobHead(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
-	desc, err := r.backend.ResolveBlob(ctx, rreq.repo, ociregistry.Digest(rreq.digest))
+func (r *registry) handleBlobHead(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	desc, err := r.backend.ResolveBlob(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest))
 	if err != nil {
 		return err
 	}
@@ -34,8 +35,8 @@ func (r *registry) handleBlobHead(ctx context.Context, resp http.ResponseWriter,
 	return nil
 }
 
-func (r *registry) handleBlobGet(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
-	blob, err := r.backend.GetBlob(ctx, rreq.repo, ociregistry.Digest(rreq.digest))
+func (r *registry) handleBlobGet(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	blob, err := r.backend.GetBlob(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest))
 	if err != nil {
 		return err
 	}
@@ -43,52 +44,52 @@ func (r *registry) handleBlobGet(ctx context.Context, resp http.ResponseWriter, 
 	desc := blob.Descriptor()
 	resp.Header().Set("Content-Type", desc.MediaType)
 	resp.Header().Set("Content-Length", fmt.Sprint(desc.Size))
-	resp.Header().Set("Docker-Content-Digest", rreq.digest)
+	resp.Header().Set("Docker-Content-Digest", rreq.Digest)
 	resp.WriteHeader(http.StatusOK)
 
 	io.Copy(resp, blob)
 	return nil
 }
 
-func (r *registry) handleBlobUploadBlob(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
+func (r *registry) handleBlobUploadBlob(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	// TODO check that Content-Type is application/octet-stream?
 	mediaType := "application/octet-stream"
 
-	desc, err := r.backend.PushBlob(req.Context(), rreq.repo, ociregistry.Descriptor{
+	desc, err := r.backend.PushBlob(req.Context(), rreq.Repo, ociregistry.Descriptor{
 		MediaType: mediaType,
 		Size:      req.ContentLength,
-		Digest:    ociregistry.Digest(rreq.digest),
+		Digest:    ociregistry.Digest(rreq.Digest),
 	}, req.Body)
 	if err != nil {
 		return err
 	}
 	resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
-	resp.Header().Set("Location", "/v2/"+rreq.repo+"/blobs/"+string(desc.Digest))
+	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/blobs/"+string(desc.Digest))
 	resp.WriteHeader(http.StatusCreated)
 	return nil
 }
 
-func (r *registry) handleBlobStartUpload(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
-	w, err := r.backend.PushBlobChunked(ctx, rreq.repo, "")
+func (r *registry) handleBlobStartUpload(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, "")
 	if err != nil {
 		return err
 	}
 	defer w.Close()
 	// TODO how can we make it so that the backend can return a location that isn't
 	// in the registry?
-	resp.Header().Set("Location", "/v2/"+rreq.repo+"/blobs/uploads/"+w.ID())
+	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/blobs/uploads/"+w.ID())
 	resp.Header().Set("Range", "0-0")
 	resp.WriteHeader(http.StatusAccepted)
 	return nil
 }
 
-func (r *registry) handleBlobUploadInfo(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
-	w, err := r.backend.PushBlobChunked(ctx, rreq.repo, rreq.uploadID)
+func (r *registry) handleBlobUploadInfo(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, rreq.UploadID)
 	if err != nil {
 		return err
 	}
 	defer w.Close()
-	resp.Header().Set("Location", "/v2/"+rreq.repo+"/blobs/uploads/"+w.ID())
+	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/blobs/uploads/"+w.ID())
 	max := w.Size() - 1
 	if max == 0 {
 		max = 0
@@ -98,7 +99,7 @@ func (r *registry) handleBlobUploadInfo(ctx context.Context, resp http.ResponseW
 	return nil
 }
 
-func (r *registry) handleBlobUploadChunk(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
+func (r *registry) handleBlobUploadChunk(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	// TODO technically it seems like there should always be
 	// a content range for a PATCH request but the existing tests
 	// seem to be lax about it, and we can just assume for the
@@ -111,7 +112,7 @@ func (r *registry) handleBlobUploadChunk(ctx context.Context, resp http.Response
 			return badAPIUseError("We don't understand your Content-Range")
 		}
 	}
-	w, err := r.backend.PushBlobChunked(ctx, rreq.repo, rreq.uploadID)
+	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, rreq.UploadID)
 	if err != nil {
 		return err
 	}
@@ -125,14 +126,14 @@ func (r *registry) handleBlobUploadChunk(ctx context.Context, resp http.Response
 		return fmt.Errorf("cannot copy blob data: %v", err)
 	}
 
-	resp.Header().Set("Location", "/v2/"+rreq.repo+"/blobs/uploads/"+rreq.uploadID)
+	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/blobs/uploads/"+rreq.UploadID)
 	resp.Header().Set("Range", fmt.Sprintf("0-%d", w.Size()-1))
 	resp.WriteHeader(http.StatusAccepted)
 	return nil
 }
 
-func (r *registry) handleBlobCompleteUpload(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
-	w, err := r.backend.PushBlobChunked(ctx, rreq.repo, rreq.uploadID)
+func (r *registry) handleBlobCompleteUpload(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, rreq.UploadID)
 	if err != nil {
 		return err
 	}
@@ -141,27 +142,27 @@ func (r *registry) handleBlobCompleteUpload(ctx context.Context, resp http.Respo
 	if _, err := io.Copy(w, req.Body); err != nil {
 		return fmt.Errorf("failed to copy data: %v", err)
 	}
-	digest, err := w.Commit(ctx, ociregistry.Digest(rreq.digest))
+	digest, err := w.Commit(ctx, ociregistry.Digest(rreq.Digest))
 	if err != nil {
 		return err
 	}
 	resp.Header().Set("Docker-Content-Digest", string(digest))
-	resp.Header().Set("Location", "/v2/"+rreq.repo+"/blobs/"+string(digest))
+	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/blobs/"+string(digest))
 	resp.WriteHeader(http.StatusCreated)
 	return nil
 }
 
-func (r *registry) handleBlobMount(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
-	if err := r.backend.MountBlob(ctx, rreq.fromRepo, rreq.repo, ociregistry.Digest(rreq.digest)); err != nil {
+func (r *registry) handleBlobMount(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	if err := r.backend.MountBlob(ctx, rreq.FromRepo, rreq.Repo, ociregistry.Digest(rreq.Digest)); err != nil {
 		return err
 	}
-	resp.Header().Set("Location", "/v2/"+rreq.repo+"/blobs/"+rreq.digest)
+	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/blobs/"+rreq.Digest)
 	resp.WriteHeader(http.StatusCreated)
 	return nil
 }
 
-func (r *registry) handleBlobDelete(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
-	if err := r.backend.DeleteBlob(ctx, rreq.repo, ociregistry.Digest(rreq.digest)); err != nil {
+func (r *registry) handleBlobDelete(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	if err := r.backend.DeleteBlob(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest)); err != nil {
 		return err
 	}
 	resp.WriteHeader(http.StatusAccepted)

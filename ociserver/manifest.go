@@ -27,7 +27,9 @@ import (
 	"github.com/opencontainers/go-digest"
 	ocispecroot "github.com/opencontainers/image-spec/specs-go"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+
 	"github.com/rogpeppe/ociregistry"
+	"github.com/rogpeppe/ociregistry/internal/ocirequest"
 )
 
 var v2 = ocispecroot.Versioned{
@@ -43,13 +45,13 @@ type listTags struct {
 	Tags []string `json:"tags"`
 }
 
-func (r *registry) handleManifestGet(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
+func (r *registry) handleManifestGet(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	var mr ociregistry.BlobReader
 	var err error
-	if rreq.tag != "" {
-		mr, err = r.backend.GetTag(ctx, rreq.repo, rreq.tag)
+	if rreq.Tag != "" {
+		mr, err = r.backend.GetTag(ctx, rreq.Repo, rreq.Tag)
 	} else {
-		mr, err = r.backend.GetManifest(ctx, rreq.repo, ociregistry.Digest(rreq.digest))
+		mr, err = r.backend.GetManifest(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest))
 	}
 	if err != nil {
 		return err
@@ -63,13 +65,13 @@ func (r *registry) handleManifestGet(ctx context.Context, resp http.ResponseWrit
 	return nil
 }
 
-func (r *registry) handleManifestHead(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
+func (r *registry) handleManifestHead(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	var desc ociregistry.Descriptor
 	var err error
-	if rreq.tag != "" {
-		desc, err = r.backend.ResolveTag(ctx, rreq.repo, rreq.tag)
+	if rreq.Tag != "" {
+		desc, err = r.backend.ResolveTag(ctx, rreq.Repo, rreq.Tag)
 	} else {
-		desc, err = r.backend.ResolveManifest(ctx, rreq.repo, ociregistry.Digest(rreq.digest))
+		desc, err = r.backend.ResolveManifest(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest))
 	}
 	if err != nil {
 		return err
@@ -81,7 +83,7 @@ func (r *registry) handleManifestHead(ctx context.Context, resp http.ResponseWri
 	return nil
 }
 
-func (r *registry) handleManifestPut(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
+func (r *registry) handleManifestPut(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	mediaType := req.Header.Get("Content-Type")
 	if mediaType == "" {
 		mediaType = "application/octet-stream"
@@ -94,30 +96,30 @@ func (r *registry) handleManifestPut(ctx context.Context, resp http.ResponseWrit
 	}
 	dig := digest.FromBytes(data)
 	var tag string
-	if rreq.tag != "" {
-		tag = rreq.tag
+	if rreq.Tag != "" {
+		tag = rreq.Tag
 	} else {
-		if ociregistry.Digest(rreq.digest) != dig {
+		if ociregistry.Digest(rreq.Digest) != dig {
 			return ociregistry.ErrDigestInvalid
 		}
 	}
-	desc, err := r.backend.PushManifest(ctx, rreq.repo, tag, data, mediaType)
+	desc, err := r.backend.PushManifest(ctx, rreq.Repo, tag, data, mediaType)
 	if err != nil {
 		return err
 	}
 	// TODO OCI-Subject header?
 	resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
-	resp.Header().Set("Location", "/v2/"+rreq.repo+"/manifests/"+string(desc.Digest))
+	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/manifests/"+string(desc.Digest))
 	resp.WriteHeader(http.StatusCreated)
 	return nil
 }
 
-func (r *registry) handleManifestDelete(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
+func (r *registry) handleManifestDelete(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	var err error
-	if rreq.tag != "" {
-		err = r.backend.DeleteTag(ctx, rreq.repo, rreq.tag)
+	if rreq.Tag != "" {
+		err = r.backend.DeleteTag(ctx, rreq.Repo, rreq.Tag)
 	} else {
-		err = r.backend.DeleteManifest(ctx, rreq.repo, ociregistry.Digest(rreq.digest))
+		err = r.backend.DeleteManifest(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest))
 	}
 	if err != nil {
 		return err
@@ -126,11 +128,11 @@ func (r *registry) handleManifestDelete(ctx context.Context, resp http.ResponseW
 	return nil
 }
 
-func (r *registry) handleTagsList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
+func (r *registry) handleTagsList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	// TODO we should be able to tell the backend to
 	// start from a particular position to avoid fetching
 	// all tags every time.
-	tags, err := ociregistry.All(r.backend.Tags(ctx, rreq.repo))
+	tags, err := ociregistry.All(r.backend.Tags(ctx, rreq.Repo))
 	if err != nil {
 		return err
 	}
@@ -157,7 +159,7 @@ func (r *registry) handleTagsList(ctx context.Context, resp http.ResponseWriter,
 	}
 
 	tagsToList := listTags{
-		Name: rreq.repo,
+		Name: rreq.Repo,
 		Tags: tags,
 	}
 
@@ -167,10 +169,10 @@ func (r *registry) handleTagsList(ctx context.Context, resp http.ResponseWriter,
 	io.Copy(resp, bytes.NewReader([]byte(msg)))
 	return nil
 }
-func (r *registry) handleCatalogList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
+func (r *registry) handleCatalogList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	n := 10000
-	if rreq.listN >= 0 {
-		n = rreq.listN
+	if rreq.ListN >= 0 {
+		n = rreq.ListN
 	}
 	repos, err := ociregistry.All(r.backend.Repositories(ctx))
 	if err != nil {
@@ -193,14 +195,14 @@ func (r *registry) handleCatalogList(ctx context.Context, resp http.ResponseWrit
 }
 
 // TODO: implement handling of artifactType querystring
-func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *registryRequest) error {
+func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	im := &ocispec.Index{
 		Versioned: v2,
 		MediaType: mediaTypeOCIImageIndex,
 	}
 
 	// TODO support artifactType filtering
-	it := r.backend.Referrers(ctx, rreq.repo, ociregistry.Digest(rreq.digest), "")
+	it := r.backend.Referrers(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest), "")
 	for {
 		desc, ok := it.Next()
 		if !ok {

@@ -23,8 +23,6 @@ import (
 	"github.com/rogpeppe/ociregistry"
 )
 
-var errMethodNotAllowed = withHTTPCode(http.StatusMethodNotAllowed, badAPIUseError("Unrecognised method"))
-
 type wireError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
@@ -85,11 +83,6 @@ var errorStatuses = map[string]int{
 func badAPIUseError(f string, a ...any) error {
 	return ociregistry.NewError(fmt.Sprintf(f, a...), ociregistry.ErrUnsupported.Code(), nil)
 }
-
-var (
-	errNotFound          = withHTTPCode(http.StatusNotFound, fmt.Errorf("page not found"))
-	errBadlyFormedDigest = withHTTPCode(http.StatusBadRequest, fmt.Errorf("badly formed digest"))
-)
 
 func withHTTPCode(status int, err error) error {
 	if err == nil {
