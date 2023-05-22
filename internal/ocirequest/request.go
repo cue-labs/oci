@@ -158,6 +158,7 @@ const (
 	ReqReferrersList
 
 	// Catalog endpoints (out-of-spec)
+	// 	GET	/v2/_catalog
 	ReqCatalogList
 )
 

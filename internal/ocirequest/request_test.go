@@ -12,13 +12,21 @@ var parseRequestTests = []struct {
 	method   string
 	url      string
 
-	wantRequest  *Request
-	wantError    string
-	wantHTTPCode int
+	wantRequest   *Request
+	wantError     string
+	wantConstruct string
 }{{
 	testName: "ping",
 	method:   "GET",
 	url:      "/v2",
+	wantRequest: &Request{
+		Kind: ReqPing,
+	},
+	wantConstruct: "/v2/",
+}, {
+	testName: "ping",
+	method:   "GET",
+	url:      "/v2/",
 	wantRequest: &Request{
 		Kind: ReqPing,
 	},
@@ -109,6 +117,7 @@ var parseRequestTests = []struct {
 		Kind: ReqBlobStartUpload,
 		Repo: "x/y",
 	},
+	wantConstruct: "/v2/x/y/blobs/uploads/",
 }, {
 	testName: "manifestHead",
 	method:   "HEAD",
@@ -135,6 +144,26 @@ func TestParseRequest(t *testing.T) {
 			}
 			qt.Assert(t, qt.IsNil(err))
 			qt.Assert(t, qt.DeepEquals(rreq, test.wantRequest))
+			method, ustr := rreq.Construct()
+			if test.wantConstruct == "" {
+				test.wantConstruct = test.url
+			}
+
+			qt.Check(t, qt.Equals(method, test.method))
+			qt.Check(t, qt.Equals(canonURL(ustr), canonURL(test.wantConstruct)))
 		})
 	}
+}
+
+func canonURL(ustr string) string {
+	u, err := url.Parse(ustr)
+	if err != nil {
+		panic(err)
+	}
+	qv := u.Query()
+	if len(qv) == 0 {
+		return ustr
+	}
+	u.RawQuery = qv.Encode()
+	return u.String()
 }
