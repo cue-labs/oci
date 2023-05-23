@@ -33,6 +33,46 @@ import (
 	"github.com/rogpeppe/ociregistry/internal/ocirequest"
 )
 
+// Options holds options for the server.
+type Options struct {
+	// DisableReferrersAPI, when true, causes the registry to behave as if
+	// it does not understand the referrers API.
+	DisableReferrersAPI bool
+
+	// UploadIDToLocation transforms an upload ID as returned by
+	// ocirequest.BlobWriter.ID to a location as returned by the
+	// upload endpoints.
+	//
+	// By default, when this function is nil, or it returns an empty
+	// string, upload IDs are treated as opaque identifiers and the
+	// returned locations are always host-relative URLs into the
+	// server itself.
+	//
+	// This can be used to allow clients to fetch and push content
+	// directly from some upstream server rather than passing
+	// through this server. Clients doing that will need access
+	// rights to that remote location.
+	//
+	// TODO implement this.
+	UploadIDToLocation func(string) (string, error)
+}
+
+// New returns a handler which implements the docker registry protocol
+// by making calls to the underlying registry backend r.
+//
+// If opts is nil, it's equivalent to passing new(Options).
+//
+// The returned handler should be registered at the site root.
+func New(backend ociregistry.Interface, opts *Options) http.Handler {
+	if opts == nil {
+		opts = new(Options)
+	}
+	return &registry{
+		backend:          backend,
+		referrersEnabled: !opts.DisableReferrersAPI,
+	}
+}
+
 const debug = false
 
 type registry struct {
@@ -120,27 +160,4 @@ func handlerErrorForRequestParseError(err error) error {
 func (r *registry) handlePing(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
 	return nil
-}
-
-// Options holds options for the server.
-type Options struct {
-	// DisableReferrersAPI, when true, causes the registry to behave as if
-	// it does not understand the referrers API.
-	DisableReferrersAPI bool
-}
-
-// New returns a handler which implements the docker registry protocol
-// by making calls to the underlying registry backend r.
-//
-// If opts is nil, it's equivalent to passing new(Options).
-//
-// The returned handler should be registered at the site root.
-func New(backend ociregistry.Interface, opts *Options) http.Handler {
-	if opts == nil {
-		opts = new(Options)
-	}
-	return &registry{
-		backend:          backend,
-		referrersEnabled: !opts.DisableReferrersAPI,
-	}
 }

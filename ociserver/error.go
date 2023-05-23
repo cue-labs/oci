@@ -25,8 +25,8 @@ import (
 
 type wireError struct {
 	Code    string `json:"code"`
-	Message string `json:"message"`
-	Detail  any    `json:"detail"`
+	Message string `json:"message,omitempty"`
+	Detail  any    `json:"detail,omitempty"`
 }
 
 type wireErrors struct {

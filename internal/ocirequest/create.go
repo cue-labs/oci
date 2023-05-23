@@ -22,10 +22,13 @@ func (req *Request) Construct() (method string, url string) {
 	case ReqBlobMount:
 		return "POST", "/v2/" + req.Repo + "/blobs/uploads/?mount=" + req.Digest + "&from=" + req.FromRepo
 	case ReqBlobUploadInfo:
+		// Note: this is specific to the ociserver implementation.
 		return "GET", "/v2/" + req.Repo + "/blobs/uploads/" + req.UploadID
 	case ReqBlobUploadChunk:
+		// Note: this is specific to the ociserver implementation.
 		return "PATCH", "/v2/" + req.Repo + "/blobs/uploads/" + req.UploadID
 	case ReqBlobCompleteUpload:
+		// Note: this is specific to the ociserver implementation.
 		// TODO this is bogus when the upload ID contains query parameters.
 		return "PUT", "/v2/" + req.Repo + "/blobs/uploads/" + req.UploadID + "?digest=" + req.Digest
 	case ReqManifestGet:

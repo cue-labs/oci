@@ -45,112 +45,112 @@ type funcs struct {
 }
 
 func (f funcs) GetBlob(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.BlobReader, error) {
-	if f.GetBlob != nil {
+	if f.f.GetBlob != nil {
 		return f.f.GetBlob(ctx, repo, digest)
 	}
 	return nil, fmt.Errorf("GetBlob: %w", ociregistry.ErrUnsupported)
 }
 
 func (f funcs) GetManifest(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.BlobReader, error) {
-	if f.GetManifest != nil {
+	if f.f.GetManifest != nil {
 		return f.f.GetManifest(ctx, repo, digest)
 	}
 	return nil, fmt.Errorf("GetManifest: %w", ociregistry.ErrUnsupported)
 }
 
 func (f funcs) GetTag(ctx context.Context, repo string, tagName string) (ociregistry.BlobReader, error) {
-	if f.GetTag != nil {
+	if f.f.GetTag != nil {
 		return f.f.GetTag(ctx, repo, tagName)
 	}
 	return nil, fmt.Errorf("GetTag: %w", ociregistry.ErrUnsupported)
 }
 
 func (f funcs) ResolveBlob(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
-	if f.ResolveBlob != nil {
+	if f.f.ResolveBlob != nil {
 		return f.f.ResolveBlob(ctx, repo, digest)
 	}
 	return ociregistry.Descriptor{}, fmt.Errorf("ResolveBlob: %w", ociregistry.ErrUnsupported)
 }
 
 func (f funcs) ResolveManifest(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
-	if f.ResolveManifest != nil {
+	if f.f.ResolveManifest != nil {
 		return f.f.ResolveManifest(ctx, repo, digest)
 	}
 	return ociregistry.Descriptor{}, fmt.Errorf("ResolveManifest: %w", ociregistry.ErrUnsupported)
 }
 
 func (f funcs) ResolveTag(ctx context.Context, repo string, tagName string) (ociregistry.Descriptor, error) {
-	if f.ResolveTag != nil {
+	if f.f.ResolveTag != nil {
 		return f.f.ResolveTag(ctx, repo, tagName)
 	}
 	return ociregistry.Descriptor{}, fmt.Errorf("ResolveTag: %w", ociregistry.ErrUnsupported)
 }
 
 func (f funcs) PushBlob(ctx context.Context, repo string, desc ociregistry.Descriptor, r io.Reader) (ociregistry.Descriptor, error) {
-	if f.PushBlob != nil {
+	if f.f.PushBlob != nil {
 		return f.f.PushBlob(ctx, repo, desc, r)
 	}
 	return ociregistry.Descriptor{}, fmt.Errorf("PushBlob: %w", ociregistry.ErrUnsupported)
 }
 
 func (f funcs) PushBlobChunked(ctx context.Context, repo string, id string) (ociregistry.BlobWriter, error) {
-	if f.PushBlobChunked != nil {
+	if f.f.PushBlobChunked != nil {
 		return f.f.PushBlobChunked(ctx, repo, id)
 	}
 	return nil, fmt.Errorf("PushBlobChunked: %w", ociregistry.ErrUnsupported)
 }
 
 func (f funcs) MountBlob(ctx context.Context, fromRepo, toRepo string, digest ociregistry.Digest) error {
-	if f.MountBlob != nil {
+	if f.f.MountBlob != nil {
 		return f.f.MountBlob(ctx, fromRepo, toRepo, digest)
 	}
 	return fmt.Errorf("MountBlob: %w", ociregistry.ErrUnsupported)
 }
 
 func (f funcs) PushManifest(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (ociregistry.Descriptor, error) {
-	if f.PushManifest != nil {
+	if f.f.PushManifest != nil {
 		return f.f.PushManifest(ctx, repo, tag, contents, mediaType)
 	}
 	return ociregistry.Descriptor{}, fmt.Errorf("PushManifest: %w", ociregistry.ErrUnsupported)
 }
 
 func (f funcs) DeleteBlob(ctx context.Context, repo string, digest ociregistry.Digest) error {
-	if f.DeleteBlob != nil {
+	if f.f.DeleteBlob != nil {
 		return f.f.DeleteBlob(ctx, repo, digest)
 	}
 	return fmt.Errorf("DeleteBlob: %w", ociregistry.ErrUnsupported)
 }
 
 func (f funcs) DeleteManifest(ctx context.Context, repo string, digest ociregistry.Digest) error {
-	if f.DeleteManifest != nil {
+	if f.f.DeleteManifest != nil {
 		return f.f.DeleteManifest(ctx, repo, digest)
 	}
 	return fmt.Errorf("DeleteManifest: %w", ociregistry.ErrUnsupported)
 }
 
 func (f funcs) DeleteTag(ctx context.Context, repo string, name string) error {
-	if f.DeleteTag != nil {
+	if f.f.DeleteTag != nil {
 		return f.f.DeleteTag(ctx, repo, name)
 	}
 	return fmt.Errorf("DeleteTag: %w", ociregistry.ErrUnsupported)
 }
 
 func (f funcs) Repositories(ctx context.Context) ociregistry.Iter[string] {
-	if f.Repositories != nil {
+	if f.f.Repositories != nil {
 		return f.f.Repositories(ctx)
 	}
 	return ErrIter[string]{fmt.Errorf("Repositories: %w", ociregistry.ErrUnsupported)}
 }
 
 func (f funcs) Tags(ctx context.Context, repo string) ociregistry.Iter[string] {
-	if f.Tags != nil {
+	if f.f.Tags != nil {
 		return f.f.Tags(ctx, repo)
 	}
 	return ErrIter[string]{fmt.Errorf("Tags: %w", ociregistry.ErrUnsupported)}
 }
 
 func (f funcs) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) ociregistry.Iter[ociregistry.Descriptor] {
-	if f.Referrers != nil {
+	if f.f.Referrers != nil {
 		return f.f.Referrers(ctx, repo, digest, artifactType)
 	}
 	return ErrIter[ociregistry.Descriptor]{fmt.Errorf("Referrers: %w", ociregistry.ErrUnsupported)}
