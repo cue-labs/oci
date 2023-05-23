@@ -2,7 +2,6 @@ package ocimem
 
 import (
 	"bytes"
-	"context"
 	"crypto/rand"
 	"fmt"
 	"sync"
@@ -41,7 +40,6 @@ func (r *bytesReader) Read(data []byte) (int, error) {
 }
 
 // Buffer holds an in-memory implementation of ociregistry.BlobWriter.
-// The zero value is good to use.
 type Buffer struct {
 	commit    func(b *Buffer) error
 	mu        sync.Mutex
@@ -66,7 +64,7 @@ func NewBuffer(commit func(b *Buffer) error, uuid string) *Buffer {
 	}
 }
 
-func (b *Buffer) Cancel(ctx context.Context) error {
+func (b *Buffer) Cancel() error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.commitErr = fmt.Errorf("upload canceled")
@@ -121,7 +119,7 @@ func (b *Buffer) ID() string {
 
 // Commit implements [ociregistry.BlobWriter.Commit] by checking
 // that everything looks OK and calling the commit function if so.
-func (b *Buffer) Commit(ctx context.Context, dig ociregistry.Digest) (_ ociregistry.Digest, err error) {
+func (b *Buffer) Commit(dig ociregistry.Digest) (_ ociregistry.Digest, err error) {
 	if err := b.checkCommit(dig); err != nil {
 		return "", err
 	}

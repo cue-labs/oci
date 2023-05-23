@@ -20,7 +20,7 @@ type Funcs struct {
 	ResolveManifest func(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.Descriptor, error)
 	ResolveTag      func(ctx context.Context, repo string, tagName string) (ociregistry.Descriptor, error)
 	PushBlob        func(ctx context.Context, repo string, desc ociregistry.Descriptor, r io.Reader) (ociregistry.Descriptor, error)
-	PushBlobChunked func(ctx context.Context, repo string, id string) (ociregistry.BlobWriter, error)
+	PushBlobChunked func(ctx context.Context, repo string, id string, chunkSize int) (ociregistry.BlobWriter, error)
 	MountBlob       func(ctx context.Context, fromRepo, toRepo string, digest ociregistry.Digest) error
 	PushManifest    func(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (ociregistry.Descriptor, error)
 	DeleteBlob      func(ctx context.Context, repo string, digest ociregistry.Digest) error
@@ -93,9 +93,9 @@ func (f funcs) PushBlob(ctx context.Context, repo string, desc ociregistry.Descr
 	return ociregistry.Descriptor{}, fmt.Errorf("PushBlob: %w", ociregistry.ErrUnsupported)
 }
 
-func (f funcs) PushBlobChunked(ctx context.Context, repo string, id string) (ociregistry.BlobWriter, error) {
+func (f funcs) PushBlobChunked(ctx context.Context, repo string, id string, chunkSize int) (ociregistry.BlobWriter, error) {
 	if f.f.PushBlobChunked != nil {
-		return f.f.PushBlobChunked(ctx, repo, id)
+		return f.f.PushBlobChunked(ctx, repo, id, chunkSize)
 	}
 	return nil, fmt.Errorf("PushBlobChunked: %w", ociregistry.ErrUnsupported)
 }

@@ -98,7 +98,14 @@ type Writer interface {
 	// If id is non-zero, it should be the value returned from BlobWriter.ID
 	// from a previous PushBlobChunked call and will be used to resume that blob
 	// write.
-	PushBlobChunked(ctx context.Context, repo string, id string) (BlobWriter, error)
+	//
+	// The chunkSize parameter provides a hint for the chunk size to use
+	// when writing to the registry. If it's zero, a suitable default will be chosen.
+	// It might be larger if the underlying registry requires that.
+	//
+	// The context remains active as long as the BlobWriter is around: if it's
+	// cancelled, it should cause any blocked BlobWriter operations to terminate.
+	PushBlobChunked(ctx context.Context, repo string, id string, chunkSize int) (BlobWriter, error)
 
 	// MountBlob makes a blob with the given digest that's in fromRepo available
 	// in toRepo.
@@ -161,20 +168,24 @@ type BlobWriter interface {
 
 	// ID returns the opaque identifier for this writer. The returned value
 	// can be passed to PushBlobChunked to resume the write.
+	//
+	// Note that the returned value might not be valid if ID is called
+	// after data has been written and before the writer has been
+	// closed.
 	ID() string
 
 	// Commit completes the blob writer process. The content is verified
 	// against the provided digest. The returned digest may be different
 	// to the original depending on the blob store, referred to as the canonical
 	// descriptor.
-	Commit(ctx context.Context, digest Digest) (Digest, error)
+	Commit(digest Digest) (Digest, error)
 
 	// Cancel ends the blob write without storing any data and frees any
 	// associated resources. Any data written thus far will be lost. Cancel
 	// implementations should allow multiple calls even after a commit that
 	// result in a no-op. This allows use of Cancel in a defer statement,
 	// increasing the assurance that it is correctly called.
-	Cancel(ctx context.Context) error
+	Cancel() error
 }
 
 // BlobReader provides the contents of a given blob or manifest.

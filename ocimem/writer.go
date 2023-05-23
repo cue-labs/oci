@@ -32,7 +32,7 @@ func (r *Registry) PushBlob(ctx context.Context, repoName string, desc ociregist
 	return desc, nil
 }
 
-func (r *Registry) PushBlobChunked(ctx context.Context, repoName string, resumeID string) (ociregistry.BlobWriter, error) {
+func (r *Registry) PushBlobChunked(ctx context.Context, repoName string, resumeID string, chunkSize int) (ociregistry.BlobWriter, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	repo, err := r.makeRepo(repoName)

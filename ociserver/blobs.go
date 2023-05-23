@@ -70,7 +70,7 @@ func (r *registry) handleBlobUploadBlob(ctx context.Context, resp http.ResponseW
 }
 
 func (r *registry) handleBlobStartUpload(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, "")
+	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, "", 0)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (r *registry) handleBlobStartUpload(ctx context.Context, resp http.Response
 }
 
 func (r *registry) handleBlobUploadInfo(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, rreq.UploadID)
+	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, rreq.UploadID, 0)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (r *registry) handleBlobUploadChunk(ctx context.Context, resp http.Response
 			return badAPIUseError("We don't understand your Content-Range")
 		}
 	}
-	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, rreq.UploadID)
+	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, rreq.UploadID, 0)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func (r *registry) handleBlobUploadChunk(ctx context.Context, resp http.Response
 }
 
 func (r *registry) handleBlobCompleteUpload(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, rreq.UploadID)
+	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, rreq.UploadID, 0)
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func (r *registry) handleBlobCompleteUpload(ctx context.Context, resp http.Respo
 	if _, err := io.Copy(w, req.Body); err != nil {
 		return fmt.Errorf("failed to copy data: %v", err)
 	}
-	digest, err := w.Commit(ctx, ociregistry.Digest(rreq.Digest))
+	digest, err := w.Commit(ociregistry.Digest(rreq.Digest))
 	if err != nil {
 		return err
 	}
