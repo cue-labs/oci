@@ -1,0 +1,207 @@
+package ocidebug
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"log"
+	"sync/atomic"
+
+	"github.com/rogpeppe/ociregistry"
+)
+
+func New(r ociregistry.Interface, logf func(f string, a ...any)) ociregistry.Interface {
+	if logf == nil {
+		logf = log.Printf
+	}
+	return &logger{
+		logf: logf,
+		r:    r,
+	}
+}
+
+var blobWriterID int32
+
+type logger struct {
+	logf func(f string, a ...any)
+	r    ociregistry.Interface
+}
+
+func (r *logger) DeleteBlob(ctx context.Context, repoName string, digest ociregistry.Digest) error {
+	r.logf("DeleteBlob %s %s {", repoName, digest)
+	err := r.r.DeleteBlob(ctx, repoName, digest)
+	r.logf("} -> %v", err)
+	return err
+}
+
+func (r *logger) DeleteManifest(ctx context.Context, repoName string, digest ociregistry.Digest) error {
+	r.logf("DeleteManifest %s %s {", repoName, digest)
+	err := r.r.DeleteManifest(ctx, repoName, digest)
+	r.logf("} -> %v", err)
+	return err
+}
+
+func (r *logger) DeleteTag(ctx context.Context, repoName string, tagName string) error {
+	r.logf("DeleteTag %s %s {", repoName, tagName)
+	err := r.r.DeleteTag(ctx, repoName, tagName)
+	r.logf("} -> %v", err)
+	return err
+}
+
+func (r *logger) GetBlob(ctx context.Context, repoName string, dig ociregistry.Digest) (ociregistry.BlobReader, error) {
+	r.logf("GetBlob %s %s {", repoName, dig)
+	rd, err := r.r.GetBlob(ctx, repoName, dig)
+	r.logf("} -> %T, %v", rd, err)
+	return rd, err
+}
+
+func (r *logger) GetManifest(ctx context.Context, repoName string, dig ociregistry.Digest) (ociregistry.BlobReader, error) {
+	r.logf("GetManifest %s %s {", repoName, dig)
+	rd, err := r.r.GetManifest(ctx, repoName, dig)
+	r.logf("} -> %T, %v", rd, err)
+	return rd, err
+}
+
+func (r *logger) GetTag(ctx context.Context, repoName string, tagName string) (ociregistry.BlobReader, error) {
+	r.logf("GetTag %s %s {", repoName, tagName)
+	rd, err := r.r.GetTag(ctx, repoName, tagName)
+	r.logf("} -> %T, %v", rd, err)
+	return rd, err
+}
+
+func (r *logger) MountBlob(ctx context.Context, fromRepo, toRepo string, dig ociregistry.Digest) error {
+	r.logf("MountBlob from=%s to=%s digest=%s {", fromRepo, toRepo, dig)
+	err := r.r.MountBlob(ctx, fromRepo, toRepo, dig)
+	r.logf("} -> %v", err)
+	return err
+}
+
+func (r *logger) PushBlob(ctx context.Context, repoName string, desc ociregistry.Descriptor, content io.Reader) (ociregistry.Descriptor, error) {
+	r.logf("PushBlob %s %#v %T {", repoName, desc, content)
+	desc, err := r.r.PushBlob(ctx, repoName, desc, content)
+	if err != nil {
+		r.logf("} -> %v", err)
+	} else {
+		r.logf("} -> %#v", desc)
+	}
+	return desc, err
+}
+
+func (r *logger) PushBlobChunked(ctx context.Context, repoName string, resumeID string, chunkSize int) (ociregistry.BlobWriter, error) {
+	bwid := fmt.Sprintf("bw%d", atomic.AddInt32(&blobWriterID, 1))
+	r.logf("PushBlobChunked %s resumeID=%q chunkSize=%d {", repoName, resumeID, chunkSize)
+	w, err := r.r.PushBlobChunked(ctx, repoName, resumeID, chunkSize)
+	r.logf("} -> %T(%s), %v", w, bwid, err)
+	return blobWriter{
+		id: bwid,
+		w:  w,
+		r:  r,
+	}, err
+}
+
+func (r *logger) PushManifest(ctx context.Context, repoName string, tag string, data []byte, mediaType string) (ociregistry.Descriptor, error) {
+	r.logf("PushManifest %s tag=%q mediaType=%q data=%q {", repoName, tag, data, mediaType)
+	desc, err := r.r.PushManifest(ctx, repoName, tag, data, mediaType)
+	if err != nil {
+		r.logf("} -> %v", err)
+	} else {
+		r.logf("} -> %#v", desc)
+	}
+	return desc, err
+}
+
+func (r *logger) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, artifactType string) ociregistry.Iter[ociregistry.Descriptor] {
+	// TODO
+	return r.r.Referrers(ctx, repoName, digest, artifactType)
+}
+
+func (r *logger) Repositories(ctx context.Context) ociregistry.Iter[string] {
+	// TODO
+	return r.r.Repositories(ctx)
+}
+
+func (r *logger) Tags(ctx context.Context, repoName string) ociregistry.Iter[string] {
+	// TODO
+	return r.r.Tags(ctx, repoName)
+}
+
+func (r *logger) ResolveBlob(ctx context.Context, repoName string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
+	r.logf("ResolveBlob %s %s {", repoName, digest)
+	desc, err := r.r.ResolveBlob(ctx, repoName, digest)
+	if err != nil {
+		r.logf("} -> %v", err)
+	} else {
+		r.logf("} -> %#v", desc)
+	}
+	return desc, err
+}
+
+func (r *logger) ResolveManifest(ctx context.Context, repoName string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
+	r.logf("ResolveManifest %s %s {", repoName, digest)
+	desc, err := r.r.ResolveManifest(ctx, repoName, digest)
+	if err != nil {
+		r.logf("} -> %v", err)
+	} else {
+		r.logf("} -> %#v", desc)
+	}
+	return desc, err
+}
+
+func (r *logger) ResolveTag(ctx context.Context, repoName string, tagName string) (ociregistry.Descriptor, error) {
+	r.logf("ResolveTag %s %s {", repoName, tagName)
+	desc, err := r.r.ResolveTag(ctx, repoName, tagName)
+	if err != nil {
+		r.logf("} -> %v", err)
+	} else {
+		r.logf("} -> %#v", desc)
+	}
+	return desc, err
+}
+
+type blobWriter struct {
+	id string
+	r  *logger
+	w  ociregistry.BlobWriter
+}
+
+func (w blobWriter) logf(f string, a ...any) {
+	w.r.logf("%s: %s", w.id, fmt.Sprintf(f, a...))
+}
+
+func (w blobWriter) Write(buf []byte) (int, error) {
+	w.logf("Write %q {", buf)
+	n, err := w.w.Write(buf)
+	w.logf("} -> %v, %v", n, err)
+	return n, err
+}
+
+func (w blobWriter) ID() string {
+	return w.w.ID()
+}
+
+func (w blobWriter) Size() int64 {
+	size := w.w.Size()
+	w.logf("Size -> %v", size)
+	return size
+}
+
+func (w blobWriter) Close() error {
+	w.logf("Close {")
+	err := w.w.Close()
+	w.logf("} -> %v", err)
+	return err
+}
+
+func (w blobWriter) Commit(digest ociregistry.Digest) (ociregistry.Digest, error) {
+	w.logf("Commit %q {", digest)
+	digest, err := w.w.Commit(digest)
+	w.logf("} -> %q, %v", digest, err)
+	return digest, err
+}
+
+func (w blobWriter) Cancel() error {
+	w.logf("Cancel {")
+	err := w.w.Cancel()
+	w.logf("} -> %v", err)
+	return err
+}

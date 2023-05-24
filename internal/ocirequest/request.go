@@ -1,12 +1,14 @@
 package ocirequest
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/opencontainers/go-digest"
 
@@ -275,6 +277,8 @@ func parse(method string, u *url.URL) (*Request, error) {
 		}
 		return &rreq, nil
 	case "uploads":
+		// Note: this section is all specific to ociserver and
+		// isn't part of the OCI registry spec.
 		repo, ok := strings.CutSuffix(path, "/blobs")
 		if !ok {
 			return nil, ErrNotFound
@@ -283,13 +287,19 @@ func parse(method string, u *url.URL) (*Request, error) {
 		if !isValidRepoName(rreq.Repo) {
 			return nil, ociregistry.ErrNameInvalid
 		}
-		// TODO this doesn't allow query parameters inside the upload ID
-		// which is something that some registries (e.g. docker) use.
-		// Do we need to do that?
-		rreq.UploadID = last
-		if rreq.UploadID == "" {
+		uploadID64 := last
+		if uploadID64 == "" {
 			return nil, ErrNotFound
 		}
+		uploadID, err := base64.RawURLEncoding.DecodeString(uploadID64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid upload ID (cannot decode)")
+		}
+		if !utf8.Valid(uploadID) {
+			return nil, fmt.Errorf("upload ID %q decoded to invalid utf8", uploadID64)
+		}
+		rreq.UploadID = string(uploadID)
+
 		switch method {
 		case "GET":
 			rreq.Kind = ReqBlobUploadInfo

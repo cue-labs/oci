@@ -26,8 +26,10 @@ package ociserver
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"sync/atomic"
 
 	"github.com/rogpeppe/ociregistry"
 	"github.com/rogpeppe/ociregistry/internal/ocirequest"
@@ -39,9 +41,9 @@ type Options struct {
 	// it does not understand the referrers API.
 	DisableReferrersAPI bool
 
-	// UploadIDToLocation transforms an upload ID as returned by
-	// ocirequest.BlobWriter.ID to a location as returned by the
-	// upload endpoints.
+	// LocationForUploadID transforms an upload ID as returned by
+	// ocirequest.BlobWriter.ID to the absolute URL location
+	// as returned by the upload endpoints.
 	//
 	// By default, when this function is nil, or it returns an empty
 	// string, upload IDs are treated as opaque identifiers and the
@@ -52,10 +54,12 @@ type Options struct {
 	// directly from some upstream server rather than passing
 	// through this server. Clients doing that will need access
 	// rights to that remote location.
-	//
-	// TODO implement this.
-	UploadIDToLocation func(string) (string, error)
+	LocationForUploadID func(string) (string, error)
+
+	DebugID string
 }
+
+var debugID int32
 
 // New returns a handler which implements the docker registry protocol
 // by making calls to the underlying registry backend r.
@@ -67,17 +71,26 @@ func New(backend ociregistry.Interface, opts *Options) http.Handler {
 	if opts == nil {
 		opts = new(Options)
 	}
+	if opts.DebugID == "" {
+		opts.DebugID = fmt.Sprintf("id%d", atomic.AddInt32(&debugID, 1))
+	}
 	return &registry{
 		backend:          backend,
 		referrersEnabled: !opts.DisableReferrersAPI,
+		debugID:          opts.DebugID,
 	}
 }
 
-const debug = false
+func (r *registry) logf(f string, a ...any) {
+	log.Printf("ociserver %s: %s", r.debugID, fmt.Sprintf(f, a...))
+}
+
+const debug = true
 
 type registry struct {
 	backend          ociregistry.Interface
 	referrersEnabled bool
+	debugID          string
 }
 
 var handlers = []func(r *registry, ctx context.Context, w http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error{
@@ -111,12 +124,12 @@ func (r *registry) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 // https://github.com/opencontainers/distribution-spec/blob/master/spec.md#api-version-check
 func (r *registry) v2(resp http.ResponseWriter, req *http.Request) (_err error) {
 	if debug {
-		log.Printf("registry.v2 %v %s {", req.Method, req.URL)
+		r.logf("registry.v2 %v %s {", req.Method, req.URL)
 		defer func() {
 			if _err != nil {
-				log.Printf("} -> %v", _err)
+				r.logf("} -> %v", _err)
 			} else {
-				log.Printf("}")
+				r.logf("}")
 			}
 		}()
 	}

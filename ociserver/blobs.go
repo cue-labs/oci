@@ -75,9 +75,8 @@ func (r *registry) handleBlobStartUpload(ctx context.Context, resp http.Response
 		return err
 	}
 	defer w.Close()
-	// TODO how can we make it so that the backend can return a location that isn't
-	// in the registry?
-	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/blobs/uploads/"+w.ID())
+
+	resp.Header().Set("Location", r.locationForUploadID(rreq.Repo, w.ID()))
 	resp.Header().Set("Range", "0-0")
 	resp.WriteHeader(http.StatusAccepted)
 	return nil
@@ -89,12 +88,8 @@ func (r *registry) handleBlobUploadInfo(ctx context.Context, resp http.ResponseW
 		return err
 	}
 	defer w.Close()
-	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/blobs/uploads/"+w.ID())
-	max := w.Size() - 1
-	if max == 0 {
-		max = 0
-	}
-	resp.Header().Set("Range", fmt.Sprintf("0-%d", max))
+	resp.Header().Set("Location", r.locationForUploadID(rreq.Repo, w.ID()))
+	resp.Header().Set("Range", rangeString(0, w.Size()))
 	resp.WriteHeader(http.StatusNoContent)
 	return nil
 }
@@ -116,23 +111,26 @@ func (r *registry) handleBlobUploadChunk(ctx context.Context, resp http.Response
 	if err != nil {
 		return err
 	}
-	defer w.Close()
 	// TODO this is potentially racy if multiple clients are doing this concurrently.
 	// Perhaps the PushBlobChunked call should take a "startAt" parameter?
 	if start != w.Size() {
 		return fmt.Errorf("write at invalid starting point %d; actual start %d: %w", start, w.Size(), withHTTPCode(http.StatusRequestedRangeNotSatisfiable, ociregistry.ErrBlobUploadInvalid))
 	}
 	if _, err := io.Copy(w, req.Body); err != nil {
-		return fmt.Errorf("cannot copy blob data: %v", err)
+		w.Close()
+		return fmt.Errorf("cannot copy blob data: %w", err)
 	}
-
-	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/blobs/uploads/"+rreq.UploadID)
-	resp.Header().Set("Range", fmt.Sprintf("0-%d", w.Size()-1))
+	if err := w.Close(); err != nil {
+		return fmt.Errorf("cannot close BlobWriter: %w", err)
+	}
+	resp.Header().Set("Location", r.locationForUploadID(rreq.Repo, w.ID()))
+	resp.Header().Set("Range", rangeString(0, w.Size()))
 	resp.WriteHeader(http.StatusAccepted)
 	return nil
 }
 
 func (r *registry) handleBlobCompleteUpload(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	r.logf("handleBlobCompleteUpload; digest %q", rreq.Digest)
 	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, rreq.UploadID, 0)
 	if err != nil {
 		return err
@@ -140,7 +138,7 @@ func (r *registry) handleBlobCompleteUpload(ctx context.Context, resp http.Respo
 	defer w.Close()
 
 	if _, err := io.Copy(w, req.Body); err != nil {
-		return fmt.Errorf("failed to copy data: %v", err)
+		return fmt.Errorf("failed to copy data to %T: %v", w, err)
 	}
 	digest, err := w.Commit(ociregistry.Digest(rreq.Digest))
 	if err != nil {
@@ -167,4 +165,21 @@ func (r *registry) handleBlobDelete(ctx context.Context, resp http.ResponseWrite
 	}
 	resp.WriteHeader(http.StatusAccepted)
 	return nil
+}
+
+func (r *registry) locationForUploadID(repo string, uploadID string) string {
+	_, loc := (&ocirequest.Request{
+		Kind:     ocirequest.ReqBlobUploadInfo,
+		Repo:     repo,
+		UploadID: uploadID,
+	}).Construct()
+	return loc
+}
+
+func rangeString(x0, x1 int64) string {
+	x1--
+	if x1 < 0 {
+		x1 = 0
+	}
+	return fmt.Sprintf("%d-%d", x0, x1)
 }

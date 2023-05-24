@@ -112,6 +112,9 @@ type Writer interface {
 	//
 	// This avoids the need to pull content down from fromRepo only to push it to r.
 	// TODO this should return the canonical digest.
+	//
+	// Errors:
+	//	ErrUnsupported (when the repository does not support mounts).
 	MountBlob(ctx context.Context, fromRepo, toRepo string, digest Digest) error
 
 	// PushManifest pushes a manifest with the given media type and contents.
@@ -168,10 +171,8 @@ type BlobWriter interface {
 
 	// ID returns the opaque identifier for this writer. The returned value
 	// can be passed to PushBlobChunked to resume the write.
-	//
-	// Note that the returned value might not be valid if ID is called
-	// after data has been written and before the writer has been
-	// closed.
+	// It is only valid before Write has been called or after Close has
+	// been called.
 	ID() string
 
 	// Commit completes the blob writer process. The content is verified

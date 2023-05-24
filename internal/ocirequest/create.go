@@ -1,6 +1,7 @@
 package ocirequest
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/url"
 )
@@ -23,14 +24,14 @@ func (req *Request) Construct() (method string, url string) {
 		return "POST", "/v2/" + req.Repo + "/blobs/uploads/?mount=" + req.Digest + "&from=" + req.FromRepo
 	case ReqBlobUploadInfo:
 		// Note: this is specific to the ociserver implementation.
-		return "GET", "/v2/" + req.Repo + "/blobs/uploads/" + req.UploadID
+		return "GET", req.uploadPath()
 	case ReqBlobUploadChunk:
 		// Note: this is specific to the ociserver implementation.
-		return "PATCH", "/v2/" + req.Repo + "/blobs/uploads/" + req.UploadID
+		return "PATCH", req.uploadPath()
 	case ReqBlobCompleteUpload:
 		// Note: this is specific to the ociserver implementation.
 		// TODO this is bogus when the upload ID contains query parameters.
-		return "PUT", "/v2/" + req.Repo + "/blobs/uploads/" + req.UploadID + "?digest=" + req.Digest
+		return "PUT", req.uploadPath() + "?digest=" + req.Digest
 	case ReqManifestGet:
 		return "GET", "/v2/" + req.Repo + "/manifests/" + req.tagOrDigest()
 	case ReqManifestHead:
@@ -48,6 +49,10 @@ func (req *Request) Construct() (method string, url string) {
 	default:
 		panic("invalid request kind")
 	}
+}
+
+func (req *Request) uploadPath() string {
+	return "/v2/" + req.Repo + "/blobs/uploads/" + base64.RawURLEncoding.EncodeToString([]byte(req.UploadID))
 }
 
 func (req *Request) listParams() string {

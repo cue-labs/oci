@@ -3,6 +3,7 @@
 package ociclient
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -13,9 +14,9 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
+	"github.com/rogpeppe/misc/runtime/debug"
 	"github.com/rogpeppe/ociregistry"
 	"github.com/rogpeppe/ociregistry/internal/ocirequest"
-	"github.com/rogpeppe/ociregistry/ocifunc"
 )
 
 func New(hostURL string) ociregistry.Interface {
@@ -24,16 +25,14 @@ func New(hostURL string) ociregistry.Interface {
 		panic(err)
 	}
 	return &client{
-		url:       u,
-		client:    http.DefaultClient,
-		Interface: ocifunc.New(ocifunc.Funcs{}),
+		url:    u,
+		client: http.DefaultClient,
 	}
 }
 
 type client struct {
 	url    *url.URL
 	client *http.Client
-	ociregistry.Interface
 }
 
 func descriptorFromResponse(resp *http.Response) (ociregistry.Descriptor, error) {
@@ -105,9 +104,28 @@ func (c *client) do(req *http.Request, okStatuses ...int) (*http.Response, error
 		// when pushing blobs.
 		req.Header.Set("Expect", "100-continue")
 	}
+	fmt.Printf("client.Do: %s %s {\n", req.Method, req.URL)
+	fmt.Printf("\tBODY: %#v\n", req.Body)
+	for k, v := range req.Header {
+		fmt.Printf("\t%s: %q\n", k, v)
+	}
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("cannot make HTTP request: %w", err)
+		return nil, fmt.Errorf("cannot do HTTP request: %w; callers %s", err, debug.Callers(0, 20))
+	}
+	fmt.Printf("-> %s\n", resp.Status)
+	for k, v := range resp.Header {
+		fmt.Printf("\t%s: %q\n", k, v)
+	}
+	data, _ := io.ReadAll(resp.Body)
+	if len(data) > 0 {
+		fmt.Printf("\tBODY: %q\n", data)
+	}
+	fmt.Printf("}\n")
+	resp.Body.Close()
+	resp.Body = io.NopCloser(bytes.NewReader(data))
+	if len(okStatuses) == 0 && resp.StatusCode == http.StatusOK {
+		return resp, nil
 	}
 	for _, status := range okStatuses {
 		if resp.StatusCode == status {

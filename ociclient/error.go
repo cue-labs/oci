@@ -20,14 +20,14 @@ import (
 const errorBodySizeLimit = 8 * 1024
 
 type wireError struct {
-	Code    string          `json:"code"`
+	Code_   string          `json:"code"`
 	Message string          `json:"message,omitempty"`
-	Detail  json.RawMessage `json:"detail,omitempty"`
+	Detail_ json.RawMessage `json:"detail,omitempty"`
 }
 
 func (e *wireError) Error() string {
 	var buf strings.Builder
-	for _, r := range e.Code {
+	for _, r := range e.Code_ {
 		if r == '_' {
 			buf.WriteByte(' ')
 		} else {
@@ -37,23 +37,38 @@ func (e *wireError) Error() string {
 	if buf.Len() == 0 {
 		buf.WriteString("(no code)")
 	}
-	buf.WriteString(": ")
 	if e.Message != "" {
 		buf.WriteString(": ")
 		buf.WriteString(e.Message)
 	}
-	if len(e.Detail) != 0 && !bytes.Equal(e.Detail, []byte("null")) {
+	if len(e.Detail_) != 0 && !bytes.Equal(e.Detail_, []byte("null")) {
 		buf.WriteString("; detail: ")
-		buf.Write(e.Detail)
+		buf.Write(e.Detail_)
 	}
 	return buf.String()
+}
+
+// Code implements [ociregistry.Error.Code].
+func (e *wireError) Code() string {
+	return e.Code_
+}
+
+// Detail implements [ociregistry.Error.Detail].
+func (e *wireError) Detail() any {
+	if len(e.Detail_) == 0 {
+		return nil
+	}
+	// TODO do this once only?
+	var d any
+	json.Unmarshal(e.Detail_, &d)
+	return d
 }
 
 // Is makes it possible for users to write `if errors.Is(err, ociregistry.ErrBlobUnknown)`
 // even when the error hasn't exactly wrapped that error.
 func (e *wireError) Is(err error) bool {
 	var rerr ociregistry.Error
-	return errors.As(err, &rerr) && rerr.Code() == e.Code
+	return errors.As(err, &rerr) && rerr.Code() == e.Code()
 }
 
 type wireErrors struct {
@@ -84,9 +99,31 @@ func (e *wireErrors) Error() string {
 
 // makeError forms an error from a non-OK response.
 func makeError(resp *http.Response) error {
-	if !isJSONMediaType(resp.Header.Get("Content-Type")) {
+	if resp.Request.Method == "HEAD" {
+		// When we've made a HEAD request, we can't see any of
+		// the actual error, so we'll have to make up something
+		// from the HTTP status.
+		var err error
+		switch resp.StatusCode {
+		case http.StatusNotFound:
+			err = ociregistry.ErrNameUnknown
+		case http.StatusUnauthorized:
+			err = ociregistry.ErrUnauthorized
+		case http.StatusForbidden:
+			err = ociregistry.ErrDenied
+		case http.StatusTooManyRequests:
+			err = ociregistry.ErrTooManyRequests
+		case http.StatusBadRequest:
+			err = ociregistry.ErrUnsupported
+		default:
+			return fmt.Errorf("error response: %v", resp.Status)
+		}
+		return fmt.Errorf("error response: %v: %w", resp.Status, err)
+	}
+	if !isJSONMediaType(resp.Header.Get("Content-Type")) || resp.Request.Method == "HEAD" {
 		// TODO include some of the body in this case?
-		return errors.New(resp.Status)
+		data, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("error response: %v; body: %q", resp.Status, data)
 	}
 	data, err := io.ReadAll(io.LimitReader(resp.Body, errorBodySizeLimit+1))
 	if err != nil {

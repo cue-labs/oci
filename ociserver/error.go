@@ -42,8 +42,9 @@ func writeError(resp http.ResponseWriter, err error) {
 		e.Code = ociErr.Code()
 		e.Detail = ociErr.Detail()
 	} else {
-		// TODO This is contrary to spec, but what else should we do?
-		e.Code = "INTERNAL_SERVER_ERROR"
+		// This is contrary to spec, but it's what the Docker registry
+		// does, so it can't be too bad.
+		e.Code = "UNKNOWN"
 	}
 	httpStatus := http.StatusInternalServerError
 	var statusErr *httpStatusError
@@ -52,6 +53,7 @@ func writeError(resp http.ResponseWriter, err error) {
 	} else if status, ok := errorStatuses[e.Code]; ok {
 		httpStatus = status
 	}
+	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(httpStatus)
 
 	data, err := json.Marshal(wireErrors{
@@ -65,7 +67,7 @@ func writeError(resp http.ResponseWriter, err error) {
 
 var errorStatuses = map[string]int{
 	ociregistry.ErrBlobUnknown.Code():         http.StatusNotFound,
-	ociregistry.ErrBlobUploadInvalid.Code():   http.StatusBadRequest,
+	ociregistry.ErrBlobUploadInvalid.Code():   http.StatusRequestedRangeNotSatisfiable,
 	ociregistry.ErrBlobUploadUnknown.Code():   http.StatusNotFound,
 	ociregistry.ErrDigestInvalid.Code():       http.StatusBadRequest,
 	ociregistry.ErrManifestBlobUnknown.Code(): http.StatusNotFound,

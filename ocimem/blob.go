@@ -147,7 +147,7 @@ func (b *Buffer) checkCommit(dig ociregistry.Digest) (err error) {
 		}
 	}()
 	if digest.FromBytes(b.buf) != dig {
-		return fmt.Errorf("digest mismatch %p (sha256(%q) != %s): %w", b, b.buf, dig, ociregistry.ErrDigestInvalid)
+		return fmt.Errorf("digest mismatch (sha256(%q) != %s): %w", b.buf, dig, ociregistry.ErrDigestInvalid)
 	}
 	b.desc = ociregistry.Descriptor{
 		MediaType: "application/octet-stream",

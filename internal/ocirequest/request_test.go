@@ -60,7 +60,7 @@ var parseRequestTests = []struct {
 }, {
 	testName: "uploadChunk",
 	method:   "PATCH",
-	url:      "/v2/somerepo/blobs/uploads/blahblah",
+	url:      "/v2/somerepo/blobs/uploads/YmxhaGJsYWg",
 	wantRequest: &Request{
 		Kind:     ReqBlobUploadChunk,
 		Repo:     "somerepo",
@@ -69,7 +69,7 @@ var parseRequestTests = []struct {
 }, {
 	testName: "uploadChunk",
 	method:   "PATCH",
-	url:      "/v2/somerepo/blobs/uploads/blahblah",
+	url:      "/v2/somerepo/blobs/uploads/YmxhaGJsYWg",
 	wantRequest: &Request{
 		Kind:     ReqBlobUploadChunk,
 		Repo:     "somerepo",
@@ -83,11 +83,11 @@ var parseRequestTests = []struct {
 }, {
 	testName: "getUploadInfo",
 	method:   "GET",
-	url:      "/v2/myorg/myrepo/blobs/uploads/c659529df24a1878f6df8d93c652280235a50b95e862d8e5cb566ee5b9ed6386",
+	url:      "/v2/myorg/myrepo/blobs/uploads/YmxhaGJsYWg",
 	wantRequest: &Request{
 		Kind:     ReqBlobUploadInfo,
 		Repo:     "myorg/myrepo",
-		UploadID: "c659529df24a1878f6df8d93c652280235a50b95e862d8e5cb566ee5b9ed6386",
+		UploadID: "blahblah",
 	},
 }, {
 	testName: "mount",
