@@ -41,7 +41,7 @@ func (c *client) ResolveTag(ctx context.Context, repo string, tag string) (ocire
 }
 
 func (c *client) resolve(ctx context.Context, rreq *ocirequest.Request) (ociregistry.Descriptor, error) {
-	resp, err := c.doRequest(ctx, rreq, nil)
+	resp, err := c.doRequest(ctx, rreq)
 	if err != nil {
 		return ociregistry.Descriptor{}, err
 	}
@@ -70,7 +70,7 @@ func (c *client) GetTag(ctx context.Context, repo string, tagName string) (ocire
 }
 
 func (c *client) read(ctx context.Context, rreq *ocirequest.Request) (_ ociregistry.BlobReader, _err error) {
-	resp, err := c.doRequest(ctx, rreq, nil)
+	resp, err := c.doRequest(ctx, rreq)
 	if err != nil {
 		return nil, err
 	}

@@ -19,7 +19,7 @@ func (c *client) Tags(ctx context.Context, repoName string) ociregistry.Iter[str
 		Kind:  ocirequest.ReqTagsList,
 		Repo:  repoName,
 		ListN: 10000,
-	}, nil)
+	})
 	if err != nil {
 		return errIter[string]{err}
 	}

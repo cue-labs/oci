@@ -72,7 +72,7 @@ func isValidDigest(d string) bool {
 }
 
 // doRequest performs the given OCI request, sending it with the given body (which may be nil).
-func (c *client) doRequest(ctx context.Context, rreq *ocirequest.Request, body io.Reader, okStatuses ...int) (*http.Response, error) {
+func (c *client) doRequest(ctx context.Context, rreq *ocirequest.Request, okStatuses ...int) (*http.Response, error) {
 	method, u := rreq.Construct()
 	req, err := http.NewRequestWithContext(ctx, method, u, nil)
 	if err != nil {

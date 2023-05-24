@@ -33,7 +33,7 @@ func (c *client) DeleteTag(ctx context.Context, repoName string, tagName string)
 }
 
 func (c *client) delete(ctx context.Context, rreq *ocirequest.Request) error {
-	resp, err := c.doRequest(ctx, rreq, nil, http.StatusAccepted)
+	resp, err := c.doRequest(ctx, rreq, http.StatusAccepted)
 	if err != nil {
 		return err
 	}

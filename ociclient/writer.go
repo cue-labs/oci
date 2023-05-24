@@ -56,7 +56,7 @@ func (c *client) MountBlob(ctx context.Context, fromRepo, toRepo string, dig oci
 		FromRepo: fromRepo,
 		Digest:   string(dig),
 	}
-	resp, err := c.doRequest(ctx, rreq, nil, http.StatusCreated, http.StatusAccepted)
+	resp, err := c.doRequest(ctx, rreq, http.StatusCreated, http.StatusAccepted)
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func (c *client) PushBlobChunked(ctx context.Context, repo string, id string, ch
 		resp, err := c.doRequest(ctx, &ocirequest.Request{
 			Kind: ocirequest.ReqBlobStartUpload,
 			Repo: repo,
-		}, nil, http.StatusAccepted)
+		}, http.StatusAccepted)
 		if err != nil {
 			return nil, err
 		}
