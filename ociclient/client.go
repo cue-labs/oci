@@ -14,7 +14,6 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"github.com/rogpeppe/misc/runtime/debug"
 	"github.com/rogpeppe/ociregistry"
 	"github.com/rogpeppe/ociregistry/internal/ocirequest"
 )
@@ -111,7 +110,7 @@ func (c *client) do(req *http.Request, okStatuses ...int) (*http.Response, error
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("cannot do HTTP request: %w; callers %s", err, debug.Callers(0, 20))
+		return nil, fmt.Errorf("cannot do HTTP request: %w", err)
 	}
 	fmt.Printf("-> %s\n", resp.Status)
 	for k, v := range resp.Header {
