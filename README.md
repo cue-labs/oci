@@ -1,6 +1,6 @@
 # `ociregistry`
 
-In the top level package (`ociregistry`) this module defines a Go interface that encapsulates the operations provided by an OCI
+In the top level package (`ociregistry`) this module defines a [Go interface](./interface.go) that encapsulates the operations provided by an OCI
 registry.
 
 It also provides a lightweight in-memory implementation of that interface (`ocimem`)
