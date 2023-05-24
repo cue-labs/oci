@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 
 	"github.com/rogpeppe/ociregistry/ociclient"
-	"github.com/rogpeppe/ociregistry/ocidebug"
 	"github.com/rogpeppe/ociregistry/ocimem"
 	"github.com/rogpeppe/ociregistry/ociserver"
 )
@@ -18,13 +17,9 @@ func main() {
 	local := httptest.NewServer(ociserver.New(ocimem.New(), &ociserver.Options{
 		DebugID: "direct",
 	}))
-	proxy := ociserver.New(ocidebug.New(ociclient.New(local.URL), logf), &ociserver.Options{
+	proxy := ociserver.New(ociclient.New(local.URL), &ociserver.Options{
 		DebugID: "proxy",
 	})
 	err := http.ListenAndServe(":5000", proxy)
 	log.Fatal(err)
-}
-
-func logf(f string, a ...any) {
-	log.Printf("ociclient: %s", fmt.Sprintf(f, a...))
 }
