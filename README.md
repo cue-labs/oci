@@ -13,4 +13,4 @@ That said, it is in total flux at the moment! Do not use it as a dependency, as 
 The aim, however, is to provide an ergonomic interface for defining and layering
 OCI registry implementations.
 
-The code was originally derived from the [go-containerregistry registry](https://pkg.go.dev/github.com/google/go-containerregistry/pkg/registry], but has considerably diverged since then.
+The code was originally derived from the [go-containerregistry registry](https://pkg.go.dev/github.com/google/go-containerregistry/pkg/registry), but has considerably diverged since then.
