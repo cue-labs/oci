@@ -8,11 +8,11 @@ go 1.21
 // Use the local repository for the ociregistry module.
 replace github.com/rogpeppe/ociregistry => ../..
 
-replace github.com/opencontainers/distribution-spec/conformance => /home/rogpeppe/other/oci-distribution-spec/conformance
-
 require (
 	github.com/go-quicktest/qt v0.1.0
 	github.com/opencontainers/distribution-spec/conformance v0.0.0-20230516164017-7fcdf80f3c8b
+	github.com/opencontainers/go-digest v1.0.0
+	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/rogpeppe/ociregistry v0.0.0-00010101000000-000000000000
 	oras.land/oras-go/v2 v2.2.0
 )
@@ -29,8 +29,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
-	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
 	github.com/rogpeppe/go-internal v1.6.1 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect
