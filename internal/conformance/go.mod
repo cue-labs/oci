@@ -35,3 +35,5 @@ require (
 	golang.org/x/sys v0.6.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 )
+
+// replace 	github.com/opencontainers/distribution-spec/conformance  => /home/rogpeppe/other/oci-distribution-spec/conformance
