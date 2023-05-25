@@ -24,6 +24,7 @@ type Interface interface {
 	Reader
 	Deleter
 	Lister
+	private()
 }
 
 type ReadWriter interface {

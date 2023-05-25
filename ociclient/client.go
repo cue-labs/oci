@@ -33,6 +33,7 @@ func New(hostURL string) ociregistry.Interface {
 }
 
 type client struct {
+	*ociregistry.Funcs
 	url    *url.URL
 	client *http.Client
 }

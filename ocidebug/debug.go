@@ -25,6 +25,7 @@ var blobWriterID int32
 type logger struct {
 	logf func(f string, a ...any)
 	r    ociregistry.Interface
+	*ociregistry.Funcs
 }
 
 func (r *logger) DeleteBlob(ctx context.Context, repoName string, digest ociregistry.Digest) error {

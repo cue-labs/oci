@@ -10,6 +10,7 @@ import (
 )
 
 type Registry struct {
+	*ociregistry.Funcs
 	mu    sync.Mutex
 	repos map[string]*repository
 }
