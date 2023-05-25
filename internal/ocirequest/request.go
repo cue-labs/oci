@@ -293,7 +293,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 		}
 		uploadID, err := base64.RawURLEncoding.DecodeString(uploadID64)
 		if err != nil {
-			return nil, fmt.Errorf("invalid upload ID (cannot decode)")
+			return nil, fmt.Errorf("invalid upload ID %q (cannot decode)", uploadID64)
 		}
 		if !utf8.Valid(uploadID) {
 			return nil, fmt.Errorf("upload ID %q decoded to invalid utf8", uploadID64)

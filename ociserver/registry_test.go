@@ -175,7 +175,7 @@ func TestCalls(t *testing.T) {
 		{
 			Description: "upload_put_missing_digest",
 			Method:      "PUT",
-			URL:         "/v2/foo/blobs/uploads/1",
+			URL:         "/v2/foo/blobs/uploads/MQ",
 			WantCode:    http.StatusBadRequest,
 		},
 		{
@@ -196,7 +196,7 @@ func TestCalls(t *testing.T) {
 		{
 			Description: "upload_good_digest",
 			Method:      "PUT",
-			URL:         "/v2/foo/blobs/uploads/1?digest=sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
+			URL:         "/v2/foo/blobs/uploads/MQ?digest=sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
 			WantCode:    http.StatusCreated,
 			Body:        "foo",
 			WantHeader:  map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
@@ -204,14 +204,14 @@ func TestCalls(t *testing.T) {
 		{
 			Description: "upload_bad_digest",
 			Method:      "PUT",
-			URL:         "/v2/foo/blobs/uploads/1?digest=sha256:baddigest",
+			URL:         "/v2/foo/blobs/uploads/MQ?digest=sha256:baddigest",
 			WantCode:    http.StatusBadRequest,
 			Body:        "foo",
 		},
 		{
 			Description: "stream_upload",
 			Method:      "PATCH",
-			URL:         "/v2/foo/blobs/uploads/1",
+			URL:         "/v2/foo/blobs/uploads/MQ",
 			WantCode:    http.StatusAccepted,
 			Body:        "foo",
 			RequestHeader: map[string]string{
@@ -219,23 +219,23 @@ func TestCalls(t *testing.T) {
 			},
 			WantHeader: map[string]string{
 				"Range":    "0-2",
-				"Location": "/v2/foo/blobs/uploads/1",
+				"Location": "/v2/foo/blobs/uploads/MQ",
 			},
 		},
 		{
 			skip:        true,
 			Description: "stream_duplicate_upload",
 			Method:      "PATCH",
-			URL:         "/v2/foo/blobs/uploads/1",
+			URL:         "/v2/foo/blobs/uploads/MQ",
 			WantCode:    http.StatusBadRequest,
 			Body:        "foo",
-			BlobStream:  map[string]string{"1": "foo"},
+			BlobStream:  map[string]string{"MQ": "foo"},
 		},
 		{
 			Description: "stream_finish_upload",
 			Method:      "PUT",
-			URL:         "/v2/foo/blobs/uploads/1?digest=sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
-			BlobStream:  map[string]string{"1": "foo"},
+			URL:         "/v2/foo/blobs/uploads/MQ?digest=sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
+			BlobStream:  map[string]string{"MQ": "foo"},
 			WantCode:    http.StatusCreated,
 			WantHeader:  map[string]string{"Docker-Content-Digest": "sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"},
 		},
@@ -337,19 +337,19 @@ func TestCalls(t *testing.T) {
 		{
 			Description:   "Chunk_upload_start",
 			Method:        "PATCH",
-			URL:           "/v2/foo/blobs/uploads/1",
+			URL:           "/v2/foo/blobs/uploads/MQ",
 			RequestHeader: map[string]string{"Content-Range": "0-3"},
 			WantCode:      http.StatusAccepted,
 			Body:          "foo",
 			WantHeader: map[string]string{
 				"Range":    "0-2",
-				"Location": "/v2/foo/blobs/uploads/1",
+				"Location": "/v2/foo/blobs/uploads/MQ",
 			},
 		},
 		{
 			Description:   "Chunk_upload_bad_content_range",
 			Method:        "PATCH",
-			URL:           "/v2/foo/blobs/uploads/1",
+			URL:           "/v2/foo/blobs/uploads/MQ",
 			RequestHeader: map[string]string{"Content-Range": "0-bar"},
 			// TODO the original had 405 response here. Which is correct?
 			WantCode: http.StatusBadRequest,
@@ -358,8 +358,8 @@ func TestCalls(t *testing.T) {
 		{
 			Description:   "Chunk_upload_overlaps_previous_data",
 			Method:        "PATCH",
-			URL:           "/v2/foo/blobs/uploads/1",
-			BlobStream:    map[string]string{"1": "foo"},
+			URL:           "/v2/foo/blobs/uploads/MQ",
+			BlobStream:    map[string]string{"MQ": "foo"},
 			RequestHeader: map[string]string{"Content-Range": "2-5"},
 			WantCode:      http.StatusRequestedRangeNotSatisfiable,
 			Body:          "bar",
@@ -367,14 +367,14 @@ func TestCalls(t *testing.T) {
 		{
 			Description:   "Chunk_upload_after_previous_data",
 			Method:        "PATCH",
-			URL:           "/v2/foo/blobs/uploads/1",
-			BlobStream:    map[string]string{"1": "foo"},
+			URL:           "/v2/foo/blobs/uploads/MQ",
+			BlobStream:    map[string]string{"MQ": "foo"},
 			RequestHeader: map[string]string{"Content-Range": "3-6"},
 			WantCode:      http.StatusAccepted,
 			Body:          "bar",
 			WantHeader: map[string]string{
 				"Range":    "0-5",
-				"Location": "/v2/foo/blobs/uploads/1",
+				"Location": "/v2/foo/blobs/uploads/MQ",
 			},
 		},
 		{

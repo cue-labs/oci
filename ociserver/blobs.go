@@ -130,7 +130,6 @@ func (r *registry) handleBlobUploadChunk(ctx context.Context, resp http.Response
 }
 
 func (r *registry) handleBlobCompleteUpload(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	r.logf("handleBlobCompleteUpload; digest %q", rreq.Digest)
 	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, rreq.UploadID, 0)
 	if err != nil {
 		return err

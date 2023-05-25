@@ -35,6 +35,9 @@ import (
 	"github.com/rogpeppe/ociregistry/internal/ocirequest"
 )
 
+// debug causes debug messages to be emitted when running the server.
+const debug = false
+
 // Options holds options for the server.
 type Options struct {
 	// DisableReferrersAPI, when true, causes the registry to behave as if
@@ -84,8 +87,6 @@ func New(backend ociregistry.Interface, opts *Options) http.Handler {
 func (r *registry) logf(f string, a ...any) {
 	log.Printf("ociserver %s: %s", r.debugID, fmt.Sprintf(f, a...))
 }
-
-const debug = true
 
 type registry struct {
 	backend          ociregistry.Interface
