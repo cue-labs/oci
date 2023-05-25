@@ -20,36 +20,11 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/opencontainers/go-digest"
+
 	"github.com/rogpeppe/ociregistry"
 	"github.com/rogpeppe/ociregistry/internal/ocirequest"
 )
-
-func (r *registry) handleBlobHead(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	desc, err := r.backend.ResolveBlob(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest))
-	if err != nil {
-		return err
-	}
-	resp.Header().Set("Content-Length", fmt.Sprint(desc.Size))
-	resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
-	resp.WriteHeader(http.StatusOK)
-	return nil
-}
-
-func (r *registry) handleBlobGet(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	blob, err := r.backend.GetBlob(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest))
-	if err != nil {
-		return err
-	}
-	defer blob.Close()
-	desc := blob.Descriptor()
-	resp.Header().Set("Content-Type", desc.MediaType)
-	resp.Header().Set("Content-Length", fmt.Sprint(desc.Size))
-	resp.Header().Set("Docker-Content-Digest", rreq.Digest)
-	resp.WriteHeader(http.StatusOK)
-
-	io.Copy(resp, blob)
-	return nil
-}
 
 func (r *registry) handleBlobUploadBlob(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	// TODO check that Content-Type is application/octet-stream?
@@ -158,11 +133,34 @@ func (r *registry) handleBlobMount(ctx context.Context, resp http.ResponseWriter
 	return nil
 }
 
-func (r *registry) handleBlobDelete(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	if err := r.backend.DeleteBlob(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest)); err != nil {
+func (r *registry) handleManifestPut(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	mediaType := req.Header.Get("Content-Type")
+	if mediaType == "" {
+		mediaType = "application/octet-stream"
+	}
+	// TODO check that the media type is valid?
+	// TODO size limit
+	data, err := io.ReadAll(req.Body)
+	if err != nil {
+		return fmt.Errorf("cannot read content: %v", err)
+	}
+	dig := digest.FromBytes(data)
+	var tag string
+	if rreq.Tag != "" {
+		tag = rreq.Tag
+	} else {
+		if ociregistry.Digest(rreq.Digest) != dig {
+			return ociregistry.ErrDigestInvalid
+		}
+	}
+	desc, err := r.backend.PushManifest(ctx, rreq.Repo, tag, data, mediaType)
+	if err != nil {
 		return err
 	}
-	resp.WriteHeader(http.StatusAccepted)
+	// TODO OCI-Subject header?
+	resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
+	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/manifests/"+string(desc.Digest))
+	resp.WriteHeader(http.StatusCreated)
 	return nil
 }
 

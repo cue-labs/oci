@@ -31,12 +31,17 @@ import (
 	"net/http"
 	"sync/atomic"
 
+	ocispecroot "github.com/opencontainers/image-spec/specs-go"
 	"github.com/rogpeppe/ociregistry"
 	"github.com/rogpeppe/ociregistry/internal/ocirequest"
 )
 
 // debug causes debug messages to be emitted when running the server.
 const debug = false
+
+var v2 = ocispecroot.Versioned{
+	SchemaVersion: 2,
+}
 
 // Options holds options for the server.
 type Options struct {
@@ -144,6 +149,11 @@ func (r *registry) v2(resp http.ResponseWriter, req *http.Request) (_err error) 
 	return handle(r, req.Context(), resp, req, rreq)
 }
 
+func (r *registry) handlePing(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
+	return nil
+}
+
 // ParseError represents an error that can happen when parsing.
 // The Err field holds one of the possible error values below.
 type ParseError struct {
@@ -169,9 +179,4 @@ func handlerErrorForRequestParseError(err error) error {
 		return withHTTPCode(http.StatusBadRequest, err)
 	}
 	return err
-}
-
-func (r *registry) handlePing(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
-	return nil
 }
