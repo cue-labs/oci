@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -30,9 +29,10 @@ func (c *client) PushManifest(ctx context.Context, repo string, tag string, cont
 	}
 
 	rreq := &ocirequest.Request{
-		Kind: ocirequest.ReqManifestPut,
-		Repo: repo,
-		Tag:  tag,
+		Kind:   ocirequest.ReqManifestPut,
+		Repo:   repo,
+		Tag:    tag,
+		Digest: string(desc.Digest),
 	}
 	method, u := rreq.Construct()
 	req, err := http.NewRequestWithContext(ctx, method, u, bytes.NewReader(contents))
@@ -211,10 +211,6 @@ type doResult struct {
 }
 
 func (w *blobWriter) Write(buf []byte) (_n int, _err error) {
-	log.Printf("blobWriter.Write %q {", buf)
-	defer func() {
-		log.Printf("} -> %d, %v", _n, _err)
-	}()
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	nwritten := 0
@@ -259,10 +255,6 @@ func (w *blobWriter) flushAll() (int, error) {
 // and starts the next chunk upload if there's some data
 // to write.
 func (w *blobWriter) flush() (_n int, _err error) {
-	log.Printf("blobWriter.flush (chunk %d, inprogress %d) {", len(w.chunk), len(w.chunkInProgress))
-	defer func() {
-		log.Printf("} -> %v, %v", _n, _err)
-	}()
 	nwritten := 0
 	if w.response != nil {
 		// An upload PATCH is still
@@ -308,7 +300,6 @@ func (w *blobWriter) flush() (_n int, _err error) {
 	req.Header.Set("Content-Range", rangeString(w.flushed, w.flushed+int64(len(w.chunkInProgress))))
 	w.response = make(chan doResult, 1)
 	go func() {
-		log.Printf("sending PATCH with data %q", w.chunkInProgress)
 		resp, err := w.client.do(req, http.StatusAccepted)
 		if err == nil {
 			resp.Body.Close()
@@ -346,7 +337,6 @@ func (w *blobWriter) ID() string {
 }
 
 func (w *blobWriter) Commit(digest ociregistry.Digest) (ociregistry.Digest, error) {
-	log.Printf("blobWriter.Commit %q", digest)
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	_, err := w.flushAll()

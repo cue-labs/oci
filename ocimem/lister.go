@@ -18,7 +18,7 @@ func (r *Registry) Tags(ctx context.Context, repoName string) ociregistry.Iter[s
 	defer r.mu.Unlock()
 	repo, err := r.repo(repoName)
 	if err != nil {
-		return errIter[string]{err}
+		return ociregistry.ErrorIter[string](err)
 	}
 	return mapKeysIter(repo.tags, stringLess)
 }
@@ -28,10 +28,10 @@ func (r *Registry) Referrers(ctx context.Context, repoName string, digest ocireg
 	defer r.mu.Unlock()
 	repo, err := r.repo(repoName)
 	if err != nil {
-		return errIter[ociregistry.Descriptor]{err}
+		return ociregistry.ErrorIter[ociregistry.Descriptor](err)
 	}
 	var referrers []ociregistry.Descriptor
-	for _, b := range repo.blobs {
+	for _, b := range repo.manifests {
 		if b.subject != digest {
 			continue
 		}
@@ -42,20 +42,6 @@ func (r *Registry) Referrers(ctx context.Context, repoName string, digest ocireg
 		return descriptorLess(referrers[i], referrers[j])
 	})
 	return ociregistry.SliceIter(referrers)
-}
-
-type errIter[T any] struct {
-	err error
-}
-
-func (it errIter[T]) Close() {}
-
-func (it errIter[T]) Next() (T, bool) {
-	return *new(T), false
-}
-
-func (it errIter[T]) Error() error {
-	return it.err
 }
 
 func mapKeysIter[K comparable, V any](m map[K]V, less func(K, K) bool) ociregistry.Iter[K] {

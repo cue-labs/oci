@@ -111,18 +111,18 @@ func (r *logger) PushManifest(ctx context.Context, repoName string, tag string, 
 }
 
 func (r *logger) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, artifactType string) ociregistry.Iter[ociregistry.Descriptor] {
-	// TODO
-	return r.r.Referrers(ctx, repoName, digest, artifactType)
+	r.logf("Referrers {")
+	return logIterReturn(r, r.r.Referrers(ctx, repoName, digest, artifactType))
 }
 
 func (r *logger) Repositories(ctx context.Context) ociregistry.Iter[string] {
-	// TODO
-	return r.r.Repositories(ctx)
+	r.logf("Repositories {")
+	return logIterReturn(r, r.r.Repositories(ctx))
 }
 
 func (r *logger) Tags(ctx context.Context, repoName string) ociregistry.Iter[string] {
-	// TODO
-	return r.r.Tags(ctx, repoName)
+	r.logf("Tags {")
+	return logIterReturn(r, r.r.Tags(ctx, repoName))
 }
 
 func (r *logger) ResolveBlob(ctx context.Context, repoName string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
@@ -204,4 +204,33 @@ func (w blobWriter) Cancel() error {
 	err := w.w.Cancel()
 	w.logf("} -> %v", err)
 	return err
+}
+
+func logIterReturn[T any](r *logger, it ociregistry.Iter[T]) ociregistry.Iter[T] {
+	items, err := ociregistry.All(it)
+	if err != nil {
+		if len(items) > 0 {
+			r.logf("} -> %#v, %v", items, err)
+		} else {
+			r.logf("} -> %v", err)
+		}
+	} else {
+		r.logf("} -> %#v", items)
+	}
+	if err == nil {
+		return ociregistry.SliceIter(items)
+	}
+	return errIter[T]{
+		ociregistry.SliceIter(items),
+		err,
+	}
+}
+
+type errIter[T any] struct {
+	ociregistry.Iter[T]
+	err error
+}
+
+func (it errIter[T]) Error() error {
+	return it.err
 }

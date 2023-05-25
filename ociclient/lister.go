@@ -6,12 +6,34 @@ import (
 	"fmt"
 	"io"
 
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+
 	"github.com/rogpeppe/ociregistry"
 	"github.com/rogpeppe/ociregistry/internal/ocirequest"
 )
 
 func (c *client) Repositories(ctx context.Context) ociregistry.Iter[string] {
-	return errIter[string]{fmt.Errorf("Repositories unsupported: %w", ociregistry.ErrUnsupported)}
+	// TODO paging
+	resp, err := c.doRequest(ctx, &ocirequest.Request{
+		Kind:  ocirequest.ReqCatalogList,
+		ListN: -1,
+	})
+	if err != nil {
+		return ociregistry.ErrorIter[string](err)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		return ociregistry.ErrorIter[string](err)
+	}
+	var catalog struct {
+		Repos []string `json:"repositories"`
+	}
+	if err := json.Unmarshal(data, &catalog); err != nil {
+		return ociregistry.ErrorIter[string](fmt.Errorf("cannot unmarshal catalog response: %v", err))
+	}
+	return ociregistry.SliceIter(catalog.Repos)
 }
 
 func (c *client) Tags(ctx context.Context, repoName string) ociregistry.Iter[string] {
@@ -21,39 +43,45 @@ func (c *client) Tags(ctx context.Context, repoName string) ociregistry.Iter[str
 		ListN: 10000,
 	})
 	if err != nil {
-		return errIter[string]{err}
+		return ociregistry.ErrorIter[string](err)
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		return errIter[string]{err}
+		return ociregistry.ErrorIter[string](err)
 	}
 	var tagsResponse struct {
 		Repo string   `json:"name"`
 		Tags []string `json:"tags"`
 	}
 	if err := json.Unmarshal(data, &tagsResponse); err != nil {
-		return errIter[string]{fmt.Errorf("cannot unmarshal tags list response: %v", err)}
+		return ociregistry.ErrorIter[string](fmt.Errorf("cannot unmarshal tags list response: %v", err))
 	}
 	// TODO paging
 	return ociregistry.SliceIter(tagsResponse.Tags)
 }
 
 func (c *client) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, artifactType string) ociregistry.Iter[ociregistry.Descriptor] {
-	return errIter[ociregistry.Descriptor]{fmt.Errorf("Referrers unsupported: %w", ociregistry.ErrUnsupported)}
-}
+	// TODO paging
+	resp, err := c.doRequest(ctx, &ocirequest.Request{
+		Kind:   ocirequest.ReqReferrersList,
+		Repo:   repoName,
+		Digest: string(digest),
+		ListN:  10000,
+	})
+	if err != nil {
+		return ociregistry.ErrorIter[ociregistry.Descriptor](err)
+	}
 
-type errIter[T any] struct {
-	err error
-}
-
-func (it errIter[T]) Close() {}
-
-func (it errIter[T]) Next() (T, bool) {
-	return *new(T), false
-}
-
-func (it errIter[T]) Error() error {
-	return it.err
+	data, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		return ociregistry.ErrorIter[ociregistry.Descriptor](err)
+	}
+	var referrersResponse ocispec.Index
+	if err := json.Unmarshal(data, &referrersResponse); err != nil {
+		return ociregistry.ErrorIter[ociregistry.Descriptor](fmt.Errorf("cannot unmarshal referrers response: %v", err))
+	}
+	return ociregistry.SliceIter(referrersResponse.Manifests)
 }

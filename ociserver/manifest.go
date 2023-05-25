@@ -169,6 +169,7 @@ func (r *registry) handleTagsList(ctx context.Context, resp http.ResponseWriter,
 	io.Copy(resp, bytes.NewReader([]byte(msg)))
 	return nil
 }
+
 func (r *registry) handleCatalogList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	n := 10000
 	if rreq.ListN >= 0 {

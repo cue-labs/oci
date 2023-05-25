@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -17,6 +18,8 @@ import (
 	"github.com/rogpeppe/ociregistry"
 	"github.com/rogpeppe/ociregistry/internal/ocirequest"
 )
+
+const debug = false
 
 func New(hostURL string) ociregistry.Interface {
 	u, err := url.Parse(hostURL)
@@ -103,26 +106,34 @@ func (c *client) do(req *http.Request, okStatuses ...int) (*http.Response, error
 		// when pushing blobs.
 		req.Header.Set("Expect", "100-continue")
 	}
-	fmt.Printf("client.Do: %s %s {\n", req.Method, req.URL)
-	fmt.Printf("\tBODY: %#v\n", req.Body)
-	for k, v := range req.Header {
-		fmt.Printf("\t%s: %q\n", k, v)
+	var buf bytes.Buffer
+	if debug {
+		fmt.Fprintf(&buf, "client.Do: %s %s {{\n", req.Method, req.URL)
+		fmt.Fprintf(&buf, "\tBODY: %#v\n", req.Body)
+		for k, v := range req.Header {
+			fmt.Fprintf(&buf, "\t%s: %q\n", k, v)
+		}
+		log.Printf("%s", buf.Bytes())
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("cannot do HTTP request: %w", err)
 	}
-	fmt.Printf("-> %s\n", resp.Status)
-	for k, v := range resp.Header {
-		fmt.Printf("\t%s: %q\n", k, v)
+	if debug {
+		buf.Reset()
+		fmt.Fprintf(&buf, "} -> %s {\n", resp.Status)
+		for k, v := range resp.Header {
+			fmt.Fprintf(&buf, "\t%s: %q\n", k, v)
+		}
+		data, _ := io.ReadAll(resp.Body)
+		if len(data) > 0 {
+			fmt.Fprintf(&buf, "\tBODY: %q\n", data)
+		}
+		fmt.Fprintf(&buf, "}}\n")
+		resp.Body.Close()
+		resp.Body = io.NopCloser(bytes.NewReader(data))
+		log.Printf("%s", buf.Bytes())
 	}
-	data, _ := io.ReadAll(resp.Body)
-	if len(data) > 0 {
-		fmt.Printf("\tBODY: %q\n", data)
-	}
-	fmt.Printf("}\n")
-	resp.Body.Close()
-	resp.Body = io.NopCloser(bytes.NewReader(data))
 	if len(okStatuses) == 0 && resp.StatusCode == http.StatusOK {
 		return resp, nil
 	}

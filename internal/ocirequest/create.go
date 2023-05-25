@@ -6,7 +6,19 @@ import (
 	"net/url"
 )
 
-func (req *Request) Construct() (method string, url string) {
+func (req *Request) Construct() (method string, ustr string) {
+	method, ustr = req.construct()
+	u, err := url.Parse(ustr)
+	if err != nil {
+		panic(err)
+	}
+	if _, err := Parse(method, u); err != nil {
+		panic(fmt.Errorf("invalid request %q %q constructed from %#v: %v", method, ustr, req, err))
+	}
+	return method, ustr
+}
+
+func (req *Request) construct() (method string, url string) {
 	switch req.Kind {
 	case ReqPing:
 		return "GET", "/v2/"

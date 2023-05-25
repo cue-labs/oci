@@ -89,6 +89,8 @@ type Request struct {
 	//
 	// Valid for:
 	//	ReqTagsList
+	//	ReqCatalog
+	//	ReqReferrers
 	ListN int
 
 	// listLast holds the item to start just after
@@ -96,6 +98,8 @@ type Request struct {
 	//
 	// Valid for:
 	//	ReqTagsList
+	//	ReqCatalog
+	//	ReqReferrers
 	ListLast string
 }
 
@@ -199,6 +203,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 			return nil, ErrMethodNotAllowed
 		}
 		rreq.Kind = ReqCatalogList
+		setListQueryParams(&rreq, urlq)
 		return &rreq, nil
 	}
 	uploadPath, ok := strings.CutSuffix(path, "/blobs/uploads/")
@@ -346,15 +351,9 @@ func parse(method string, u *url.URL) (*Request, error) {
 		if last != "list" {
 			return nil, ErrNotFound
 		}
-		rreq.ListN = -1
-		if nstr := urlq.Get("n"); nstr != "" {
-			n, err := strconv.Atoi(nstr)
-			if err != nil {
-				return nil, ErrBadRequest // TODO withHTTPCode(http.StatusBadRequest, fmt.Errorf("n is not a valid integer"))
-			}
-			rreq.ListN = n
+		if err := setListQueryParams(&rreq, urlq); err != nil {
+			return nil, err
 		}
-		rreq.ListLast = urlq.Get("last")
 		if method != "GET" {
 			return nil, ErrMethodNotAllowed
 		}
@@ -375,11 +374,27 @@ func parse(method string, u *url.URL) (*Request, error) {
 		if !isValidRepoName(rreq.Repo) {
 			return nil, ociregistry.ErrNameInvalid
 		}
+		// TODO is there any kind of pagination for referrers?
+		// We'll set ListN to be future-proof.
+		rreq.ListN = -1
 		rreq.Digest = last
 		rreq.Kind = ReqReferrersList
 		return &rreq, nil
 	}
 	return nil, ErrNotFound
+}
+
+func setListQueryParams(rreq *Request, urlq url.Values) error {
+	rreq.ListN = -1
+	if nstr := urlq.Get("n"); nstr != "" {
+		n, err := strconv.Atoi(nstr)
+		if err != nil {
+			return fmt.Errorf("n is not a valid integer: %w", ErrBadRequest)
+		}
+		rreq.ListN = n
+	}
+	rreq.ListLast = urlq.Get("last")
+	return nil
 }
 
 func cutLast(s, sep string) (before, after string, found bool) {

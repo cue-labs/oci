@@ -42,3 +42,23 @@ func (it *sliceIter[T]) Next() (T, bool) {
 func (it *sliceIter[T]) Error() error {
 	return nil
 }
+
+// ErrorIter returns an iterator that has no
+// items and always returns the given error.
+func ErrorIter[T any](err error) Iter[T] {
+	return errorIter[T]{err}
+}
+
+type errorIter[T any] struct {
+	err error
+}
+
+func (it errorIter[T]) Close() {}
+
+func (it errorIter[T]) Next() (T, bool) {
+	return *new(T), false
+}
+
+func (it errorIter[T]) Error() error {
+	return it.err
+}
