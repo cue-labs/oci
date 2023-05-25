@@ -125,6 +125,9 @@ func (c *client) PushBlob(ctx context.Context, repo string, desc ociregistry.Des
 const defaultChunkSize = 64 * 1024
 
 func (c *client) PushBlobChunked(ctx context.Context, repo string, id string, chunkSize int) (ociregistry.BlobWriter, error) {
+	if chunkSize <= 0 {
+		chunkSize = defaultChunkSize
+	}
 	if id == "" {
 		resp, err := c.doRequest(ctx, &ocirequest.Request{
 			Kind: ocirequest.ReqBlobStartUpload,
@@ -168,14 +171,10 @@ func (c *client) PushBlobChunked(ctx context.Context, repo string, id string, ch
 	if p0 != 0 {
 		return nil, fmt.Errorf("range %q does not start with 0", rangeStr)
 	}
-	if chunkSize == 0 {
-		chunkSize = defaultChunkSize
-	}
 	return &blobWriter{
 		ctx:       ctx,
 		client:    c,
 		chunkSize: chunkSizeFromResponse(resp, chunkSize),
-		chunk:     make([]byte, 0, chunkSize),
 		size:      p1,
 		flushed:   p1,
 		location:  location,
@@ -210,106 +209,57 @@ type doResult struct {
 	err  error
 }
 
-func (w *blobWriter) Write(buf []byte) (_n int, _err error) {
+func (w *blobWriter) Write(buf []byte) (int, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	nwritten := 0
-	for {
-		if len(w.chunk) < cap(w.chunk) {
-			// Copy as much as we can into the chunk buffer.
-			n := copy(w.chunk[len(w.chunk):cap(w.chunk)], buf)
-			w.chunk = w.chunk[:len(w.chunk)+n]
-			buf = buf[n:]
-			nwritten += n
+	if len(w.chunk)+len(buf) >= w.chunkSize {
+		if err := w.flush(buf); err != nil {
+			return 0, err
 		}
-		if len(w.chunk) < cap(w.chunk) {
-			// We need more data before we can send the request,
-			// so let the user write it.
-			w.size += int64(nwritten)
-			return nwritten, nil
+	} else {
+		if w.chunk == nil {
+			w.chunk = make([]byte, 0, w.chunkSize)
 		}
-		// The chunk buffer is full. First flush it.
-		n, err := w.flush()
-		if err != nil {
-			nwritten += n
-			w.size += int64(nwritten)
-			return nwritten, err
-		}
-		nwritten += n
+		w.chunk = append(w.chunk, buf...)
 	}
-}
-
-// flushAll flushes all the data in the writer and waits for
-// all chunk uploads to complete.
-func (w *blobWriter) flushAll() (int, error) {
-	n, err := w.flush()
-	if err != nil {
-		return n, err
-	}
-	n1, err := w.flush()
-	n += n1
-	return n, err
+	w.size += int64(len(buf))
+	return len(buf), nil
 }
 
 // flush waits for any existing chunk upload to complete
 // and starts the next chunk upload if there's some data
 // to write.
-func (w *blobWriter) flush() (_n int, _err error) {
-	nwritten := 0
-	if w.response != nil {
-		// An upload PATCH is still
-		// in progress; we can't make any progress now, so wait
-		// for the response to complete before uploading the next chunk.
-		select {
-		case resp := <-w.response:
-			if resp.err != nil {
-				return 0, resp.err
-			}
-			nwritten += len(w.chunkInProgress)
-			location, err := locationFromResponse(resp.resp)
-			if err != nil {
-				return nwritten, fmt.Errorf("bad Location in response: %v", err)
-			}
-			// TODO is there something we could be doing with the Range header in the response?
-			w.location = location
-			w.response = nil
-		case <-w.ctx.Done():
-			return 0, fmt.Errorf("context cancelled while sending data: %v", w.ctx.Err())
-		}
+func (w *blobWriter) flush(buf []byte) error {
+	if len(buf)+len(w.chunk) == 0 {
+		return nil
 	}
-	// We just got confirmation from the server that we wrote the chunk.
-	w.flushed += int64(len(w.chunkInProgress))
-	// Now swap the buffers and process with a new PATCH.
-	w.chunk, w.chunkInProgress = w.chunkInProgress, w.chunk
-	w.chunk = w.chunk[:0]
-	if cap(w.chunk) == 0 {
-		w.chunk = make([]byte, 0, w.chunkSize)
-	}
-
-	if len(w.chunkInProgress) == 0 {
-		// Nothing more to write.
-		return nwritten, nil
-	}
-	// Start a new PATCH request to send the data in w.chunkInProgress.
+	// Start a new PATCH request to send the currently outstanding data.
 	// It'll send on w.response when done
-	req, err := http.NewRequestWithContext(w.ctx, "PATCH", "", bytes.NewReader(w.chunkInProgress))
+	req, err := http.NewRequestWithContext(w.ctx, "PATCH", "", io.MultiReader(
+		bytes.NewReader(w.chunk),
+		bytes.NewReader(buf),
+	))
 	if err != nil {
-		return nwritten, fmt.Errorf("cannot make PATCH request: %v", err)
+		return fmt.Errorf("cannot make PATCH request: %v", err)
 	}
 	req.URL = w.location
+	req.ContentLength = int64(len(w.chunk) + len(buf))
 	req.Header.Set("Content-Range", rangeString(w.flushed, w.flushed+int64(len(w.chunkInProgress))))
-	w.response = make(chan doResult, 1)
-	go func() {
-		resp, err := w.client.do(req, http.StatusAccepted)
-		if err == nil {
-			resp.Body.Close()
-		}
-		w.response <- doResult{
-			resp: resp,
-			err:  err,
-		}
-	}()
-	return nwritten, nil
+	resp, err := w.client.do(req, http.StatusAccepted)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	location, err := locationFromResponse(resp)
+	if err != nil {
+		return fmt.Errorf("bad Location in response: %v", err)
+	}
+	// TODO is there something we could be doing with the Range header in the response?
+	w.location = location
+	w.response = nil
+	w.flushed += req.ContentLength
+	w.chunk = w.chunk[:0]
+	return nil
 }
 
 func (w *blobWriter) Close() error {
@@ -318,7 +268,7 @@ func (w *blobWriter) Close() error {
 	if w.closed {
 		return w.closeErr
 	}
-	_, err := w.flushAll()
+	err := w.flush(nil)
 	w.closed = true
 	w.closeErr = err
 	return err
@@ -339,8 +289,7 @@ func (w *blobWriter) ID() string {
 func (w *blobWriter) Commit(digest ociregistry.Digest) (ociregistry.Digest, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	_, err := w.flushAll()
-	if err != nil {
+	if err := w.flush(nil); err != nil {
 		return "", fmt.Errorf("cannot flush data before commit: %v", err)
 	}
 	req, _ := http.NewRequestWithContext(w.ctx, "PUT", "", nil)
