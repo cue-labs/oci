@@ -21,6 +21,8 @@ import (
 // value to get an implementation of the private method. This means that it will
 // be possible to add members to Interface in the future without breaking compatibility.
 type Funcs struct {
+	NewError func(ctx context.Context, methodName, repo string) error
+
 	GetBlob_         func(ctx context.Context, repo string, digest Digest) (BlobReader, error)
 	GetManifest_     func(ctx context.Context, repo string, digest Digest) (BlobReader, error)
 	GetTag_          func(ctx context.Context, repo string, tagName string) (BlobReader, error)
@@ -42,118 +44,121 @@ type Funcs struct {
 // This blesses Funcs as the canonical Interface implementation.
 func (*Funcs) private() {}
 
-type funcs struct {
-	f Funcs
+func (f *Funcs) newError(ctx context.Context, methodName, repo string) error {
+	if f != nil && f.NewError != nil {
+		return f.NewError(ctx, methodName, repo)
+	}
+	return fmt.Errorf("%s: %w", methodName, ErrUnsupported)
 }
 
-func (f *funcs) GetBlob(ctx context.Context, repo string, digest Digest) (BlobReader, error) {
-	if f != nil && f.f.GetBlob_ != nil {
-		return f.f.GetBlob_(ctx, repo, digest)
+func (f *Funcs) GetBlob(ctx context.Context, repo string, digest Digest) (BlobReader, error) {
+	if f != nil && f.GetBlob_ != nil {
+		return f.GetBlob_(ctx, repo, digest)
 	}
-	return nil, fmt.Errorf("GetBlob: %w", ErrUnsupported)
+	return nil, f.newError(ctx, "GetBlob", repo)
 }
 
-func (f *funcs) GetManifest(ctx context.Context, repo string, digest Digest) (BlobReader, error) {
-	if f != nil && f.f.GetManifest_ != nil {
-		return f.f.GetManifest_(ctx, repo, digest)
+func (f *Funcs) GetManifest(ctx context.Context, repo string, digest Digest) (BlobReader, error) {
+	if f != nil && f.GetManifest_ != nil {
+		return f.GetManifest_(ctx, repo, digest)
 	}
-	return nil, fmt.Errorf("GetManifest: %w", ErrUnsupported)
+	return nil, f.newError(ctx, "GetManifest", repo)
 }
 
-func (f *funcs) GetTag(ctx context.Context, repo string, tagName string) (BlobReader, error) {
-	if f != nil && f.f.GetTag_ != nil {
-		return f.f.GetTag_(ctx, repo, tagName)
+func (f *Funcs) GetTag(ctx context.Context, repo string, tagName string) (BlobReader, error) {
+	if f != nil && f.GetTag_ != nil {
+		return f.GetTag_(ctx, repo, tagName)
 	}
-	return nil, fmt.Errorf("GetTag: %w", ErrUnsupported)
+	return nil, f.newError(ctx, "GetTag", repo)
 }
 
-func (f *funcs) ResolveBlob(ctx context.Context, repo string, digest Digest) (Descriptor, error) {
-	if f != nil && f.f.ResolveBlob_ != nil {
-		return f.f.ResolveBlob_(ctx, repo, digest)
+func (f *Funcs) ResolveBlob(ctx context.Context, repo string, digest Digest) (Descriptor, error) {
+	if f != nil && f.ResolveBlob_ != nil {
+		return f.ResolveBlob_(ctx, repo, digest)
 	}
-	return Descriptor{}, fmt.Errorf("ResolveBlob: %w", ErrUnsupported)
+	return Descriptor{}, f.newError(ctx, "ResolveBlob", repo)
 }
 
-func (f *funcs) ResolveManifest(ctx context.Context, repo string, digest Digest) (Descriptor, error) {
-	if f != nil && f.f.ResolveManifest_ != nil {
-		return f.f.ResolveManifest_(ctx, repo, digest)
+func (f *Funcs) ResolveManifest(ctx context.Context, repo string, digest Digest) (Descriptor, error) {
+	if f != nil && f.ResolveManifest_ != nil {
+		return f.ResolveManifest_(ctx, repo, digest)
 	}
-	return Descriptor{}, fmt.Errorf("ResolveManifest: %w", ErrUnsupported)
+	return Descriptor{}, f.newError(ctx, "ResolveManifest", repo)
 }
 
-func (f *funcs) ResolveTag(ctx context.Context, repo string, tagName string) (Descriptor, error) {
-	if f != nil && f.f.ResolveTag_ != nil {
-		return f.f.ResolveTag_(ctx, repo, tagName)
+func (f *Funcs) ResolveTag(ctx context.Context, repo string, tagName string) (Descriptor, error) {
+	if f != nil && f.ResolveTag_ != nil {
+		return f.ResolveTag_(ctx, repo, tagName)
 	}
-	return Descriptor{}, fmt.Errorf("ResolveTag: %w", ErrUnsupported)
+	return Descriptor{}, f.newError(ctx, "ResolveTag", repo)
 }
 
-func (f *funcs) PushBlob(ctx context.Context, repo string, desc Descriptor, r io.Reader) (Descriptor, error) {
-	if f != nil && f.f.PushBlob_ != nil {
-		return f.f.PushBlob_(ctx, repo, desc, r)
+func (f *Funcs) PushBlob(ctx context.Context, repo string, desc Descriptor, r io.Reader) (Descriptor, error) {
+	if f != nil && f.PushBlob_ != nil {
+		return f.PushBlob_(ctx, repo, desc, r)
 	}
-	return Descriptor{}, fmt.Errorf("PushBlob: %w", ErrUnsupported)
+	return Descriptor{}, f.newError(ctx, "PushBlob", repo)
 }
 
-func (f *funcs) PushBlobChunked(ctx context.Context, repo string, id string, chunkSize int) (BlobWriter, error) {
-	if f != nil && f.f.PushBlobChunked_ != nil {
-		return f.f.PushBlobChunked_(ctx, repo, id, chunkSize)
+func (f *Funcs) PushBlobChunked(ctx context.Context, repo string, id string, chunkSize int) (BlobWriter, error) {
+	if f != nil && f.PushBlobChunked_ != nil {
+		return f.PushBlobChunked_(ctx, repo, id, chunkSize)
 	}
-	return nil, fmt.Errorf("PushBlobChunked: %w", ErrUnsupported)
+	return nil, f.newError(ctx, "PushBlobChunked", repo)
 }
 
-func (f *funcs) MountBlob(ctx context.Context, fromRepo, toRepo string, digest Digest) error {
-	if f != nil && f.f.MountBlob_ != nil {
-		return f.f.MountBlob_(ctx, fromRepo, toRepo, digest)
+func (f *Funcs) MountBlob(ctx context.Context, fromRepo, toRepo string, digest Digest) error {
+	if f != nil && f.MountBlob_ != nil {
+		return f.MountBlob_(ctx, fromRepo, toRepo, digest)
 	}
-	return fmt.Errorf("MountBlob: %w", ErrUnsupported)
+	return f.newError(ctx, "MountBlob", toRepo)
 }
 
-func (f *funcs) PushManifest(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (Descriptor, error) {
-	if f != nil && f.f.PushManifest_ != nil {
-		return f.f.PushManifest_(ctx, repo, tag, contents, mediaType)
+func (f *Funcs) PushManifest(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (Descriptor, error) {
+	if f != nil && f.PushManifest_ != nil {
+		return f.PushManifest_(ctx, repo, tag, contents, mediaType)
 	}
-	return Descriptor{}, fmt.Errorf("PushManifest: %w", ErrUnsupported)
+	return Descriptor{}, f.newError(ctx, "PushManifest", repo)
 }
 
-func (f *funcs) DeleteBlob(ctx context.Context, repo string, digest Digest) error {
-	if f != nil && f.f.DeleteBlob_ != nil {
-		return f.f.DeleteBlob_(ctx, repo, digest)
+func (f *Funcs) DeleteBlob(ctx context.Context, repo string, digest Digest) error {
+	if f != nil && f.DeleteBlob_ != nil {
+		return f.DeleteBlob_(ctx, repo, digest)
 	}
-	return fmt.Errorf("DeleteBlob: %w", ErrUnsupported)
+	return f.newError(ctx, "DeleteBlob", repo)
 }
 
-func (f *funcs) DeleteManifest(ctx context.Context, repo string, digest Digest) error {
-	if f != nil && f.f.DeleteManifest_ != nil {
-		return f.f.DeleteManifest_(ctx, repo, digest)
+func (f *Funcs) DeleteManifest(ctx context.Context, repo string, digest Digest) error {
+	if f != nil && f.DeleteManifest_ != nil {
+		return f.DeleteManifest_(ctx, repo, digest)
 	}
-	return fmt.Errorf("DeleteManifest: %w", ErrUnsupported)
+	return f.newError(ctx, "DeleteManifest", repo)
 }
 
-func (f *funcs) DeleteTag(ctx context.Context, repo string, name string) error {
-	if f != nil && f.f.DeleteTag_ != nil {
-		return f.f.DeleteTag_(ctx, repo, name)
+func (f *Funcs) DeleteTag(ctx context.Context, repo string, name string) error {
+	if f != nil && f.DeleteTag_ != nil {
+		return f.DeleteTag_(ctx, repo, name)
 	}
-	return fmt.Errorf("DeleteTag: %w", ErrUnsupported)
+	return f.newError(ctx, "DeleteTag", repo)
 }
 
-func (f *funcs) Repositories(ctx context.Context) Iter[string] {
-	if f != nil && f.f.Repositories_ != nil {
-		return f.f.Repositories_(ctx)
+func (f *Funcs) Repositories(ctx context.Context) Iter[string] {
+	if f != nil && f.Repositories_ != nil {
+		return f.Repositories_(ctx)
 	}
-	return ErrorIter[string](fmt.Errorf("Repositories: %w", ErrUnsupported))
+	return ErrorIter[string](f.newError(ctx, "Repositories", ""))
 }
 
-func (f *funcs) Tags(ctx context.Context, repo string) Iter[string] {
-	if f != nil && f.f.Tags_ != nil {
-		return f.f.Tags_(ctx, repo)
+func (f *Funcs) Tags(ctx context.Context, repo string) Iter[string] {
+	if f != nil && f.Tags_ != nil {
+		return f.Tags_(ctx, repo)
 	}
-	return ErrorIter[string](fmt.Errorf("Tags: %w", ErrUnsupported))
+	return ErrorIter[string](f.newError(ctx, "Tags", repo))
 }
 
-func (f *funcs) Referrers(ctx context.Context, repo string, digest Digest, artifactType string) Iter[Descriptor] {
-	if f != nil && f.f.Referrers_ != nil {
-		return f.f.Referrers_(ctx, repo, digest, artifactType)
+func (f *Funcs) Referrers(ctx context.Context, repo string, digest Digest, artifactType string) Iter[Descriptor] {
+	if f != nil && f.Referrers_ != nil {
+		return f.Referrers_(ctx, repo, digest, artifactType)
 	}
-	return ErrorIter[Descriptor](fmt.Errorf("Referrers: %w", ErrUnsupported))
+	return ErrorIter[Descriptor](f.newError(ctx, "Referrers", repo))
 }

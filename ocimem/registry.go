@@ -9,13 +9,13 @@ import (
 	"github.com/rogpeppe/ociregistry"
 )
 
+var _ ociregistry.Interface = (*Registry)(nil)
+
 type Registry struct {
 	*ociregistry.Funcs
 	mu    sync.Mutex
 	repos map[string]*repository
 }
-
-var _ ociregistry.Interface = (*Registry)(nil)
 
 type repository struct {
 	tags      map[string]ociregistry.Descriptor
