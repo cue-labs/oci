@@ -57,25 +57,33 @@ type client struct {
 	debugID string
 }
 
-func descriptorFromResponse(resp *http.Response) (ociregistry.Descriptor, error) {
-	digest := resp.Header.Get("Docker-Content-Digest")
-	if digest == "" {
-		return ociregistry.Descriptor{}, fmt.Errorf("no digest found in response")
-	}
-	if !isValidDigest(digest) {
-		return ociregistry.Descriptor{}, fmt.Errorf("bad digest %q found in response", digest)
+func descriptorFromResponse(resp *http.Response, knownDigest digest.Digest, requireContentLength bool) (ociregistry.Descriptor, error) {
+	digest := digest.Digest(resp.Header.Get("Docker-Content-Digest"))
+	if digest != "" {
+		if !isValidDigest(string(digest)) {
+			return ociregistry.Descriptor{}, fmt.Errorf("bad digest %q found in response", digest)
+		}
+	} else {
+		if knownDigest == "" {
+			return ociregistry.Descriptor{}, fmt.Errorf("no digest found in response")
+		}
+		digest = knownDigest
 	}
 	contentType := resp.Header.Get("Content-Type")
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
-	if resp.ContentLength < 0 {
-		return ociregistry.Descriptor{}, fmt.Errorf("unknown content length")
+	contentLength := int64(0)
+	if requireContentLength {
+		if resp.ContentLength < 0 {
+			return ociregistry.Descriptor{}, fmt.Errorf("unknown content length")
+		}
+		contentLength = resp.ContentLength
 	}
 	return ociregistry.Descriptor{
-		Digest:    ociregistry.Digest(digest),
+		Digest:    digest,
 		MediaType: contentType,
-		Size:      resp.ContentLength,
+		Size:      contentLength,
 	}, nil
 }
 

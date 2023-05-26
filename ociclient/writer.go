@@ -49,7 +49,7 @@ func (c *client) PushManifest(ctx context.Context, repo string, tag string, cont
 	return desc, nil
 }
 
-func (c *client) MountBlob(ctx context.Context, fromRepo, toRepo string, dig ociregistry.Digest) error {
+func (c *client) MountBlob(ctx context.Context, fromRepo, toRepo string, dig ociregistry.Digest) (ociregistry.Descriptor, error) {
 	rreq := &ocirequest.Request{
 		Kind:     ocirequest.ReqBlobMount,
 		Repo:     toRepo,
@@ -58,16 +58,16 @@ func (c *client) MountBlob(ctx context.Context, fromRepo, toRepo string, dig oci
 	}
 	resp, err := c.doRequest(ctx, rreq, http.StatusCreated, http.StatusAccepted)
 	if err != nil {
-		return err
+		return ociregistry.Descriptor{}, err
 	}
 	resp.Body.Close()
 	if resp.StatusCode == http.StatusAccepted {
 		// Mount isn't supported and technically the upload session has begun,
 		// but we aren't in a great position to be able to continue it, so let's just
 		// return Unsupported.
-		return fmt.Errorf("registry does not support mounts: %w", ociregistry.ErrUnsupported)
+		return ociregistry.Descriptor{}, fmt.Errorf("registry does not support mounts: %w", ociregistry.ErrUnsupported)
 	}
-	return nil
+	return descriptorFromResponse(resp, dig, false)
 }
 
 func (c *client) PushBlob(ctx context.Context, repo string, desc ociregistry.Descriptor, r io.Reader) (_ ociregistry.Descriptor, _err error) {
@@ -286,18 +286,22 @@ func (w *blobWriter) ID() string {
 	return w.location.String()
 }
 
-func (w *blobWriter) Commit(digest ociregistry.Digest) (ociregistry.Digest, error) {
+func (w *blobWriter) Commit(digest ociregistry.Digest) (ociregistry.Descriptor, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if err := w.flush(nil); err != nil {
-		return "", fmt.Errorf("cannot flush data before commit: %v", err)
+		return ociregistry.Descriptor{}, fmt.Errorf("cannot flush data before commit: %v", err)
 	}
 	req, _ := http.NewRequestWithContext(w.ctx, "PUT", "", nil)
 	req.URL = urlWithDigest(w.location, string(digest))
 	if _, err := w.client.do(req, http.StatusCreated); err != nil {
-		return "", err
+		return ociregistry.Descriptor{}, err
 	}
-	return digest, nil
+	return ociregistry.Descriptor{
+		MediaType: "application/octet-stream",
+		Size:      w.size,
+		Digest:    digest,
+	}, nil
 }
 
 func (w *blobWriter) Cancel() error {

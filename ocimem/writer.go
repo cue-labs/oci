@@ -53,19 +53,19 @@ func (r *Registry) PushBlobChunked(ctx context.Context, repoName string, resumeI
 	return b, nil
 }
 
-func (r *Registry) MountBlob(ctx context.Context, fromRepo, toRepo string, dig ociregistry.Digest) error {
+func (r *Registry) MountBlob(ctx context.Context, fromRepo, toRepo string, dig ociregistry.Digest) (ociregistry.Descriptor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	rto, err := r.makeRepo(toRepo)
 	if err != nil {
-		return err
+		return ociregistry.Descriptor{}, err
 	}
 	b, err := r.blobForDigest(fromRepo, dig)
 	if err != nil {
-		return err
+		return ociregistry.Descriptor{}, err
 	}
 	rto.blobs[dig] = b
-	return nil
+	return b.descriptor(), nil
 }
 
 func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string, data []byte, mediaType string) (ociregistry.Descriptor, error) {

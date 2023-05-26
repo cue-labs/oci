@@ -1,3 +1,45 @@
+// Package ociregistry provides an abstraction that represents the
+// capabilities provided by an OCI registry.
+//
+// See the [OCI distribution specification] for more information on OCI registries.
+//
+// Packages within this module provide the capability to translate to and
+// from the HTTP protocol documented in that specification:
+// - [github.com/rogpeppe/ociregistry/ociclient] provides an [Interface] value
+// that acts as an HTTP client.
+// - [github.com/rogpeppe/ociregistry/ociserver] provides an HTTP server
+// that serves the distribution protocol by making calls to an arbitrary
+// [Interface] value.
+//
+// When used together in a stack, the above two packages can be used
+// to provide a simple proxy server.
+//
+// The [github.com/rogpeppe/ociregistry/ocimem] package provides a trivial
+// in-memory implementation of the interface.
+//
+// Other packages provide some utilities that manipulate [Interface] values:
+// - [github.com/rogpeppe/ociregistry/ocifilter] provides functionality for exposing
+// modified or restricted views onto a registry.
+// - [github.com/rogpeppe/ociregistry/ociunify] can combine two registries into one
+// unified view across both.
+//
+// # Notes on [Interface]
+//
+// In general, the caller cannot assume that the implementation of a given [Interface] value
+// is present on the network. For example, [github.com/rogpeppe/ociregistry/ocimem]
+// doesn't know about the network at all. But there are times when an implementation
+// might want to provide information about the location of blobs or manifests so
+// that a client can go direct if it wishes. That is, a proxy might not wish
+// to ship all the traffic for all blobs through itself, but instead redirect clients
+// to talk to some other location on the internet.
+//
+// When an [Interface] implementation wishes to provide that information, it
+// can do so by setting the `URLs` field on the descriptor that it returns for
+// a given blob or manifest. Although it is not mandatory for a caller to use
+// this, some callers (specifically the ociserver package) can use this information
+// to redirect clients appropriately.
+//
+// [OCI distribution specification]: https://github.com/opencontainers/distribution-spec/blob/main/spec.md
 package ociregistry
 
 import (
@@ -109,14 +151,18 @@ type Writer interface {
 	PushBlobChunked(ctx context.Context, repo string, id string, chunkSize int) (BlobWriter, error)
 
 	// MountBlob makes a blob with the given digest that's in fromRepo available
-	// in toRepo.
+	// in toRepo and returns its canonical descriptor.
 	//
 	// This avoids the need to pull content down from fromRepo only to push it to r.
-	// TODO this should return the canonical digest.
+	//
+	// TODO the mount endpoint doesn't return the size of the content,
+	// so to return a correctly populated descriptor, a client will need to make
+	// an extra HTTP call to find that out. For now, we'll just say that
+	// the descriptor returned from MountBlob might have a zero Size.
 	//
 	// Errors:
 	//	ErrUnsupported (when the repository does not support mounts).
-	MountBlob(ctx context.Context, fromRepo, toRepo string, digest Digest) error
+	MountBlob(ctx context.Context, fromRepo, toRepo string, digest Digest) (Descriptor, error)
 
 	// PushManifest pushes a manifest with the given media type and contents.
 	// If tag is non-empty, the tag with that name will be pointed at the manifest.
@@ -177,10 +223,8 @@ type BlobWriter interface {
 	ID() string
 
 	// Commit completes the blob writer process. The content is verified
-	// against the provided digest. The returned digest may be different
-	// to the original depending on the blob store, referred to as the canonical
-	// descriptor.
-	Commit(digest Digest) (Digest, error)
+	// against the provided digest, and a canonical descriptor for it is returned.
+	Commit(digest Digest) (Descriptor, error)
 
 	// Cancel ends the blob write without storing any data and frees any
 	// associated resources. Any data written thus far will be lost. Cancel

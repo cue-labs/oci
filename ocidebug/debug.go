@@ -70,11 +70,11 @@ func (r *logger) GetTag(ctx context.Context, repoName string, tagName string) (o
 	return rd, err
 }
 
-func (r *logger) MountBlob(ctx context.Context, fromRepo, toRepo string, dig ociregistry.Digest) error {
+func (r *logger) MountBlob(ctx context.Context, fromRepo, toRepo string, dig ociregistry.Digest) (ociregistry.Descriptor, error) {
 	r.logf("MountBlob from=%s to=%s digest=%s {", fromRepo, toRepo, dig)
-	err := r.r.MountBlob(ctx, fromRepo, toRepo, dig)
-	r.logf("} -> %v", err)
-	return err
+	desc, err := r.r.MountBlob(ctx, fromRepo, toRepo, dig)
+	r.logf("} -> %#v, %v", desc, err)
+	return desc, err
 }
 
 func (r *logger) PushBlob(ctx context.Context, repoName string, desc ociregistry.Descriptor, content io.Reader) (ociregistry.Descriptor, error) {
@@ -193,11 +193,11 @@ func (w blobWriter) Close() error {
 	return err
 }
 
-func (w blobWriter) Commit(digest ociregistry.Digest) (ociregistry.Digest, error) {
+func (w blobWriter) Commit(digest ociregistry.Digest) (ociregistry.Descriptor, error) {
 	w.logf("Commit %q {", digest)
-	digest, err := w.w.Commit(digest)
-	w.logf("} -> %q, %v", digest, err)
-	return digest, err
+	desc, err := w.w.Commit(digest)
+	w.logf("} -> %#v, %v", desc, err)
+	return desc, err
 }
 
 func (w blobWriter) Cancel() error {

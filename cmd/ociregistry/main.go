@@ -17,7 +17,7 @@ func main() {
 	local := httptest.NewServer(ociserver.New(ocimem.New(), &ociserver.Options{
 		DebugID: "direct",
 	}))
-	proxy := ociserver.New(ociclient.New(local.URL), &ociserver.Options{
+	proxy := ociserver.New(ociclient.New(local.URL, nil), &ociserver.Options{
 		DebugID: "proxy",
 	})
 	err := http.ListenAndServe(":5000", proxy)

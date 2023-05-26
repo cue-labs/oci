@@ -38,8 +38,9 @@ func (r *registry) handleBlobUploadBlob(ctx context.Context, resp http.ResponseW
 	if err != nil {
 		return err
 	}
-	resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
-	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/blobs/"+string(desc.Digest))
+	if err := r.setLocationHeader(resp, false, desc, "/v2/"+rreq.Repo+"/blobs/"+string(desc.Digest)); err != nil {
+		return err
+	}
 	resp.WriteHeader(http.StatusCreated)
 	return nil
 }
@@ -114,21 +115,25 @@ func (r *registry) handleBlobCompleteUpload(ctx context.Context, resp http.Respo
 	if _, err := io.Copy(w, req.Body); err != nil {
 		return fmt.Errorf("failed to copy data to %T: %v", w, err)
 	}
-	digest, err := w.Commit(ociregistry.Digest(rreq.Digest))
+	desc, err := w.Commit(ociregistry.Digest(rreq.Digest))
 	if err != nil {
 		return err
 	}
-	resp.Header().Set("Docker-Content-Digest", string(digest))
-	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/blobs/"+string(digest))
+	if err := r.setLocationHeader(resp, false, desc, "/v2/"+rreq.Repo+"/blobs/"+string(desc.Digest)); err != nil {
+		return err
+	}
 	resp.WriteHeader(http.StatusCreated)
 	return nil
 }
 
 func (r *registry) handleBlobMount(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	if err := r.backend.MountBlob(ctx, rreq.FromRepo, rreq.Repo, ociregistry.Digest(rreq.Digest)); err != nil {
+	desc, err := r.backend.MountBlob(ctx, rreq.FromRepo, rreq.Repo, ociregistry.Digest(rreq.Digest))
+	if err != nil {
 		return err
 	}
-	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/blobs/"+rreq.Digest)
+	if err := r.setLocationHeader(resp, true, desc, "/v2/"+rreq.Repo+"/blobs/"+rreq.Digest); err != nil {
+		return err
+	}
 	resp.WriteHeader(http.StatusCreated)
 	return nil
 }
@@ -157,9 +162,10 @@ func (r *registry) handleManifestPut(ctx context.Context, resp http.ResponseWrit
 	if err != nil {
 		return err
 	}
+	if err := r.setLocationHeader(resp, false, desc, "/v2/"+rreq.Repo+"/manifests/"+string(desc.Digest)); err != nil {
+		return err
+	}
 	// TODO OCI-Subject header?
-	resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
-	resp.Header().Set("Location", "/v2/"+rreq.Repo+"/manifests/"+string(desc.Digest))
 	resp.WriteHeader(http.StatusCreated)
 	return nil
 }

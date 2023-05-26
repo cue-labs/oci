@@ -92,15 +92,15 @@ func (u unifier) PushBlobChunked(ctx context.Context, repo string, id string, ch
 	}, nil
 }
 
-func (u unifier) MountBlob(ctx context.Context, fromRepo, toRepo string, digest ociregistry.Digest) error {
+func (u unifier) MountBlob(ctx context.Context, fromRepo, toRepo string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
 	return bothResults(both(
-		func() t1 {
-			return mk1(u.r0.MountBlob(ctx, fromRepo, toRepo, digest))
+		func() t2[ociregistry.Descriptor] {
+			return mk2(u.r0.MountBlob(ctx, fromRepo, toRepo, digest))
 		},
-		func() t1 {
-			return mk1(u.r1.MountBlob(ctx, fromRepo, toRepo, digest))
+		func() t2[ociregistry.Descriptor] {
+			return mk2(u.r1.MountBlob(ctx, fromRepo, toRepo, digest))
 		},
-	)).err
+	)).get()
 }
 
 type unifiedBlobWriter struct {
@@ -155,12 +155,12 @@ func (w *unifiedBlobWriter) ID() string {
 	return base64.RawURLEncoding.EncodeToString(data)
 }
 
-func (w *unifiedBlobWriter) Commit(digest ociregistry.Digest) (ociregistry.Digest, error) {
+func (w *unifiedBlobWriter) Commit(digest ociregistry.Digest) (ociregistry.Descriptor, error) {
 	return bothResults(both(
-		func() t2[ociregistry.Digest] {
+		func() t2[ociregistry.Descriptor] {
 			return mk2(w.w0.Commit(digest))
 		},
-		func() t2[ociregistry.Digest] {
+		func() t2[ociregistry.Descriptor] {
 			return mk2(w.w1.Commit(digest))
 		},
 	)).get()

@@ -64,6 +64,23 @@ type Options struct {
 	// rights to that remote location.
 	LocationForUploadID func(string) (string, error)
 
+	// LocationsForDescriptor returns a set of possible download
+	// URLs for the given descriptor.
+	// If it's nil, then all locations returned by the server
+	// will refer to the server itself.
+	//
+	// If not, then the Location header of responses will be
+	// set accordingly (to an arbitrary value from the
+	// returned slice if there are multiple).
+	//
+	// Returning a location from this function will also
+	// cause GET requests to return a redirect response
+	// to that location.
+	//
+	// TODO perhaps the redirect behavior described above
+	// isn't always what is wanted?
+	LocationsForDescriptor func(isManifest bool, desc ociregistry.Descriptor) ([]string, error)
+
 	DebugID string
 }
 
@@ -79,14 +96,21 @@ func New(backend ociregistry.Interface, opts *Options) http.Handler {
 	if opts == nil {
 		opts = new(Options)
 	}
-	if opts.DebugID == "" {
-		opts.DebugID = fmt.Sprintf("ociserver%d", atomic.AddInt32(&debugID, 1))
+	r := &registry{
+		backend:                backend,
+		referrersEnabled:       !opts.DisableReferrersAPI,
+		debugID:                opts.DebugID,
+		locationsForDescriptor: opts.LocationsForDescriptor,
 	}
-	return &registry{
-		backend:          backend,
-		referrersEnabled: !opts.DisableReferrersAPI,
-		debugID:          opts.DebugID,
+	if r.debugID == "" {
+		r.debugID = fmt.Sprintf("ociserver%d", atomic.AddInt32(&debugID, 1))
 	}
+	if r.locationsForDescriptor == nil {
+		r.locationsForDescriptor = func(isManifest bool, desc ociregistry.Descriptor) ([]string, error) {
+			return nil, nil
+		}
+	}
+	return r
 }
 
 func (r *registry) logf(f string, a ...any) {
@@ -94,9 +118,10 @@ func (r *registry) logf(f string, a ...any) {
 }
 
 type registry struct {
-	backend          ociregistry.Interface
-	referrersEnabled bool
-	debugID          string
+	backend                ociregistry.Interface
+	referrersEnabled       bool
+	debugID                string
+	locationsForDescriptor func(isManifest bool, desc ociregistry.Descriptor) ([]string, error)
 }
 
 var handlers = []func(r *registry, ctx context.Context, w http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error{
@@ -151,6 +176,20 @@ func (r *registry) v2(resp http.ResponseWriter, req *http.Request) (_err error) 
 
 func (r *registry) handlePing(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
+	return nil
+}
+
+func (r *registry) setLocationHeader(resp http.ResponseWriter, isManifest bool, desc ociregistry.Descriptor, defaultLocation string) error {
+	locs, err := r.locationsForDescriptor(isManifest, desc)
+	if err != nil {
+		return err
+	}
+	loc := defaultLocation
+	if len(locs) > 0 {
+		loc = locs[0] // TODO select arbitrary location from the slice
+	}
+	resp.Header().Set("Location", loc)
+	resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
 	return nil
 }
 

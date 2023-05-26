@@ -119,9 +119,9 @@ func (b *Buffer) ID() string {
 
 // Commit implements [ociregistry.BlobWriter.Commit] by checking
 // that everything looks OK and calling the commit function if so.
-func (b *Buffer) Commit(dig ociregistry.Digest) (_ ociregistry.Digest, err error) {
+func (b *Buffer) Commit(dig ociregistry.Digest) (_ ociregistry.Descriptor, err error) {
 	if err := b.checkCommit(dig); err != nil {
-		return "", err
+		return ociregistry.Descriptor{}, err
 	}
 	// Note: we're careful to call this function outside of the mutex so
 	// that it can call locked Buffer methods OK.
@@ -130,9 +130,13 @@ func (b *Buffer) Commit(dig ociregistry.Digest) (_ ociregistry.Digest, err error
 		defer b.mu.Unlock()
 
 		b.commitErr = err
-		return "", err
+		return ociregistry.Descriptor{}, err
 	}
-	return dig, nil
+	return ociregistry.Descriptor{
+		MediaType: "application/octet-stream",
+		Size:      int64(len(b.buf)),
+		Digest:    dig,
+	}, nil
 }
 
 func (b *Buffer) checkCommit(dig ociregistry.Digest) (err error) {
