@@ -7,7 +7,7 @@ type Iter[T any] interface {
 }
 
 func All[T any](it Iter[T]) ([]T, error) {
-	var xs []T
+	xs := []T{}
 	for {
 		x, ok := it.Next()
 		if !ok {

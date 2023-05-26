@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync/atomic"
 
 	"github.com/opencontainers/go-digest"
 
@@ -21,21 +22,39 @@ import (
 
 const debug = false
 
-func New(hostURL string) ociregistry.Interface {
+type Options struct {
+	DebugID string
+}
+
+var debugID int32
+
+func New(hostURL string, opts *Options) ociregistry.Interface {
+	if opts == nil {
+		opts = new(Options)
+	}
+	if opts.DebugID == "" {
+		opts.DebugID = fmt.Sprintf("id%d", atomic.AddInt32(&debugID, 1))
+	}
 	u, err := url.Parse(hostURL)
 	if err != nil {
 		panic(err)
 	}
 	return &client{
-		url:    u,
-		client: http.DefaultClient,
+		url:     u,
+		client:  http.DefaultClient,
+		debugID: opts.DebugID,
 	}
+}
+
+func (c *client) logf(f string, a ...any) {
+	log.Printf("ociclient %s: %s", c.debugID, fmt.Sprintf(f, a...))
 }
 
 type client struct {
 	*ociregistry.Funcs
-	url    *url.URL
-	client *http.Client
+	url     *url.URL
+	client  *http.Client
+	debugID string
 }
 
 func descriptorFromResponse(resp *http.Response) (ociregistry.Descriptor, error) {

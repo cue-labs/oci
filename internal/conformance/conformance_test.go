@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http/httptest"
 	"net/url"
@@ -24,6 +25,7 @@ import (
 	"github.com/rogpeppe/ociregistry/ocidebug"
 	"github.com/rogpeppe/ociregistry/ocimem"
 	"github.com/rogpeppe/ociregistry/ociserver"
+	"github.com/rogpeppe/ociregistry/ociunify"
 )
 
 func init() {
@@ -44,8 +46,38 @@ func TestClientAsProxy(t *testing.T) {
 			DebugID: "direct",
 		}))
 		t.Cleanup(direct.Close)
-		proxy := httptest.NewServer(ociserver.New(ociclient.New(direct.URL), &ociserver.Options{
+		proxy := httptest.NewServer(ociserver.New(ociclient.New(direct.URL, nil), &ociserver.Options{
 			DebugID: "proxy",
+		}))
+		t.Cleanup(proxy.Close)
+		return proxy.URL
+	})
+}
+
+func TestUnifyingProxy(t *testing.T) {
+	debugWrap := func(what string, r ociregistry.Interface) ociregistry.Interface {
+		return ocidebug.New(r, func(f string, a ...any) {
+			t.Logf("%s: %s", what, fmt.Sprintf(f, a...))
+		})
+	}
+	runTests(t, func(t *testing.T) string {
+		direct0 := httptest.NewServer(ociserver.New(debugWrap("direct0mem", ocimem.New()), &ociserver.Options{
+			DebugID: "direct0srv",
+		}))
+		t.Cleanup(direct0.Close)
+		direct1 := httptest.NewServer(ociserver.New(debugWrap("direct1mem", ocimem.New()), &ociserver.Options{
+			DebugID: "direct1srv",
+		}))
+		t.Cleanup(direct1.Close)
+		proxy := httptest.NewServer(ociserver.New(debugWrap("proxy", ociunify.New(
+			debugWrap("proxy0", ociclient.New(direct0.URL, &ociclient.Options{
+				DebugID: "client0",
+			})),
+			debugWrap("proxy1", ociclient.New(direct1.URL, &ociclient.Options{
+				DebugID: "client1",
+			})),
+		)), &ociserver.Options{
+			DebugID: "proxysrv",
 		}))
 		t.Cleanup(proxy.Close)
 		return proxy.URL

@@ -112,7 +112,7 @@ func (r *logger) PushManifest(ctx context.Context, repoName string, tag string, 
 }
 
 func (r *logger) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, artifactType string) ociregistry.Iter[ociregistry.Descriptor] {
-	r.logf("Referrers {")
+	r.logf("Referrers %s %s %q {", repoName, digest, artifactType)
 	return logIterReturn(r, r.r.Referrers(ctx, repoName, digest, artifactType))
 }
 
@@ -122,7 +122,7 @@ func (r *logger) Repositories(ctx context.Context) ociregistry.Iter[string] {
 }
 
 func (r *logger) Tags(ctx context.Context, repoName string) ociregistry.Iter[string] {
-	r.logf("Tags {")
+	r.logf("Tags %s {", repoName)
 	return logIterReturn(r, r.r.Tags(ctx, repoName))
 }
 

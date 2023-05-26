@@ -80,7 +80,7 @@ func New(backend ociregistry.Interface, opts *Options) http.Handler {
 		opts = new(Options)
 	}
 	if opts.DebugID == "" {
-		opts.DebugID = fmt.Sprintf("id%d", atomic.AddInt32(&debugID, 1))
+		opts.DebugID = fmt.Sprintf("ociserver%d", atomic.AddInt32(&debugID, 1))
 	}
 	return &registry{
 		backend:          backend,
