@@ -8,6 +8,17 @@ import (
 	"github.com/rogpeppe/ociregistry"
 )
 
+type Options struct {
+	ReadPolicy ReadPolicy
+}
+
+type ReadPolicy int
+
+const (
+	ReadSequential ReadPolicy = iota
+	ReadConcurrent
+)
+
 // New returns a registry that unifies the contents from both
 // the given registries. If there's a conflict, (for example a tag resolves
 // to a different thing on both repositories), it returns an error
@@ -16,12 +27,20 @@ import (
 //
 // Writes write to both repositories. Reads of immutable data
 // come from either.
-func New(r0, r1 ociregistry.Interface) ociregistry.Interface {
-	return unifier{r0, r1, nil}
+func New(r0, r1 ociregistry.Interface, opts *Options) ociregistry.Interface {
+	if opts == nil {
+		opts = new(Options)
+	}
+	return unifier{
+		r0:   r0,
+		r1:   r1,
+		opts: *opts,
+	}
 }
 
 type unifier struct {
 	r0, r1 ociregistry.Interface
+	opts   Options
 	*ociregistry.Funcs
 }
 
@@ -58,7 +77,26 @@ func both[T any](f0, f1 func() T) (T, T) {
 }
 
 // race calls f0 and f1 concurrently. It returns the result from the first one that returns without error.
-func race[T result[T]](ctx context.Context, f0, f1 func(ctx context.Context) T) T {
+func runRead[T result[T]](ctx context.Context, u unifier, f0, f1 func(ctx context.Context) T) T {
+	switch u.opts.ReadPolicy {
+	case ReadConcurrent:
+		return runReadConcurrent(ctx, f0, f1)
+	case ReadSequential:
+		return runReadSequential(ctx, f0, f1)
+	default:
+		panic("unreachable")
+	}
+}
+
+func runReadSequential[T result[T]](ctx context.Context, f0, f1 func(ctx context.Context) T) T {
+	r := f0(ctx)
+	if err := r.error(); err == nil {
+		return r
+	}
+	return f1(ctx)
+}
+
+func runReadConcurrent[T result[T]](ctx context.Context, f0, f1 func(ctx context.Context) T) T {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 

@@ -108,6 +108,10 @@ func (r *registry) handleCatalogList(ctx context.Context, resp http.ResponseWrit
 
 // TODO: implement handling of artifactType querystring
 func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	if r.opts.DisableReferrersAPI {
+		return withHTTPCode(http.StatusNotFound, fmt.Errorf("referrers API has been disabled"))
+	}
+
 	im := &ocispec.Index{
 		Versioned: v2,
 		MediaType: mediaTypeOCIImageIndex,

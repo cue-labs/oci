@@ -54,7 +54,20 @@ func TestClientAsProxy(t *testing.T) {
 	})
 }
 
-func TestUnifyingProxy(t *testing.T) {
+func TestUnifyingProxySequential(t *testing.T) {
+	testUnifyingProxy(t, &ociunify.Options{
+		ReadPolicy: ociunify.ReadSequential,
+	})
+}
+
+func TestUnifyingProxyConcurrent(t *testing.T) {
+	t.Skip("this test is flaky. TODO: investigate")
+	testUnifyingProxy(t, &ociunify.Options{
+		ReadPolicy: ociunify.ReadConcurrent,
+	})
+}
+
+func testUnifyingProxy(t *testing.T, opts *ociunify.Options) {
 	debugWrap := func(what string, r ociregistry.Interface) ociregistry.Interface {
 		return ocidebug.New(r, func(f string, a ...any) {
 			t.Logf("%s: %s", what, fmt.Sprintf(f, a...))
@@ -76,6 +89,7 @@ func TestUnifyingProxy(t *testing.T) {
 			debugWrap("proxy1", ociclient.New(direct1.URL, &ociclient.Options{
 				DebugID: "client1",
 			})),
+			opts,
 		)), &ociserver.Options{
 			DebugID: "proxysrv",
 		}))

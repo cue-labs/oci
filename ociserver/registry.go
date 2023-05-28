@@ -49,6 +49,13 @@ type Options struct {
 	// it does not understand the referrers API.
 	DisableReferrersAPI bool
 
+	// DisableSinglePostUpload, when true, causes the registry
+	// to reject uploads with a single POST request.
+	// This is useful in combination with LocationsForDescriptor
+	// to cause uploaded blob content to flow through
+	// another server.
+	DisableSinglePostUpload bool
+
 	// LocationForUploadID transforms an upload ID as returned by
 	// ocirequest.BlobWriter.ID to the absolute URL location
 	// as returned by the upload endpoints.
@@ -97,31 +104,22 @@ func New(backend ociregistry.Interface, opts *Options) http.Handler {
 		opts = new(Options)
 	}
 	r := &registry{
-		backend:                backend,
-		referrersEnabled:       !opts.DisableReferrersAPI,
-		debugID:                opts.DebugID,
-		locationsForDescriptor: opts.LocationsForDescriptor,
+		opts:    *opts,
+		backend: backend,
 	}
-	if r.debugID == "" {
-		r.debugID = fmt.Sprintf("ociserver%d", atomic.AddInt32(&debugID, 1))
-	}
-	if r.locationsForDescriptor == nil {
-		r.locationsForDescriptor = func(isManifest bool, desc ociregistry.Descriptor) ([]string, error) {
-			return nil, nil
-		}
+	if r.opts.DebugID == "" {
+		r.opts.DebugID = fmt.Sprintf("ociserver%d", atomic.AddInt32(&debugID, 1))
 	}
 	return r
 }
 
 func (r *registry) logf(f string, a ...any) {
-	log.Printf("ociserver %s: %s", r.debugID, fmt.Sprintf(f, a...))
+	log.Printf("ociserver %s: %s", r.opts.DebugID, fmt.Sprintf(f, a...))
 }
 
 type registry struct {
-	backend                ociregistry.Interface
-	referrersEnabled       bool
-	debugID                string
-	locationsForDescriptor func(isManifest bool, desc ociregistry.Descriptor) ([]string, error)
+	opts    Options
+	backend ociregistry.Interface
 }
 
 var handlers = []func(r *registry, ctx context.Context, w http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error{
@@ -180,13 +178,19 @@ func (r *registry) handlePing(ctx context.Context, resp http.ResponseWriter, req
 }
 
 func (r *registry) setLocationHeader(resp http.ResponseWriter, isManifest bool, desc ociregistry.Descriptor, defaultLocation string) error {
-	locs, err := r.locationsForDescriptor(isManifest, desc)
-	if err != nil {
-		return err
-	}
 	loc := defaultLocation
-	if len(locs) > 0 {
-		loc = locs[0] // TODO select arbitrary location from the slice
+	if r.opts.LocationsForDescriptor != nil {
+		locs, err := r.opts.LocationsForDescriptor(isManifest, desc)
+		if err != nil {
+			what := "blob"
+			if isManifest {
+				what = "manifest"
+			}
+			return fmt.Errorf("cannot determine location for %s: %v", what, err)
+		}
+		if len(locs) > 0 {
+			loc = locs[0] // TODO select arbitrary location from the slice
+		}
 	}
 	resp.Header().Set("Location", loc)
 	resp.Header().Set("Docker-Content-Digest", string(desc.Digest))

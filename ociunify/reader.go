@@ -10,7 +10,7 @@ import (
 // Reader methods.
 
 func (u unifier) GetBlob(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.BlobReader, error) {
-	return race(ctx,
+	return runRead(ctx, u,
 		func(ctx context.Context) t2[ociregistry.BlobReader] {
 			return mk2(u.r0.GetBlob(ctx, repo, digest))
 		},
@@ -21,7 +21,7 @@ func (u unifier) GetBlob(ctx context.Context, repo string, digest ociregistry.Di
 }
 
 func (u unifier) GetManifest(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.BlobReader, error) {
-	return race(ctx,
+	return runRead(ctx, u,
 		func(ctx context.Context) t2[ociregistry.BlobReader] {
 			return mk2(u.r0.GetManifest(ctx, repo, digest))
 		},
@@ -59,7 +59,7 @@ func (u unifier) GetTag(ctx context.Context, repo string, tagName string) (ocire
 }
 
 func (u unifier) ResolveBlob(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
-	return race(ctx,
+	return runRead(ctx, u,
 		func(ctx context.Context) t2[ociregistry.Descriptor] {
 			return mk2(u.r0.ResolveBlob(ctx, repo, digest))
 		},
@@ -70,7 +70,7 @@ func (u unifier) ResolveBlob(ctx context.Context, repo string, digest ociregistr
 }
 
 func (u unifier) ResolveManifest(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
-	return race(ctx,
+	return runRead(ctx, u,
 		func(ctx context.Context) t2[ociregistry.Descriptor] {
 			return mk2(u.r0.ResolveManifest(ctx, repo, digest))
 		},

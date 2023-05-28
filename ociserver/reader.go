@@ -36,6 +36,30 @@ func (r *registry) handleBlobHead(ctx context.Context, resp http.ResponseWriter,
 }
 
 func (r *registry) handleBlobGet(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	if r.opts.LocationsForDescriptor != nil {
+		// We need to find information on the blob before we can determine
+		// what to pass back, so resolve the blob first so we don't
+		// stimulate the backend to start sending the whole stream
+		// only to abandon it.
+		desc, err := r.backend.ResolveBlob(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest))
+		if err != nil {
+			// TODO this might not be the best response because ResolveBlob is
+			// often implemented with a HEAD request that can't return an error
+			// body. So it might be better to fall through to the usual GetBlob request,
+			// although that would mean that every error makes two calls :(
+			return err
+		}
+		locs, err := r.opts.LocationsForDescriptor(false, desc)
+		if err != nil {
+			return err
+		}
+		if len(locs) > 0 {
+			// TODO choose randomly from the set of locations?
+			// TODO make it possible to turn off this behaviour?
+			http.Redirect(resp, req, locs[0], http.StatusTemporaryRedirect)
+			return nil
+		}
+	}
 	blob, err := r.backend.GetBlob(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest))
 	if err != nil {
 		return err
@@ -52,6 +76,7 @@ func (r *registry) handleBlobGet(ctx context.Context, resp http.ResponseWriter, 
 }
 
 func (r *registry) handleManifestGet(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	// TODO we could do a redirect here too if we thought it was worthwhile.
 	var mr ociregistry.BlobReader
 	var err error
 	if rreq.Tag != "" {

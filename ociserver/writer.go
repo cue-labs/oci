@@ -27,6 +27,9 @@ import (
 )
 
 func (r *registry) handleBlobUploadBlob(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	if r.opts.DisableSinglePostUpload {
+		return r.handleBlobStartUpload(ctx, resp, req, rreq)
+	}
 	// TODO check that Content-Type is application/octet-stream?
 	mediaType := "application/octet-stream"
 
