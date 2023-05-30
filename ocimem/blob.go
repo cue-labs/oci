@@ -8,7 +8,7 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"github.com/rogpeppe/ociregistry"
+	"go.cuelabs.dev/ociregistry"
 )
 
 // NewBytesReader returns an implementation of ociregistry.BlobReader
@@ -52,7 +52,7 @@ type Buffer struct {
 
 // NewBuffer returns a buffer that calls commit with the
 // when [Buffer.Commit] is invoked successfully.
-///
+// /
 // It's OK to call methods concurrently on a buffer.
 func NewBuffer(commit func(b *Buffer) error, uuid string) *Buffer {
 	if uuid == "" {

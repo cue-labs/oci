@@ -4,7 +4,7 @@ import (
 	"context"
 	"sort"
 
-	"github.com/rogpeppe/ociregistry"
+	"go.cuelabs.dev/ociregistry"
 )
 
 func (r *Registry) Repositories(ctx context.Context) ociregistry.Iter[string] {

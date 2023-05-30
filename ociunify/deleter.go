@@ -3,7 +3,7 @@ package ociunify
 import (
 	"context"
 
-	"github.com/rogpeppe/ociregistry"
+	"go.cuelabs.dev/ociregistry"
 )
 
 // Deleter methods

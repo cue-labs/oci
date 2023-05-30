@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/rogpeppe/ociregistry"
+	"go.cuelabs.dev/ociregistry"
 )
 
 type Options struct {

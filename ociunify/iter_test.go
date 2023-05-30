@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/go-quicktest/qt"
-	"github.com/rogpeppe/ociregistry"
+	"go.cuelabs.dev/ociregistry"
 )
 
 var mergeIterTests = []struct {

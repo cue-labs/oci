@@ -26,8 +26,8 @@ import (
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"github.com/rogpeppe/ociregistry"
-	"github.com/rogpeppe/ociregistry/internal/ocirequest"
+	"go.cuelabs.dev/ociregistry"
+	"go.cuelabs.dev/ociregistry/internal/ocirequest"
 )
 
 type catalog struct {

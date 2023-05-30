@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/opencontainers/go-digest"
-	"github.com/rogpeppe/ociregistry"
+	"go.cuelabs.dev/ociregistry"
 )
 
 // Immutable returns a registry wrap r but only allows content to be

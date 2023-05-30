@@ -5,28 +5,28 @@
 //
 // Packages within this module provide the capability to translate to and
 // from the HTTP protocol documented in that specification:
-// - [github.com/rogpeppe/ociregistry/ociclient] provides an [Interface] value
+// - [go.cuelabs.dev/ociregistry/ociclient] provides an [Interface] value
 // that acts as an HTTP client.
-// - [github.com/rogpeppe/ociregistry/ociserver] provides an HTTP server
+// - [go.cuelabs.dev/ociregistry/ociserver] provides an HTTP server
 // that serves the distribution protocol by making calls to an arbitrary
 // [Interface] value.
 //
 // When used together in a stack, the above two packages can be used
 // to provide a simple proxy server.
 //
-// The [github.com/rogpeppe/ociregistry/ocimem] package provides a trivial
+// The [go.cuelabs.dev/ociregistry/ocimem] package provides a trivial
 // in-memory implementation of the interface.
 //
 // Other packages provide some utilities that manipulate [Interface] values:
-// - [github.com/rogpeppe/ociregistry/ocifilter] provides functionality for exposing
+// - [go.cuelabs.dev/ociregistry/ocifilter] provides functionality for exposing
 // modified or restricted views onto a registry.
-// - [github.com/rogpeppe/ociregistry/ociunify] can combine two registries into one
+// - [go.cuelabs.dev/ociregistry/ociunify] can combine two registries into one
 // unified view across both.
 //
 // # Notes on [Interface]
 //
 // In general, the caller cannot assume that the implementation of a given [Interface] value
-// is present on the network. For example, [github.com/rogpeppe/ociregistry/ocimem]
+// is present on the network. For example, [go.cuelabs.dev/ociregistry/ocimem]
 // doesn't know about the network at all. But there are times when an implementation
 // might want to provide information about the location of blobs or manifests so
 // that a client can go direct if it wishes. That is, a proxy might not wish

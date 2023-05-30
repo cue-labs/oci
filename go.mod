@@ -1,4 +1,4 @@
-module github.com/rogpeppe/ociregistry
+module go.cuelabs.dev/ociregistry
 
 go 1.21
 

@@ -32,8 +32,8 @@ import (
 	"sync/atomic"
 
 	ocispecroot "github.com/opencontainers/image-spec/specs-go"
-	"github.com/rogpeppe/ociregistry"
-	"github.com/rogpeppe/ociregistry/internal/ocirequest"
+	"go.cuelabs.dev/ociregistry"
+	"go.cuelabs.dev/ociregistry/internal/ocirequest"
 )
 
 // debug causes debug messages to be emitted when running the server.

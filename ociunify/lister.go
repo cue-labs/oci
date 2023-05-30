@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/rogpeppe/ociregistry"
+	"go.cuelabs.dev/ociregistry"
 )
 
 func (u unifier) Repositories(ctx context.Context) ociregistry.Iter[string] {

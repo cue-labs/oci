@@ -7,7 +7,7 @@ import (
 	"log"
 	"sync/atomic"
 
-	"github.com/rogpeppe/ociregistry"
+	"go.cuelabs.dev/ociregistry"
 )
 
 func New(r ociregistry.Interface, logf func(f string, a ...any)) ociregistry.Interface {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/rogpeppe/ociregistry"
+	"go.cuelabs.dev/ociregistry"
 )
 
 // Reader methods.

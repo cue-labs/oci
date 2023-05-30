@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/rogpeppe/ociregistry/ociclient"
-	"github.com/rogpeppe/ociregistry/ocimem"
-	"github.com/rogpeppe/ociregistry/ociserver"
+	"go.cuelabs.dev/ociregistry/ociclient"
+	"go.cuelabs.dev/ociregistry/ocimem"
+	"go.cuelabs.dev/ociregistry/ociserver"
 )
 
 func main() {

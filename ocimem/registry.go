@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/opencontainers/go-digest"
-	"github.com/rogpeppe/ociregistry"
+	"go.cuelabs.dev/ociregistry"
 )
 
 var _ ociregistry.Interface = (*Registry)(nil)

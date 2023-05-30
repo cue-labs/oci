@@ -3,7 +3,7 @@ package ocimem
 import (
 	"context"
 
-	"github.com/rogpeppe/ociregistry"
+	"go.cuelabs.dev/ociregistry"
 )
 
 // This file implements the ociregistry.Reader methods.

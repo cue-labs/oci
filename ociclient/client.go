@@ -16,8 +16,8 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"github.com/rogpeppe/ociregistry"
-	"github.com/rogpeppe/ociregistry/internal/ocirequest"
+	"go.cuelabs.dev/ociregistry"
+	"go.cuelabs.dev/ociregistry/internal/ocirequest"
 )
 
 const debug = false

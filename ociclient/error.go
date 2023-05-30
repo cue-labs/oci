@@ -11,7 +11,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/rogpeppe/ociregistry"
+	"go.cuelabs.dev/ociregistry"
 )
 
 // errorBodySizeLimit holds the maximum number of response bytes aallowed in
