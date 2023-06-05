@@ -24,6 +24,7 @@ type Funcs struct {
 	NewError func(ctx context.Context, methodName, repo string) error
 
 	GetBlob_         func(ctx context.Context, repo string, digest Digest) (BlobReader, error)
+	GetBlobRange_    func(ctx context.Context, repo string, digest Digest, offset0, offset1 int64) (BlobReader, error)
 	GetManifest_     func(ctx context.Context, repo string, digest Digest) (BlobReader, error)
 	GetTag_          func(ctx context.Context, repo string, tagName string) (BlobReader, error)
 	ResolveBlob_     func(ctx context.Context, repo string, digest Digest) (Descriptor, error)
@@ -56,6 +57,13 @@ func (f *Funcs) GetBlob(ctx context.Context, repo string, digest Digest) (BlobRe
 		return f.GetBlob_(ctx, repo, digest)
 	}
 	return nil, f.newError(ctx, "GetBlob", repo)
+}
+
+func (f *Funcs) GetBlobRange(ctx context.Context, repo string, digest Digest, offset0, offset1 int64) (BlobReader, error) {
+	if f != nil && f.GetBlobRange_ != nil {
+		return f.GetBlobRange_(ctx, repo, digest, offset0, offset1)
+	}
+	return nil, f.newError(ctx, "GetBlobRange", repo)
 }
 
 func (f *Funcs) GetManifest(ctx context.Context, repo string, digest Digest) (BlobReader, error) {

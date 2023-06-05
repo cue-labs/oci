@@ -87,8 +87,10 @@ type Reader interface {
 	// - ErrBlobUnknown when the blob is not present in the repository.
 	GetBlob(ctx context.Context, repo string, digest Digest) (BlobReader, error)
 
-	// TODO
-	// GetBlobFrom(ctx context.Context, repo string, digest Digest, startAt int64) (BlobReader, error)
+	// GetBlobRange is like GetBlob but asks to get only the given range of bytes from the blob,
+	// starting at offset0, up to but not including offset1.
+	// If offset1 is negative, GetBlobRange will return all the data starting from offset0.
+	GetBlobRange(ctx context.Context, repo string, digest Digest, offset0, offset1 int64) (BlobReader, error)
 
 	// GetManifest returns the contents of the manifest with the given digest.
 	// Errors:
