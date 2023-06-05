@@ -31,6 +31,8 @@ func (r *registry) handleBlobHead(ctx context.Context, resp http.ResponseWriter,
 	}
 	resp.Header().Set("Content-Length", fmt.Sprint(desc.Size))
 	resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
+	// TODO this is true in theory, but what if the backend doesn't support GetBlobRange ?
+	resp.Header().Set("Accept-Ranges", "bytes")
 	resp.WriteHeader(http.StatusOK)
 	return nil
 }
@@ -60,19 +62,55 @@ func (r *registry) handleBlobGet(ctx context.Context, resp http.ResponseWriter, 
 			return nil
 		}
 	}
-	blob, err := r.backend.GetBlob(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest))
+	ranges, err := parseRange(req.Header.Get("Range"))
 	if err != nil {
-		return err
+		return withHTTPCode(http.StatusRequestedRangeNotSatisfiable, err)
 	}
-	defer blob.Close()
-	desc := blob.Descriptor()
-	resp.Header().Set("Content-Type", desc.MediaType)
-	resp.Header().Set("Content-Length", fmt.Sprint(desc.Size))
-	resp.Header().Set("Docker-Content-Digest", rreq.Digest)
-	resp.WriteHeader(http.StatusOK)
+	switch len(ranges) {
+	case 0:
+		blob, err := r.backend.GetBlob(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest))
+		if err != nil {
+			return err
+		}
+		defer blob.Close()
+		desc := blob.Descriptor()
+		resp.Header().Set("Content-Type", desc.MediaType)
+		resp.Header().Set("Content-Length", fmt.Sprint(desc.Size))
+		resp.Header().Set("Docker-Content-Digest", rreq.Digest)
+		resp.WriteHeader(http.StatusOK)
 
-	io.Copy(resp, blob)
-	return nil
+		io.Copy(resp, blob)
+		return nil
+	case 1:
+		rng := ranges[0]
+		blob, err := r.backend.GetBlobRange(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest), rng.start, rng.end)
+		if err != nil {
+			// TODO fall back to using GetBlob if err is ErrUnsupported?
+			return err
+		}
+		defer blob.Close()
+		desc := blob.Descriptor()
+		if rng.end == -1 || rng.end > desc.Size {
+			rng.end = desc.Size
+		}
+		if rng.start > desc.Size {
+			return withHTTPCode(http.StatusRequestedRangeNotSatisfiable, fmt.Errorf("range starts after end of blob"))
+		}
+		if rng.end < rng.start {
+			return withHTTPCode(http.StatusRequestedRangeNotSatisfiable, fmt.Errorf("range end is before start"))
+		}
+		resp.Header().Set("Content-Type", desc.MediaType)
+		resp.Header().Set("Content-Length", fmt.Sprint(rng.end-rng.start))
+		resp.Header().Set("Docker-Content-Digest", rreq.Digest)
+		resp.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", rng.start, rng.end-1, desc.Size))
+		resp.WriteHeader(http.StatusPartialContent)
+
+		io.Copy(resp, blob)
+		return nil
+
+	default:
+		return withHTTPCode(http.StatusRequestedRangeNotSatisfiable, fmt.Errorf("only a single range is supported"))
+	}
 }
 
 func (r *registry) handleManifestGet(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {

@@ -3,6 +3,7 @@ package ociclient
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"go.cuelabs.dev/ociregistry"
 	"go.cuelabs.dev/ociregistry/internal/ocirequest"
@@ -14,6 +15,40 @@ func (c *client) GetBlob(ctx context.Context, repo string, digest ociregistry.Di
 		Repo:   repo,
 		Digest: string(digest),
 	})
+}
+
+func (c *client) GetBlobRange(ctx context.Context, repo string, digest ociregistry.Digest, o0, o1 int64) (_ ociregistry.BlobReader, _err error) {
+	if o0 == 0 && o1 < 0 {
+		return c.GetBlob(ctx, repo, digest)
+	}
+	rreq := &ocirequest.Request{
+		Kind:   ocirequest.ReqBlobGet,
+		Repo:   repo,
+		Digest: string(digest),
+	}
+	method, u := rreq.Construct()
+	req, err := http.NewRequestWithContext(ctx, method, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	if o1 < 0 {
+		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", o0))
+	} else {
+		req.Header.Set("Range", fmt.Sprintf("bytes=%d-%d", o0, o1-1))
+	}
+	resp, err := c.do(req, http.StatusOK, http.StatusPartialContent)
+	if err != nil {
+		return nil, err
+	}
+	defer closeOnError(&_err, resp.Body)
+	desc, err := descriptorFromResponse(resp, ociregistry.Digest(rreq.Digest), true)
+	if err != nil {
+		return nil, fmt.Errorf("invalid descriptor in response: %v", err)
+	}
+	return &blobReader{
+		ReadCloser: resp.Body,
+		desc:       desc,
+	}, nil
 }
 
 func (c *client) ResolveBlob(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {

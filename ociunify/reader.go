@@ -20,6 +20,17 @@ func (u unifier) GetBlob(ctx context.Context, repo string, digest ociregistry.Di
 	).get()
 }
 
+func (u unifier) GetBlobRange(ctx context.Context, repo string, digest ociregistry.Digest, o0, o1 int64) (ociregistry.BlobReader, error) {
+	return runRead(ctx, u,
+		func(ctx context.Context) t2[ociregistry.BlobReader] {
+			return mk2(u.r0.GetBlobRange(ctx, repo, digest, o0, o1))
+		},
+		func(ctx context.Context) t2[ociregistry.BlobReader] {
+			return mk2(u.r0.GetBlobRange(ctx, repo, digest, o0, o1))
+		},
+	).get()
+}
+
 func (u unifier) GetManifest(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.BlobReader, error) {
 	return runRead(ctx, u,
 		func(ctx context.Context) t2[ociregistry.BlobReader] {

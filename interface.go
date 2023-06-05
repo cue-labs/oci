@@ -89,7 +89,8 @@ type Reader interface {
 
 	// GetBlobRange is like GetBlob but asks to get only the given range of bytes from the blob,
 	// starting at offset0, up to but not including offset1.
-	// If offset1 is negative, GetBlobRange will return all the data starting from offset0.
+	// If offset1 is negative or exceeds the actual size of the blob, GetBlobRange will
+	// return all the data starting from offset0.
 	GetBlobRange(ctx context.Context, repo string, digest Digest, offset0, offset1 int64) (BlobReader, error)
 
 	// GetManifest returns the contents of the manifest with the given digest.

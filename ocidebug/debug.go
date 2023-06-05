@@ -56,6 +56,13 @@ func (r *logger) GetBlob(ctx context.Context, repoName string, dig ociregistry.D
 	return rd, err
 }
 
+func (r *logger) GetBlobRange(ctx context.Context, repoName string, dig ociregistry.Digest, o0, o1 int64) (ociregistry.BlobReader, error) {
+	r.logf("GetBlob %s %s [%d, %d] {", repoName, dig, o0, o1)
+	rd, err := r.r.GetBlobRange(ctx, repoName, dig, o0, o1)
+	r.logf("} -> %T, %v", rd, err)
+	return rd, err
+}
+
 func (r *logger) GetManifest(ctx context.Context, repoName string, dig ociregistry.Digest) (ociregistry.BlobReader, error) {
 	r.logf("GetManifest %s %s {", repoName, dig)
 	rd, err := r.r.GetManifest(ctx, repoName, dig)

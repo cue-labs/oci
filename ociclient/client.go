@@ -57,7 +57,7 @@ type client struct {
 	debugID string
 }
 
-func descriptorFromResponse(resp *http.Response, knownDigest digest.Digest, requireContentLength bool) (ociregistry.Descriptor, error) {
+func descriptorFromResponse(resp *http.Response, knownDigest digest.Digest, requireSize bool) (ociregistry.Descriptor, error) {
 	digest := digest.Digest(resp.Header.Get("Docker-Content-Digest"))
 	if digest != "" {
 		if !isValidDigest(string(digest)) {
@@ -73,17 +73,33 @@ func descriptorFromResponse(resp *http.Response, knownDigest digest.Digest, requ
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
-	contentLength := int64(0)
-	if requireContentLength {
-		if resp.ContentLength < 0 {
-			return ociregistry.Descriptor{}, fmt.Errorf("unknown content length")
+	size := int64(0)
+	if requireSize {
+		if resp.StatusCode == http.StatusPartialContent {
+			contentRange := resp.Header.Get("Content-Range")
+			if contentRange == "" {
+				return ociregistry.Descriptor{}, fmt.Errorf("no Content-Range in partial content response")
+			}
+			i := strings.LastIndex(contentRange, "/")
+			if i == -1 {
+				return ociregistry.Descriptor{}, fmt.Errorf("malformed Content-Range %q", contentRange)
+			}
+			contentSize, err := strconv.ParseInt(contentRange[i+1:], 10, 64)
+			if err != nil {
+				return ociregistry.Descriptor{}, fmt.Errorf("malformed Content-Range %q", contentRange)
+			}
+			size = contentSize
+		} else {
+			if resp.ContentLength < 0 {
+				return ociregistry.Descriptor{}, fmt.Errorf("unknown content length")
+			}
+			size = resp.ContentLength
 		}
-		contentLength = resp.ContentLength
 	}
 	return ociregistry.Descriptor{
 		Digest:    digest,
 		MediaType: contentType,
-		Size:      contentLength,
+		Size:      size,
 	}, nil
 }
 

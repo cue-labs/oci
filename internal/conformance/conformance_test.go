@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http/httptest"
 	"net/url"
@@ -105,6 +106,9 @@ func runTests(t *testing.T, startSrv func(t *testing.T) string) {
 	t.Run("extra", func(t *testing.T) {
 		testExtra(t, startSrv)
 	})
+	t.Run("extraWithLocalClient", func(t *testing.T) {
+		testExtraWithLocalClient(t, startSrv)
+	})
 }
 
 var extraTests = []struct {
@@ -123,11 +127,11 @@ var extraTests = []struct {
 //
 // We use the oras-go client to keep us honest.
 func testExtra(t *testing.T, startSrv func(*testing.T) string) {
-	srvURL := startSrv(t)
-	u, err := url.Parse(srvURL)
-	qt.Assert(t, qt.IsNil(err))
 	for _, test := range extraTests {
 		t.Run(test.testName, func(t *testing.T) {
+			srvURL := startSrv(t)
+			u, err := url.Parse(srvURL)
+			qt.Assert(t, qt.IsNil(err))
 			client, err := remote.NewRegistry(u.Host)
 			qt.Assert(t, qt.IsNil(err))
 			client.PlainHTTP = true
@@ -207,6 +211,83 @@ func testReferrers(t *testing.T, client *remote.Registry) {
 	sortDescriptors(wantReferrers)
 	qt.Assert(t, qt.DeepEquals(gotReferrers, wantReferrers))
 
+}
+
+var extraWithLocalClientTests = []struct {
+	testName string
+	run      func(t *testing.T, reg ociregistry.Interface)
+}{{
+	testName: "rangeInBounds",
+	run:      testRangeInBounds,
+}, {
+	testName: "rangeToEnd",
+	run:      testRangeToEnd,
+}, {
+	testName: "rangeBeyondEnd",
+	run:      testRangeBeyondEnd,
+}}
+
+// testExtraWithLocalClient defines extra tests that can't use to oras-go client
+// because they exercise functionality that it doesn't support.
+func testExtraWithLocalClient(t *testing.T, startSrv func(*testing.T) string) {
+	for _, test := range extraWithLocalClientTests {
+		t.Run(test.testName, func(t *testing.T) {
+			srvURL := startSrv(t)
+			client := ociclient.New(srvURL, nil)
+			test.run(t, client)
+		})
+	}
+}
+
+func testRangeInBounds(t *testing.T, reg ociregistry.Interface) {
+	ctx := context.Background()
+	data := []byte("hello world")
+	desc, err := reg.PushBlob(ctx, "foo/bar", ocispec.Descriptor{
+		MediaType: "application/octet-stream",
+		Size:      int64(len(data)),
+		Digest:    digest.FromBytes(data),
+	}, bytes.NewReader(data))
+	qt.Assert(t, qt.IsNil(err))
+	r, err := reg.GetBlobRange(ctx, "foo/bar", desc.Digest, 6, 8)
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.DeepEquals(r.Descriptor(), desc))
+	gotData, err := io.ReadAll(r)
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.Equals(string(gotData), "wo"))
+}
+
+func testRangeToEnd(t *testing.T, reg ociregistry.Interface) {
+	ctx := context.Background()
+	data := []byte("hello world")
+	desc, err := reg.PushBlob(ctx, "foo/bar", ocispec.Descriptor{
+		MediaType: "application/octet-stream",
+		Size:      int64(len(data)),
+		Digest:    digest.FromBytes(data),
+	}, bytes.NewReader(data))
+	qt.Assert(t, qt.IsNil(err))
+	r, err := reg.GetBlobRange(ctx, "foo/bar", desc.Digest, 1, -1)
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.DeepEquals(r.Descriptor(), desc))
+	gotData, err := io.ReadAll(r)
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.Equals(string(gotData), "ello world"))
+}
+
+func testRangeBeyondEnd(t *testing.T, reg ociregistry.Interface) {
+	ctx := context.Background()
+	data := []byte("hello world")
+	desc, err := reg.PushBlob(ctx, "foo/bar", ocispec.Descriptor{
+		MediaType: "application/octet-stream",
+		Size:      int64(len(data)),
+		Digest:    digest.FromBytes(data),
+	}, bytes.NewReader(data))
+	qt.Assert(t, qt.IsNil(err))
+	r, err := reg.GetBlobRange(ctx, "foo/bar", desc.Digest, 1, 5000)
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.DeepEquals(r.Descriptor(), desc))
+	gotData, err := io.ReadAll(r)
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.Equals(string(gotData), "ello world"))
 }
 
 func sortDescriptors(ds []ociregistry.Descriptor) {

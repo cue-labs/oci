@@ -2,6 +2,7 @@ package ocimem
 
 import (
 	"context"
+	"fmt"
 
 	"go.cuelabs.dev/ociregistry"
 )
@@ -16,6 +17,22 @@ func (r *Registry) GetBlob(ctx context.Context, repoName string, dig ociregistry
 		return nil, err
 	}
 	return NewBytesReader(b.data, b.descriptor()), nil
+}
+
+func (r *Registry) GetBlobRange(ctx context.Context, repoName string, dig ociregistry.Digest, o0, o1 int64) (ociregistry.BlobReader, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	b, err := r.blobForDigest(repoName, dig)
+	if err != nil {
+		return nil, err
+	}
+	if o1 < 0 || o1 > int64(len(b.data)) {
+		o1 = int64(len(b.data))
+	}
+	if o0 < 0 || o0 > o1 {
+		return nil, fmt.Errorf("invalid range [%d, %d]; have [%d, %d]", o0, o1, 0, len(b.data))
+	}
+	return NewBytesReader(b.data[o0:o1], b.descriptor()), nil
 }
 
 func (r *Registry) GetManifest(ctx context.Context, repoName string, dig ociregistry.Digest) (ociregistry.BlobReader, error) {

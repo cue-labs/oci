@@ -135,6 +135,56 @@ func TestCalls(t *testing.T) {
 			WantBody:    "foo",
 		},
 		{
+			Description: "GET_blob_range_defined_range",
+			Digests: map[string]string{
+				"sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9": "hello world",
+			},
+			Method: "GET",
+			RequestHeader: map[string]string{
+				"Range": "bytes=1-4",
+			},
+			URL:      "/v2/foo/blobs/sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+			WantCode: http.StatusPartialContent,
+			WantHeader: map[string]string{
+				"Docker-Content-Digest": "sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+				"Content-Length":        "4",
+				"Content-Range":         "bytes 1-4/11",
+			},
+			WantBody: "ello",
+		},
+		{
+			Description: "GET_blob_range_undefined_range_end",
+			Digests: map[string]string{
+				"sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9": "hello world",
+			},
+			Method: "GET",
+			RequestHeader: map[string]string{
+				"Range": "bytes=3-",
+			},
+			URL:      "/v2/foo/blobs/sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+			WantCode: http.StatusPartialContent,
+			WantHeader: map[string]string{
+				"Docker-Content-Digest": "sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+				"Content-Length":        "8",
+				"Content-Range":         "bytes 3-10/11",
+			},
+			WantBody: "lo world",
+		},
+		{
+			Description: "GET_blob_range_invalid-range-start",
+			Digests: map[string]string{
+				"sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9": "hello world",
+			},
+			Method: "GET",
+			RequestHeader: map[string]string{
+				"Range": "bytes=20-30",
+			},
+			URL: "/v2/foo/blobs/sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+			// TODO change the error interface to make it possible for ocimem
+			// to return an error that results in a 416 status.
+			WantCode: http.StatusInternalServerError,
+		},
+		{
 			Description: "HEAD_blob",
 			Digests:     map[string]string{"sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae": "foo"},
 			Method:      "HEAD",
@@ -570,6 +620,7 @@ func TestCalls(t *testing.T) {
 			for k, v := range tc.RequestHeader {
 				req.Header.Set(k, v)
 			}
+			t.Logf("%s %v", req.Method, req.URL)
 			resp, err := s.Client().Do(req)
 			if err != nil {
 				t.Fatalf("Error getting %q: %v", tc.URL, err)
