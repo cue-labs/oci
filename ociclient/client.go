@@ -117,12 +117,31 @@ func isValidDigest(d string) bool {
 	return err == nil
 }
 
+// TODO make this list configurable.
+var knownManifestMediaTypes = []string{
+	ocispec.MediaTypeImageManifest,
+	ocispec.MediaTypeImageIndex,
+	ocispec.MediaTypeArtifactManifest,
+	"application/vnd.docker.container.image.v1+json",
+	"application/vnd.docker.distribution.manifest.v1+json",
+	"application/vnd.docker.distribution.manifest.list.v2+json",
+	// Technically this wildcard should be sufficient, but it isn't
+	// recognized by some registries.
+	"*/*",
+}
+
 // doRequest performs the given OCI request, sending it with the given body (which may be nil).
 func (c *client) doRequest(ctx context.Context, rreq *ocirequest.Request, okStatuses ...int) (*http.Response, error) {
 	method, u := rreq.Construct()
 	req, err := http.NewRequestWithContext(ctx, method, u, nil)
 	if err != nil {
 		return nil, err
+	}
+	if rreq.Kind == ReqManifestGet {
+		// When getting manifests, some servers won't return
+		// the content unless there's an Accept header, so
+		// add all the manifest kinds that we know about.
+		req.Header["Accept"] = knownManifestMediaTypes
 	}
 	resp, err := c.do(req, okStatuses...)
 	if err != nil {

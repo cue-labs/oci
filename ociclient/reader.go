@@ -40,6 +40,9 @@ func (c *client) GetBlobRange(ctx context.Context, repo string, digest ociregist
 	if err != nil {
 		return nil, err
 	}
+	// TODO this is wrong when the server returns a 200 response.
+	// Fix that either by returning ErrUnsupported or by reading the whole
+	// blob and returning only the required portion.
 	defer closeOnError(&_err, resp.Body)
 	desc, err := descriptorFromResponse(resp, ociregistry.Digest(rreq.Digest), true)
 	if err != nil {
