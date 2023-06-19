@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io"
 
+	"cuelabs.dev/go/oci/ociregistry"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"go.cuelabs.dev/ociregistry"
 )
 
 // This file implements the ociregistry.Writer methods.

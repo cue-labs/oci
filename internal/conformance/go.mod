@@ -1,19 +1,19 @@
 // Note: we're defining this as a separate module so we don't have
 // to take on the official conformance module's dependencies.
 
-module go.cuelabs.dev/ociregistry/internal/conformance
+module cuelabs.dev/go/oci/ociregistry/internal/conformance
 
 go 1.21
 
 // Use the local repository for the ociregistry module.
-replace go.cuelabs.dev/ociregistry => ../..
+replace cuelabs.dev/go/oci/ociregistry => ../..
 
 require (
 	github.com/go-quicktest/qt v1.100.0
 	github.com/opencontainers/distribution-spec/conformance v0.0.0-20230516164017-7fcdf80f3c8b
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
-	go.cuelabs.dev/ociregistry v0.0.0-00010101000000-000000000000
+	cuelabs.dev/go/oci/ociregistry v0.0.0-00010101000000-000000000000
 	oras.land/oras-go/v2 v2.2.0
 )
 

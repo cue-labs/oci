@@ -21,12 +21,12 @@ import (
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/registry/remote"
 
-	"go.cuelabs.dev/ociregistry"
-	"go.cuelabs.dev/ociregistry/ociclient"
-	"go.cuelabs.dev/ociregistry/ocidebug"
-	"go.cuelabs.dev/ociregistry/ocimem"
-	"go.cuelabs.dev/ociregistry/ociserver"
-	"go.cuelabs.dev/ociregistry/ociunify"
+	"cuelabs.dev/go/oci/ociregistry"
+	"cuelabs.dev/go/oci/ociregistry/ociclient"
+	"cuelabs.dev/go/oci/ociregistry/ocidebug"
+	"cuelabs.dev/go/oci/ociregistry/ocimem"
+	"cuelabs.dev/go/oci/ociregistry/ociserver"
+	"cuelabs.dev/go/oci/ociregistry/ociunify"
 )
 
 func init() {

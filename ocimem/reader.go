@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"go.cuelabs.dev/ociregistry"
+	"cuelabs.dev/go/oci/ociregistry"
 )
 
 // This file implements the ociregistry.Reader methods.

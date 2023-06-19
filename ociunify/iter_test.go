@@ -3,8 +3,8 @@ package ociunify
 import (
 	"testing"
 
+	"cuelabs.dev/go/oci/ociregistry"
 	"github.com/go-quicktest/qt"
-	"go.cuelabs.dev/ociregistry"
 )
 
 var mergeIterTests = []struct {

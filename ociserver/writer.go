@@ -22,8 +22,8 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"go.cuelabs.dev/ociregistry"
-	"go.cuelabs.dev/ociregistry/internal/ocirequest"
+	"cuelabs.dev/go/oci/ociregistry"
+	"cuelabs.dev/go/oci/ociregistry/internal/ocirequest"
 )
 
 func (r *registry) handleBlobUploadBlob(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {

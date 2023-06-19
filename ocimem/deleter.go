@@ -3,7 +3,7 @@ package ocimem
 import (
 	"context"
 
-	"go.cuelabs.dev/ociregistry"
+	"cuelabs.dev/go/oci/ociregistry"
 )
 
 func (r *Registry) DeleteBlob(ctx context.Context, repoName string, digest ociregistry.Digest) error {

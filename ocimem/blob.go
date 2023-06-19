@@ -8,7 +8,7 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"go.cuelabs.dev/ociregistry"
+	"cuelabs.dev/go/oci/ociregistry"
 )
 
 // NewBytesReader returns an implementation of ociregistry.BlobReader

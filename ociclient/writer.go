@@ -12,8 +12,8 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"go.cuelabs.dev/ociregistry"
-	"go.cuelabs.dev/ociregistry/internal/ocirequest"
+	"cuelabs.dev/go/oci/ociregistry"
+	"cuelabs.dev/go/oci/ociregistry/internal/ocirequest"
 )
 
 // This file implements the ociregistry.Writer methods.

@@ -23,9 +23,9 @@ import (
 	"strings"
 	"testing"
 
+	"cuelabs.dev/go/oci/ociregistry/ocimem"
+	"cuelabs.dev/go/oci/ociregistry/ociserver"
 	"github.com/opencontainers/go-digest"
-	"go.cuelabs.dev/ociregistry/ocimem"
-	"go.cuelabs.dev/ociregistry/ociserver"
 )
 
 const (

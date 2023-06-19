@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"sync"
 
+	"cuelabs.dev/go/oci/ociregistry"
 	"github.com/opencontainers/go-digest"
-	"go.cuelabs.dev/ociregistry"
 )
 
 var _ ociregistry.Interface = (*Registry)(nil)

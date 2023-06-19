@@ -1,4 +1,4 @@
-module go.cuelabs.dev/ociregistry
+module cuelabs.dev/go/oci/ociregistry
 
 go 1.21
 

@@ -1,6 +1,6 @@
 package ocifilter
 
-import "go.cuelabs.dev/ociregistry"
+import "cuelabs.dev/go/oci/ociregistry"
 
 // ReadOnly returns a registry implementation that returns
 // an "operation unsupported" error from all entry points that

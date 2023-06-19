@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"go.cuelabs.dev/ociregistry"
+	"cuelabs.dev/go/oci/ociregistry"
 )
 
 type wireError struct {

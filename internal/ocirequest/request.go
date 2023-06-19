@@ -12,7 +12,7 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"go.cuelabs.dev/ociregistry"
+	"cuelabs.dev/go/oci/ociregistry"
 )
 
 // ParseError represents an error that can happen when parsing.
