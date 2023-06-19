@@ -82,6 +82,7 @@ type (
 
 type Reader interface {
 	// GetBlob returns the content of the blob with the given digest.
+	// The context also controls the lifetime of the returned BlobReader.
 	// Errors:
 	// - ErrNameUnknown when the repository is not present.
 	// - ErrBlobUnknown when the blob is not present in the repository.
@@ -91,15 +92,18 @@ type Reader interface {
 	// starting at offset0, up to but not including offset1.
 	// If offset1 is negative or exceeds the actual size of the blob, GetBlobRange will
 	// return all the data starting from offset0.
+	// The context also controls the lifetime of the returned BlobReader.
 	GetBlobRange(ctx context.Context, repo string, digest Digest, offset0, offset1 int64) (BlobReader, error)
 
 	// GetManifest returns the contents of the manifest with the given digest.
+	// The context also controls the lifetime of the returned BlobReader.
 	// Errors:
 	// - ErrNameUnknown when the repository is not present.
 	// - ErrManifestUnknown when the blob is not present in the repository.
 	GetManifest(ctx context.Context, repo string, digest Digest) (BlobReader, error)
 
 	// GetTag returns the contents of the manifest with the given tag.
+	// The context also controls the lifetime of the returned BlobReader.
 	// Errors:
 	// - ErrNameUnknown when the repository is not present.
 	// - ErrManifestUnknown when the tag is not present in the repository.

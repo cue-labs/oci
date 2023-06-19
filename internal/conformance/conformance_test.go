@@ -62,7 +62,6 @@ func TestUnifyingProxySequential(t *testing.T) {
 }
 
 func TestUnifyingProxyConcurrent(t *testing.T) {
-	t.Skip("this test is flaky. TODO: investigate")
 	testUnifyingProxy(t, &ociunify.Options{
 		ReadPolicy: ociunify.ReadConcurrent,
 	})
@@ -344,7 +343,9 @@ func testDistribution(t *testing.T, startSrv func(*testing.T) string) {
 	t.Setenv("OCI_DELETE_MANIFEST_BEFORE_BLOBS", "0")
 	t.Setenv("ACK_GINKGO_DEPRECATIONS", "1.16.5")
 
-	args := []string{"test"}
+	// Note: if we don't have `-count=1` here, re-running the outer
+	// test suite with `-count=1` won't actually force a re-run of the inner tests.
+	args := []string{"test", "-count=1"}
 	if testing.Verbose() {
 		args = append(args, "-v")
 	}

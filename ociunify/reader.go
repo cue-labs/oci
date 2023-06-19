@@ -10,36 +10,46 @@ import (
 // Reader methods.
 
 func (u unifier) GetBlob(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.BlobReader, error) {
-	return runRead(ctx, u,
+	return runReadBlobReader(ctx, u,
 		func(ctx context.Context) t2[ociregistry.BlobReader] {
 			return mk2(u.r0.GetBlob(ctx, repo, digest))
 		},
 		func(ctx context.Context) t2[ociregistry.BlobReader] {
 			return mk2(u.r0.GetBlob(ctx, repo, digest))
 		},
-	).get()
+	)
 }
 
 func (u unifier) GetBlobRange(ctx context.Context, repo string, digest ociregistry.Digest, o0, o1 int64) (ociregistry.BlobReader, error) {
-	return runRead(ctx, u,
+	return runReadBlobReader(ctx, u,
 		func(ctx context.Context) t2[ociregistry.BlobReader] {
 			return mk2(u.r0.GetBlobRange(ctx, repo, digest, o0, o1))
 		},
 		func(ctx context.Context) t2[ociregistry.BlobReader] {
 			return mk2(u.r0.GetBlobRange(ctx, repo, digest, o0, o1))
 		},
-	).get()
+	)
 }
 
 func (u unifier) GetManifest(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.BlobReader, error) {
-	return runRead(ctx, u,
+	return runReadBlobReader(ctx, u,
 		func(ctx context.Context) t2[ociregistry.BlobReader] {
 			return mk2(u.r0.GetManifest(ctx, repo, digest))
 		},
 		func(ctx context.Context) t2[ociregistry.BlobReader] {
 			return mk2(u.r1.GetManifest(ctx, repo, digest))
 		},
-	).get()
+	)
+}
+
+type blobReader struct {
+	ociregistry.BlobReader
+	cancel func()
+}
+
+func (r blobReader) Close() error {
+	defer r.cancel()
+	return r.BlobReader.Close()
 }
 
 func (u unifier) GetTag(ctx context.Context, repo string, tagName string) (ociregistry.BlobReader, error) {
@@ -114,4 +124,17 @@ func (u unifier) ResolveTag(ctx context.Context, repo string, tagName string) (o
 		return r1.get()
 	}
 	panic("unreachable")
+}
+
+func runReadBlobReader(ctx context.Context, u unifier, f0, f1 func(ctx context.Context) t2[ociregistry.BlobReader]) (ociregistry.BlobReader, error) {
+	rv, cancel := runReadWithCancel(ctx, u, f0, f1)
+	r, err := rv.get()
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+	return blobReader{
+		BlobReader: r,
+		cancel:     cancel,
+	}, nil
 }

@@ -76,13 +76,22 @@ func both[T any](f0, f1 func() T) (T, T) {
 	return <-c, <-c
 }
 
-// race calls f0 and f1 concurrently. It returns the result from the first one that returns without error.
+// runRead calls f0 and f1 concurrently. It returns the result from the first one that returns without error.
+// This should not be used if the return value is affected by cancelling the context.
 func runRead[T result[T]](ctx context.Context, u unifier, f0, f1 func(ctx context.Context) T) T {
+	r, cancel := runReadWithCancel(ctx, u, f0, f1)
+	cancel()
+	return r
+}
+
+// runReadWithCancel calls f0 and f1 concurrently. It returns the result from the first one that returns without error
+// and a cancel function that should be called when the returned value is done with.
+func runReadWithCancel[T result[T]](ctx context.Context, u unifier, f0, f1 func(ctx context.Context) T) (T, func()) {
 	switch u.opts.ReadPolicy {
 	case ReadConcurrent:
 		return runReadConcurrent(ctx, f0, f1)
 	case ReadSequential:
-		return runReadSequential(ctx, f0, f1)
+		return runReadSequential(ctx, f0, f1), func() {}
 	default:
 		panic("unreachable")
 	}
@@ -96,35 +105,41 @@ func runReadSequential[T result[T]](ctx context.Context, f0, f1 func(ctx context
 	return f1(ctx)
 }
 
-func runReadConcurrent[T result[T]](ctx context.Context, f0, f1 func(ctx context.Context) T) T {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	c := make(chan T)
+func runReadConcurrent[T result[T]](ctx context.Context, f0, f1 func(ctx context.Context) T) (T, func()) {
+	done := make(chan struct{})
+	defer close(done)
+	type result struct {
+		r      T
+		cancel func()
+	}
+	c := make(chan result)
 	sender := func(f func(ctx context.Context) T) {
+		ctx, cancel := context.WithCancel(ctx)
 		r := f(ctx)
 		select {
-		case c <- r:
-		case <-ctx.Done():
+		case c <- result{r, cancel}:
+		case <-done:
 			r.close()
+			cancel()
 		}
 	}
 	go sender(f0)
 	go sender(f1)
 	select {
 	case r := <-c:
-		if r.error() == nil {
-			return r
+		if r.r.error() == nil {
+			return r.r, r.cancel
 		}
+		r.cancel()
 	case <-ctx.Done():
-		return (*new(T)).mkErr(ctx.Err())
+		return (*new(T)).mkErr(ctx.Err()), func() {}
 	}
 	// The first result was a failure. Try for the second, which might work.
 	select {
 	case r := <-c:
-		return r
+		return r.r, r.cancel
 	case <-ctx.Done():
-		return (*new(T)).mkErr(ctx.Err())
+		return (*new(T)).mkErr(ctx.Err()), func() {}
 	}
 }
 

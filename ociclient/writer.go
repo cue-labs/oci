@@ -226,9 +226,7 @@ func (w *blobWriter) Write(buf []byte) (int, error) {
 	return len(buf), nil
 }
 
-// flush waits for any existing chunk upload to complete
-// and starts the next chunk upload if there's some data
-// to write.
+// flush flushes any outstanding upload data to the server.
 func (w *blobWriter) flush(buf []byte) error {
 	if len(buf)+len(w.chunk) == 0 {
 		return nil

@@ -15,6 +15,7 @@ import (
 	"sync/atomic"
 
 	"github.com/opencontainers/go-digest"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"go.cuelabs.dev/ociregistry"
 	"go.cuelabs.dev/ociregistry/internal/ocirequest"
@@ -137,7 +138,7 @@ func (c *client) doRequest(ctx context.Context, rreq *ocirequest.Request, okStat
 	if err != nil {
 		return nil, err
 	}
-	if rreq.Kind == ReqManifestGet {
+	if rreq.Kind == ocirequest.ReqManifestGet {
 		// When getting manifests, some servers won't return
 		// the content unless there's an Accept header, so
 		// add all the manifest kinds that we know about.
@@ -176,7 +177,7 @@ func (c *client) do(req *http.Request, okStatuses ...int) (*http.Response, error
 		for k, v := range req.Header {
 			fmt.Fprintf(&buf, "\t%s: %q\n", k, v)
 		}
-		log.Printf("%s", buf.Bytes())
+		c.logf("%s", buf.Bytes())
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -195,7 +196,7 @@ func (c *client) do(req *http.Request, okStatuses ...int) (*http.Response, error
 		fmt.Fprintf(&buf, "}}\n")
 		resp.Body.Close()
 		resp.Body = io.NopCloser(bytes.NewReader(data))
-		log.Printf("%s", buf.Bytes())
+		c.logf("%s", buf.Bytes())
 	}
 	if len(okStatuses) == 0 && resp.StatusCode == http.StatusOK {
 		return resp, nil

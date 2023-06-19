@@ -9,7 +9,7 @@ go 1.21
 replace go.cuelabs.dev/ociregistry => ../..
 
 require (
-	github.com/go-quicktest/qt v0.1.0
+	github.com/go-quicktest/qt v1.100.0
 	github.com/opencontainers/distribution-spec/conformance v0.0.0-20230516164017-7fcdf80f3c8b
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
@@ -22,6 +22,7 @@ require (
 	github.com/bloodorangeio/reggie v0.6.1 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-resty/resty/v2 v2.7.0 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
