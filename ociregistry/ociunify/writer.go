@@ -35,14 +35,9 @@ func (u unifier) PushBlob(ctx context.Context, repo string, desc ociregistry.Des
 }
 
 func (u unifier) PushManifest(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (ociregistry.Descriptor, error) {
-	r0, r1 := both(
-		func() t2[ociregistry.Descriptor] {
-			return mk2(u.r0.PushManifest(ctx, repo, tag, contents, mediaType))
-		},
-		func() t2[ociregistry.Descriptor] {
-			return mk2(u.r1.PushManifest(ctx, repo, tag, contents, mediaType))
-		},
-	)
+	r0, r1 := both(u, func(r ociregistry.Interface, _ int) t2[ociregistry.Descriptor] {
+		return mk2(r.PushManifest(ctx, repo, tag, contents, mediaType))
+	})
 	if (r0.err == nil) == (r1.err == nil) {
 		return r0.get()
 	}
@@ -50,9 +45,8 @@ func (u unifier) PushManifest(ctx context.Context, repo string, tag string, cont
 }
 
 func (u unifier) PushBlobChunked(ctx context.Context, repo string, id string, chunkSize int) (ociregistry.BlobWriter, error) {
-	var id0, id1 string
+	ids := []string{"", ""}
 	if id != "" {
-		var ids []string
 		data, err := base64.RawURLEncoding.DecodeString(id)
 		if err != nil {
 			return nil, fmt.Errorf("malformed ID: %v", err)
@@ -63,16 +57,10 @@ func (u unifier) PushBlobChunked(ctx context.Context, repo string, id string, ch
 		if len(ids) != 2 {
 			return nil, fmt.Errorf("malformed ID %q (expected two elements)", id)
 		}
-		id0, id1 = ids[0], ids[1]
 	}
-	r0, r1 := both(
-		func() t2[ociregistry.BlobWriter] {
-			return mk2(u.r0.PushBlobChunked(ctx, repo, id0, chunkSize))
-		},
-		func() t2[ociregistry.BlobWriter] {
-			return mk2(u.r1.PushBlobChunked(ctx, repo, id1, chunkSize))
-		},
-	)
+	r0, r1 := both(u, func(r ociregistry.Interface, i int) t2[ociregistry.BlobWriter] {
+		return mk2(r.PushBlobChunked(ctx, repo, ids[i], chunkSize))
+	})
 	if r0.err != nil || r1.err != nil {
 		r0.close()
 		r1.close()
@@ -86,37 +74,29 @@ func (u unifier) PushBlobChunked(ctx context.Context, repo string, id string, ch
 		return nil, fmt.Errorf("registries do not agree on upload size; please start upload again")
 	}
 	return &unifiedBlobWriter{
-		w0:   w0,
-		w1:   w1,
+		w:    [2]ociregistry.BlobWriter{w0, w1},
 		size: size,
 	}, nil
 }
 
 func (u unifier) MountBlob(ctx context.Context, fromRepo, toRepo string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
-	return bothResults(both(
-		func() t2[ociregistry.Descriptor] {
-			return mk2(u.r0.MountBlob(ctx, fromRepo, toRepo, digest))
-		},
-		func() t2[ociregistry.Descriptor] {
-			return mk2(u.r1.MountBlob(ctx, fromRepo, toRepo, digest))
+	return bothResults(both(u,
+		func(r ociregistry.Interface, _ int) t2[ociregistry.Descriptor] {
+			return mk2(r.MountBlob(ctx, fromRepo, toRepo, digest))
 		},
 	)).get()
 }
 
 type unifiedBlobWriter struct {
-	w0, w1 ociregistry.BlobWriter
-	size   int64
+	u    unifier
+	w    [2]ociregistry.BlobWriter
+	size int64
 }
 
 func (w *unifiedBlobWriter) Write(buf []byte) (int, error) {
-	r := bothResults(both(
-		func() t2[int] {
-			return mk2(w.w0.Write(buf))
-		},
-		func() t2[int] {
-			return mk2(w.w1.Write(buf))
-		},
-	))
+	r := bothResults(both(w.u, func(_ ociregistry.Interface, i int) t2[int] {
+		return mk2(w.w[i].Write(buf))
+	}))
 	if r.err != nil {
 		return 0, r.err
 	}
@@ -125,25 +105,15 @@ func (w *unifiedBlobWriter) Write(buf []byte) (int, error) {
 }
 
 func (w *unifiedBlobWriter) Close() error {
-	return bothResults(both(
-		func() t1 {
-			return mk1(w.w0.Close())
-		},
-		func() t1 {
-			return mk1(w.w1.Close())
-		},
-	)).err
+	return bothResults(both(w.u, func(_ ociregistry.Interface, i int) t1 {
+		return mk1(w.w[i].Close())
+	})).err
 }
 
 func (w *unifiedBlobWriter) Cancel() error {
-	return bothResults(both(
-		func() t1 {
-			return mk1(w.w0.Cancel())
-		},
-		func() t1 {
-			return mk1(w.w1.Cancel())
-		},
-	)).err
+	return bothResults(both(w.u, func(_ ociregistry.Interface, i int) t1 {
+		return mk1(w.w[i].Cancel())
+	})).err
 }
 
 func (w *unifiedBlobWriter) Size() int64 {
@@ -151,17 +121,12 @@ func (w *unifiedBlobWriter) Size() int64 {
 }
 
 func (w *unifiedBlobWriter) ID() string {
-	data, _ := json.Marshal([]string{w.w0.ID(), w.w1.ID()})
+	data, _ := json.Marshal([]string{w.w[0].ID(), w.w[1].ID()})
 	return base64.RawURLEncoding.EncodeToString(data)
 }
 
 func (w *unifiedBlobWriter) Commit(digest ociregistry.Digest) (ociregistry.Descriptor, error) {
-	return bothResults(both(
-		func() t2[ociregistry.Descriptor] {
-			return mk2(w.w0.Commit(digest))
-		},
-		func() t2[ociregistry.Descriptor] {
-			return mk2(w.w1.Commit(digest))
-		},
-	)).get()
+	return bothResults(both(w.u, func(_ ociregistry.Interface, i int) t2[ociregistry.Descriptor] {
+		return mk2(w.w[i].Commit(digest))
+	})).get()
 }

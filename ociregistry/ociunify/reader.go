@@ -26,7 +26,7 @@ func (u unifier) GetBlobRange(ctx context.Context, repo string, digest ociregist
 			return mk2(u.r0.GetBlobRange(ctx, repo, digest, o0, o1))
 		},
 		func(ctx context.Context) t2[ociregistry.BlobReader] {
-			return mk2(u.r0.GetBlobRange(ctx, repo, digest, o0, o1))
+			return mk2(u.r1.GetBlobRange(ctx, repo, digest, o0, o1))
 		},
 	)
 }
@@ -53,13 +53,9 @@ func (r blobReader) Close() error {
 }
 
 func (u unifier) GetTag(ctx context.Context, repo string, tagName string) (ociregistry.BlobReader, error) {
-	r0, r1 := both(
-		func() t2[ociregistry.BlobReader] {
-			return mk2(u.r0.GetTag(ctx, repo, tagName))
-		},
-		func() t2[ociregistry.BlobReader] {
-			return mk2(u.r1.GetTag(ctx, repo, tagName))
-		})
+	r0, r1 := both(u, func(r ociregistry.Interface, _ int) t2[ociregistry.BlobReader] {
+		return mk2(r.GetTag(ctx, repo, tagName))
+	})
 	switch {
 	case r0.err == nil && r1.err == nil:
 		if r0.x.Descriptor().Digest == r1.x.Descriptor().Digest {
@@ -102,14 +98,9 @@ func (u unifier) ResolveManifest(ctx context.Context, repo string, digest ocireg
 }
 
 func (u unifier) ResolveTag(ctx context.Context, repo string, tagName string) (ociregistry.Descriptor, error) {
-	r0, r1 := both(
-		func() t2[ociregistry.Descriptor] {
-			return mk2(u.r0.ResolveTag(ctx, repo, tagName))
-		},
-		func() t2[ociregistry.Descriptor] {
-			return mk2(u.r1.ResolveTag(ctx, repo, tagName))
-		},
-	)
+	r0, r1 := both(u, func(r ociregistry.Interface, _ int) t2[ociregistry.Descriptor] {
+		return mk2(r.ResolveTag(ctx, repo, tagName))
+	})
 	switch {
 	case r0.err == nil && r1.err == nil:
 		if r0.x.Digest == r1.x.Digest {

@@ -10,38 +10,23 @@ import (
 )
 
 func (u unifier) Repositories(ctx context.Context) ociregistry.Iter[string] {
-	r0, r1 := both(
-		func() ociregistry.Iter[string] {
-			return u.r0.Repositories(ctx)
-		},
-		func() ociregistry.Iter[string] {
-			return u.r1.Repositories(ctx)
-		},
-	)
+	r0, r1 := both(u, func(r ociregistry.Interface, _ int) ociregistry.Iter[string] {
+		return r.Repositories(ctx)
+	})
 	return mergeIter(r0, r1, strings.Compare)
 }
 
 func (u unifier) Tags(ctx context.Context, repo string) ociregistry.Iter[string] {
-	r0, r1 := both(
-		func() ociregistry.Iter[string] {
-			return u.r0.Tags(ctx, repo)
-		},
-		func() ociregistry.Iter[string] {
-			return u.r1.Tags(ctx, repo)
-		},
-	)
+	r0, r1 := both(u, func(r ociregistry.Interface, _ int) ociregistry.Iter[string] {
+		return r.Tags(ctx, repo)
+	})
 	return mergeIter(r0, r1, strings.Compare)
 }
 
 func (u unifier) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) ociregistry.Iter[ociregistry.Descriptor] {
-	r0, r1 := both(
-		func() ociregistry.Iter[ociregistry.Descriptor] {
-			return u.r0.Referrers(ctx, repo, digest, artifactType)
-		},
-		func() ociregistry.Iter[ociregistry.Descriptor] {
-			return u.r1.Referrers(ctx, repo, digest, artifactType)
-		},
-	)
+	r0, r1 := both(u, func(r ociregistry.Interface, _ int) ociregistry.Iter[ociregistry.Descriptor] {
+		return r.Referrers(ctx, repo, digest, artifactType)
+	})
 	return mergeIter(r0, r1, compareDescriptor)
 }
 

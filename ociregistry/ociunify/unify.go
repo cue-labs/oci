@@ -65,15 +65,15 @@ type result[T any] interface {
 }
 
 // both returns the results from calling f0 and f1 concurrently.
-func both[T any](f0, f1 func() T) (T, T) {
-	c := make(chan T)
+func both[T any](u unifier, f func(r ociregistry.Interface, i int) T) (T, T) {
+	c0, c1 := make(chan T), make(chan T)
 	go func() {
-		c <- f0()
+		c0 <- f(u.r0, 0)
 	}()
 	go func() {
-		c <- f1()
+		c1 <- f(u.r1, 1)
 	}()
-	return <-c, <-c
+	return <-c0, <-c1
 }
 
 // runRead calls f0 and f1 concurrently. It returns the result from the first one that returns without error.
