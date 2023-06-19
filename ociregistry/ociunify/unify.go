@@ -64,7 +64,7 @@ type result[T any] interface {
 	mkErr(err error) T
 }
 
-// both returns the results from calling f0 and f1 concurrently.
+// both returns the results from calling f on both registries concurrently.
 func both[T any](u unifier, f func(r ociregistry.Interface, i int) T) (T, T) {
 	c0, c1 := make(chan T), make(chan T)
 	go func() {
@@ -76,36 +76,38 @@ func both[T any](u unifier, f func(r ociregistry.Interface, i int) T) (T, T) {
 	return <-c0, <-c1
 }
 
-// runRead calls f0 and f1 concurrently. It returns the result from the first one that returns without error.
+// runRead calls f concurrently on each registry.
+// It returns the result from the first one that returns without error.
 // This should not be used if the return value is affected by cancelling the context.
-func runRead[T result[T]](ctx context.Context, u unifier, f0, f1 func(ctx context.Context) T) T {
-	r, cancel := runReadWithCancel(ctx, u, f0, f1)
+func runRead[T result[T]](ctx context.Context, u unifier, f func(ctx context.Context, r ociregistry.Interface, i int) T) T {
+	r, cancel := runReadWithCancel(ctx, u, f)
 	cancel()
 	return r
 }
 
-// runReadWithCancel calls f0 and f1 concurrently. It returns the result from the first one that returns without error
+// runReadWithCancel calls f concurrently on each registry.
+// It returns the result from the first one that returns without error
 // and a cancel function that should be called when the returned value is done with.
-func runReadWithCancel[T result[T]](ctx context.Context, u unifier, f0, f1 func(ctx context.Context) T) (T, func()) {
+func runReadWithCancel[T result[T]](ctx context.Context, u unifier, f func(ctx context.Context, r ociregistry.Interface, i int) T) (T, func()) {
 	switch u.opts.ReadPolicy {
 	case ReadConcurrent:
-		return runReadConcurrent(ctx, f0, f1)
+		return runReadConcurrent(ctx, u, f)
 	case ReadSequential:
-		return runReadSequential(ctx, f0, f1), func() {}
+		return runReadSequential(ctx, u, f), func() {}
 	default:
 		panic("unreachable")
 	}
 }
 
-func runReadSequential[T result[T]](ctx context.Context, f0, f1 func(ctx context.Context) T) T {
-	r := f0(ctx)
+func runReadSequential[T result[T]](ctx context.Context, u unifier, f func(ctx context.Context, r ociregistry.Interface, i int) T) T {
+	r := f(ctx, u.r0, 0)
 	if err := r.error(); err == nil {
 		return r
 	}
-	return f1(ctx)
+	return f(ctx, u.r1, 1)
 }
 
-func runReadConcurrent[T result[T]](ctx context.Context, f0, f1 func(ctx context.Context) T) (T, func()) {
+func runReadConcurrent[T result[T]](ctx context.Context, u unifier, f func(ctx context.Context, r ociregistry.Interface, i int) T) (T, func()) {
 	done := make(chan struct{})
 	defer close(done)
 	type result struct {
@@ -113,9 +115,9 @@ func runReadConcurrent[T result[T]](ctx context.Context, f0, f1 func(ctx context
 		cancel func()
 	}
 	c := make(chan result)
-	sender := func(f func(ctx context.Context) T) {
+	sender := func(f func(context.Context, ociregistry.Interface, int) T, reg ociregistry.Interface, i int) {
 		ctx, cancel := context.WithCancel(ctx)
-		r := f(ctx)
+		r := f(ctx, reg, i)
 		select {
 		case c <- result{r, cancel}:
 		case <-done:
@@ -123,8 +125,8 @@ func runReadConcurrent[T result[T]](ctx context.Context, f0, f1 func(ctx context
 			cancel()
 		}
 	}
-	go sender(f0)
-	go sender(f1)
+	go sender(f, u.r0, 0)
+	go sender(f, u.r1, 1)
 	select {
 	case r := <-c:
 		if r.r.error() == nil {

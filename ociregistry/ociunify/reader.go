@@ -10,34 +10,23 @@ import (
 // Reader methods.
 
 func (u unifier) GetBlob(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.BlobReader, error) {
-	return runReadBlobReader(ctx, u,
-		func(ctx context.Context) t2[ociregistry.BlobReader] {
-			return mk2(u.r0.GetBlob(ctx, repo, digest))
-		},
-		func(ctx context.Context) t2[ociregistry.BlobReader] {
-			return mk2(u.r0.GetBlob(ctx, repo, digest))
-		},
-	)
+	return runReadBlobReader(ctx, u, func(ctx context.Context, r ociregistry.Interface, i int) t2[ociregistry.BlobReader] {
+		return mk2(r.GetBlob(ctx, repo, digest))
+	})
 }
 
 func (u unifier) GetBlobRange(ctx context.Context, repo string, digest ociregistry.Digest, o0, o1 int64) (ociregistry.BlobReader, error) {
 	return runReadBlobReader(ctx, u,
-		func(ctx context.Context) t2[ociregistry.BlobReader] {
-			return mk2(u.r0.GetBlobRange(ctx, repo, digest, o0, o1))
-		},
-		func(ctx context.Context) t2[ociregistry.BlobReader] {
-			return mk2(u.r1.GetBlobRange(ctx, repo, digest, o0, o1))
+		func(ctx context.Context, r ociregistry.Interface, i int) t2[ociregistry.BlobReader] {
+			return mk2(r.GetBlobRange(ctx, repo, digest, o0, o1))
 		},
 	)
 }
 
 func (u unifier) GetManifest(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.BlobReader, error) {
 	return runReadBlobReader(ctx, u,
-		func(ctx context.Context) t2[ociregistry.BlobReader] {
-			return mk2(u.r0.GetManifest(ctx, repo, digest))
-		},
-		func(ctx context.Context) t2[ociregistry.BlobReader] {
-			return mk2(u.r1.GetManifest(ctx, repo, digest))
+		func(ctx context.Context, r ociregistry.Interface, i int) t2[ociregistry.BlobReader] {
+			return mk2(r.GetManifest(ctx, repo, digest))
 		},
 	)
 }
@@ -76,25 +65,15 @@ func (u unifier) GetTag(ctx context.Context, repo string, tagName string) (ocire
 }
 
 func (u unifier) ResolveBlob(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
-	return runRead(ctx, u,
-		func(ctx context.Context) t2[ociregistry.Descriptor] {
-			return mk2(u.r0.ResolveBlob(ctx, repo, digest))
-		},
-		func(ctx context.Context) t2[ociregistry.Descriptor] {
-			return mk2(u.r1.ResolveBlob(ctx, repo, digest))
-		},
-	).get()
+	return runRead(ctx, u, func(ctx context.Context, r ociregistry.Interface, _ int) t2[ociregistry.Descriptor] {
+		return mk2(r.ResolveBlob(ctx, repo, digest))
+	}).get()
 }
 
 func (u unifier) ResolveManifest(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
-	return runRead(ctx, u,
-		func(ctx context.Context) t2[ociregistry.Descriptor] {
-			return mk2(u.r0.ResolveManifest(ctx, repo, digest))
-		},
-		func(ctx context.Context) t2[ociregistry.Descriptor] {
-			return mk2(u.r1.ResolveManifest(ctx, repo, digest))
-		},
-	).get()
+	return runRead(ctx, u, func(ctx context.Context, r ociregistry.Interface, _ int) t2[ociregistry.Descriptor] {
+		return mk2(r.ResolveManifest(ctx, repo, digest))
+	}).get()
 }
 
 func (u unifier) ResolveTag(ctx context.Context, repo string, tagName string) (ociregistry.Descriptor, error) {
@@ -117,8 +96,8 @@ func (u unifier) ResolveTag(ctx context.Context, repo string, tagName string) (o
 	panic("unreachable")
 }
 
-func runReadBlobReader(ctx context.Context, u unifier, f0, f1 func(ctx context.Context) t2[ociregistry.BlobReader]) (ociregistry.BlobReader, error) {
-	rv, cancel := runReadWithCancel(ctx, u, f0, f1)
+func runReadBlobReader(ctx context.Context, u unifier, f func(ctx context.Context, r ociregistry.Interface, i int) t2[ociregistry.BlobReader]) (ociregistry.BlobReader, error) {
+	rv, cancel := runReadWithCancel(ctx, u, f)
 	r, err := rv.get()
 	if err != nil {
 		cancel()
