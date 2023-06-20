@@ -24,6 +24,7 @@ import (
 	"cuelabs.dev/go/oci/ociregistry"
 	"cuelabs.dev/go/oci/ociregistry/ociclient"
 	"cuelabs.dev/go/oci/ociregistry/ocidebug"
+	"cuelabs.dev/go/oci/ociregistry/ocifilter"
 	"cuelabs.dev/go/oci/ociregistry/ocimem"
 	"cuelabs.dev/go/oci/ociregistry/ociserver"
 	"cuelabs.dev/go/oci/ociregistry/ociunify"
@@ -52,6 +53,19 @@ func TestClientAsProxy(t *testing.T) {
 		}))
 		t.Cleanup(proxy.Close)
 		return proxy.URL
+	})
+}
+
+func TestSelectAll(t *testing.T) {
+	// Test that the Select filter works OK as a no-op when
+	// all repositories are allowed.
+	runTests(t, func(t *testing.T) string {
+		r := ocifilter.Select(ocimem.New(), func(string) bool {
+			return true
+		})
+		srv := httptest.NewServer(ociserver.New(r, nil))
+		t.Cleanup(srv.Close)
+		return srv.URL
 	})
 }
 
