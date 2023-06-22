@@ -111,14 +111,32 @@ type Reference struct {
 	Digest ociregistry.Digest
 }
 
-// ParseReference parses a reference string.
+// Parse parses a reference string that must include
+// a host name component.
+//
+// It is represented in string form as HOST/NAME[:TAG|@DIGEST]
+// form: the same syntax accepted by "docker pull".
+// Unlike "docker pull" however, there is no default registry: when
+// presented with a bare repository name, Parse will return an error.
+func Parse(refStr string) (Reference, error) {
+	ref, err := ParseRelative(refStr)
+	if err != nil {
+		return Reference{}, err
+	}
+	if ref.Host == "" {
+		return Reference{}, fmt.Errorf("reference does not contain host name")
+	}
+	return ref, nil
+}
+
+// ParseRelative parses a reference string that may
+// or may not include a host name component.
 //
 // It is represented in string form as [HOST/]NAME[:TAG|@DIGEST]
 // form: the same syntax accepted by "docker pull".
 // Unlike "docker pull" however, there is no default registry: when
 // presented with a bare repository name, the Host field will be empty.
-// You can use [Reference.Relative] to populate the Host field in this case.
-func ParseReference(refStr string) (Reference, error) {
+func ParseRelative(refStr string) (Reference, error) {
 	m := referencePat.FindStringSubmatch(refStr)
 	if m == nil {
 		return Reference{}, fmt.Errorf("invalid reference syntax")

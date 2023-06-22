@@ -337,7 +337,7 @@ func TestParseReference(t *testing.T) {
 			test.testName = test.input
 		}
 		t.Run(test.testName, func(t *testing.T) {
-			ref, err := ParseReference(test.input)
+			ref, err := ParseRelative(test.input)
 			t.Logf("ref: %#v", ref)
 			if test.wantErr != "" {
 				qt.Assert(t, qt.ErrorMatches(err, test.wantErr))
@@ -346,6 +346,14 @@ func TestParseReference(t *testing.T) {
 			qt.Assert(t, qt.IsNil(err))
 			qt.Check(t, qt.Equals(ref, test.wantRef))
 			qt.Check(t, qt.Equals(ref.String(), test.input))
+			if test.wantRef.Host != "" {
+				ref1, err := Parse(test.input)
+				qt.Assert(t, qt.IsNil(err))
+				qt.Check(t, qt.Equals(ref1, test.wantRef))
+			} else {
+				_, err := Parse(test.input)
+				qt.Assert(t, qt.ErrorMatches(err, `reference does not contain host name`))
+			}
 		})
 	}
 }
