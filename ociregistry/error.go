@@ -1,7 +1,5 @@
 package ociregistry
 
-// TODO how to cope with redirects, if at all?
-
 // NewError returns a new error with the given code, message and detail.
 func NewError(msg string, code string, detail any) Error {
 	return &registryError{

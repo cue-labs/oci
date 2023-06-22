@@ -50,17 +50,9 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-// TODO here's an idea:
-// // WithBlobs returns a registry that can use blobs for its blob storage
-// // but r for everything else. It will not work if r checks that
-// // pushed manifests refer to blobs within its own blob storage.
-// func WithBlobs(r ociregistry.Interface, blobs ociregistry.Blobs) ociregistry.Interface
-
 // Interface defines a generic interface to a single OCI registry.
 // It does not support cross-registry operations: all methods are
 // directed to the receiver only.
-//
-// TODO define known error types (not found, redirect, ... ?)
 type Interface interface {
 	Writer
 	Reader
