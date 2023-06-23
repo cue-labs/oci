@@ -3,6 +3,8 @@ package ociref
 import (
 	_ "crypto/sha256"
 	_ "crypto/sha512"
+	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -99,11 +101,11 @@ var parseReferenceTests = []struct {
 	},
 	{
 		input:   "repo@sha256:ffffffffffffffffffffffffffffffffff",
-		wantErr: `invalid digest: invalid checksum digest length`,
+		wantErr: `invalid digest "sha256:ffffffffffffffffffffffffffffffffff": invalid checksum digest length`,
 	},
 	{
 		input:   "validname@invalidDigest:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-		wantErr: `invalid digest: invalid checksum digest format`,
+		wantErr: `invalid digest "invalidDigest:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff": invalid checksum digest format`,
 	},
 	{
 		input:   "Uppercase:tag",
@@ -117,7 +119,7 @@ var parseReferenceTests = []struct {
 	// },
 	{
 		input:   "test:5000/Uppercase/lowercase:tag",
-		wantErr: `invalid reference syntax`,
+		wantErr: `tag "5000/Uppercase/lowercase:tag" contains invalid invalid character '/'`,
 	},
 	{
 		input: "lowercase:Uppercase",
@@ -340,6 +342,9 @@ func TestParseReference(t *testing.T) {
 			ref, err := ParseRelative(test.input)
 			t.Logf("ref: %#v", ref)
 			if test.wantErr != "" {
+				if test.wantErr == "invalid reference syntax" {
+					test.wantErr += regexp.QuoteMeta(fmt.Sprintf(" (%q)", test.input))
+				}
 				qt.Assert(t, qt.ErrorMatches(err, test.wantErr))
 				return
 			}

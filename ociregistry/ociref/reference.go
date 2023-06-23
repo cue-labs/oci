@@ -40,11 +40,6 @@ const (
 	// (e.g. ":80").
 	port = `[0-9]+`
 
-	// tag matches valid tag names. From docker/docker:graph/tags.go.
-	// TODO The distribution spec allows underscores here.
-	// Also: max 127 characters.
-	tag = `(?:\w[\w.-]*)`
-
 	// domainName defines the structure of potential domain components
 	// that may be part of image names. This is purposely a subset of what is
 	// allowed by DNS to ensure backwards compatibility with Docker image
@@ -86,7 +81,7 @@ var referencePat = regexp.MustCompile(
 	`^(?:` +
 		`(?:` + `(` + domainAndPort + `)` + `/` + `)?` + // capture 1: host
 		`(` + repoName + `)` + // capture 2: repository name
-		`(?:` + `:(` + tag + `))?` + // capture 3: tag
+		`(?:` + `:([^@]+))?` + // capture 3: tag; rely on Go logic to test validity.
 		`(?:` + `@(.+))?` + // capture 4: digest; rely on go-digest to find issues
 		`)$`,
 )
@@ -139,25 +134,40 @@ func Parse(refStr string) (Reference, error) {
 func ParseRelative(refStr string) (Reference, error) {
 	m := referencePat.FindStringSubmatch(refStr)
 	if m == nil {
-		return Reference{}, fmt.Errorf("invalid reference syntax")
+		return Reference{}, fmt.Errorf("invalid reference syntax (%q)", refStr)
 	}
 	var ref Reference
 	ref.Host, ref.Repository, ref.Tag, ref.Digest = m[1], m[2], m[3], ociregistry.Digest(m[4])
 	// Check lengths and digest: we don't check these as part of the regexp
 	// because it's more efficient to do it in Go and we get
 	// nicer error messages as a result.
-	if len(ref.Tag) > 127 {
-		return Reference{}, fmt.Errorf("tag too long")
-	}
 	if len(ref.Digest) > 0 {
 		if err := ref.Digest.Validate(); err != nil {
-			return Reference{}, fmt.Errorf("invalid digest: %v", err)
+			return Reference{}, fmt.Errorf("invalid digest %q: %v", ref.Digest, err)
+		}
+	}
+	if len(ref.Tag) > 0 {
+		if len(ref.Tag) > 127 {
+			return Reference{}, fmt.Errorf("tag too long")
+		}
+		if !isWord(ref.Tag[0]) {
+			return Reference{}, fmt.Errorf("tag %q does not start with word character", ref.Tag)
+		}
+		for i := 1; i < len(ref.Tag); i++ {
+			c := ref.Tag[i]
+			if !isWord(c) && c != '.' && c != '-' {
+				return Reference{}, fmt.Errorf("tag %q contains invalid invalid character %q", ref.Tag, c)
+			}
 		}
 	}
 	if len(ref.Repository) > 255 {
 		return Reference{}, fmt.Errorf("repository name too long")
 	}
 	return ref, nil
+}
+
+func isWord(c byte) bool {
+	return c == '_' || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9')
 }
 
 // String returns the string form of a reference in the form
