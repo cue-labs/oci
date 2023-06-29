@@ -1,3 +1,4 @@
+// Package ociunify unifies two OCI registries into one.
 package ociunify
 
 import (

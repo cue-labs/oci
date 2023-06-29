@@ -1,3 +1,5 @@
+// Package ocidebug is an OCI registry wrapper that prints log messages
+// on registry operations.
 package ocidebug
 
 import (

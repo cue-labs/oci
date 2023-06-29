@@ -1,3 +1,5 @@
+// Package ocimem provides a simple in-memory implementation of
+// an OCI registry.
 package ocimem
 
 import (
