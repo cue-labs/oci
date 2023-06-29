@@ -134,7 +134,7 @@ func (c contentChecker) Check(note func(key string, value any)) error {
 	}
 	if got, want := desc.Digest, digest.FromBytes(c.wantData); got != want {
 		note("actual data", gotData)
-		return fmt.Errorf("mismatched digest (got %d want %d)", got, want)
+		return fmt.Errorf("mismatched digest (got %v want %v)", got, want)
 	}
 	if !bytes.Equal(gotData, c.wantData) {
 		note("actual data", gotData)
