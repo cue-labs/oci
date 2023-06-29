@@ -1,4 +1,4 @@
-// Package ociref implements cross-registry OCI operations.
+// Package ociref supports parsing cross-registry OCI registry references.
 package ociref
 
 import (
