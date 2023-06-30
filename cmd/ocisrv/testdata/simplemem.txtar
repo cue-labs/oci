@@ -1,0 +1,11 @@
+ocisrv cfg.cue &
+pushblob foo/bar blob.txt sha256:5aa03f96c77536579166fba147929626cc3a97960e994057a9d80271a736d10f
+
+-- cfg.cue --
+registry: {
+	kind: "mem"
+}
+listenAddr: "localhost:0"
+
+-- blob.txt --
+some data
