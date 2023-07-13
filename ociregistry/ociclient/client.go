@@ -21,20 +21,38 @@ import (
 	"cuelabs.dev/go/oci/ociregistry/internal/ocirequest"
 )
 
+// debug enables logging.
+// TODO this should be configurable in the API.
 const debug = false
 
 type Options struct {
+	// DebugID is used to prefix any log messages printed by the client.
 	DebugID string
+
+	// Client is used to send HTTP requests. If it's nil,
+	// http.DefaultClient will be used.
+	Client HTTPDoer
+}
+
+type HTTPDoer interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 var debugID int32
 
+// New returns a registry implementation that uses the OCI
+// HTTP API. A nil opts parameter is equivalent to a pointer
+// to zero Options.
 func New(hostURL string, opts *Options) ociregistry.Interface {
-	if opts == nil {
-		opts = new(Options)
+	var opts1 Options
+	if opts != nil {
+		opts1 = *opts
 	}
-	if opts.DebugID == "" {
-		opts.DebugID = fmt.Sprintf("id%d", atomic.AddInt32(&debugID, 1))
+	if opts1.DebugID == "" {
+		opts1.DebugID = fmt.Sprintf("id%d", atomic.AddInt32(&debugID, 1))
+	}
+	if opts1.Client == nil {
+		opts1.Client = http.DefaultClient
 	}
 	u, err := url.Parse(hostURL)
 	if err != nil {
@@ -42,19 +60,15 @@ func New(hostURL string, opts *Options) ociregistry.Interface {
 	}
 	return &client{
 		url:     u,
-		client:  http.DefaultClient,
-		debugID: opts.DebugID,
+		client:  opts1.Client,
+		debugID: opts1.DebugID,
 	}
-}
-
-func (c *client) logf(f string, a ...any) {
-	log.Printf("ociclient %s: %s", c.debugID, fmt.Sprintf(f, a...))
 }
 
 type client struct {
 	*ociregistry.Funcs
 	url     *url.URL
-	client  *http.Client
+	client  HTTPDoer
 	debugID string
 }
 
@@ -211,6 +225,10 @@ func (c *client) do(req *http.Request, okStatuses ...int) (*http.Response, error
 		return nil, makeError(resp)
 	}
 	return nil, unexpectedStatusError(resp.StatusCode)
+}
+
+func (c *client) logf(f string, a ...any) {
+	log.Printf("ociclient %s: %s", c.debugID, fmt.Sprintf(f, a...))
 }
 
 func locationFromResponse(resp *http.Response) (*url.URL, error) {

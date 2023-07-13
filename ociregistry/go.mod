@@ -1,6 +1,6 @@
 module cuelabs.dev/go/oci/ociregistry
 
-go 1.21
+go 1.20
 
 require (
 	github.com/go-json-experiment/json v0.0.0-20230324203220-04923b7a9528

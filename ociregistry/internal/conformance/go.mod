@@ -3,7 +3,7 @@
 
 module cuelabs.dev/go/oci/ociregistry/internal/conformance
 
-go 1.21
+go 1.20
 
 // Use the local repository for the ociregistry module.
 replace cuelabs.dev/go/oci/ociregistry => ../..
