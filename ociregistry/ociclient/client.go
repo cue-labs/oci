@@ -136,7 +136,7 @@ func isValidDigest(d string) bool {
 var knownManifestMediaTypes = []string{
 	ocispec.MediaTypeImageManifest,
 	ocispec.MediaTypeImageIndex,
-	ocispec.MediaTypeArtifactManifest,
+	"application/vnd.oci.artifact.manifest.v1+json", // deprecated.
 	"application/vnd.docker.container.image.v1+json",
 	"application/vnd.docker.distribution.manifest.v1+json",
 	"application/vnd.docker.distribution.manifest.list.v2+json",
