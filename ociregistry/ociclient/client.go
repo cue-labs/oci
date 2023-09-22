@@ -152,7 +152,7 @@ func (c *client) doRequest(ctx context.Context, rreq *ocirequest.Request, okStat
 	if err != nil {
 		return nil, err
 	}
-	if rreq.Kind == ocirequest.ReqManifestGet {
+	if rreq.Kind == ocirequest.ReqManifestGet || rreq.Kind == ocirequest.ReqManifestHead {
 		// When getting manifests, some servers won't return
 		// the content unless there's an Accept header, so
 		// add all the manifest kinds that we know about.
