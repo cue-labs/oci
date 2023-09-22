@@ -71,35 +71,30 @@ func (c *client) MountBlob(ctx context.Context, fromRepo, toRepo string, dig oci
 }
 
 func (c *client) PushBlob(ctx context.Context, repo string, desc ociregistry.Descriptor, r io.Reader) (_ ociregistry.Descriptor, _err error) {
+	// TODO use the single-post blob-upload method (ReqBlobUploadBlob)
+	// See:
+	//	https://github.com/distribution/distribution/issues/4065
+	//	https://github.com/golang/go/issues/63152
 	rreq := &ocirequest.Request{
-		Kind:   ocirequest.ReqBlobUploadBlob,
-		Repo:   repo,
-		Digest: string(desc.Digest),
+		Kind: ocirequest.ReqBlobStartUpload,
+		Repo: repo,
 	}
 	method, u := rreq.Construct()
-	req, err := http.NewRequestWithContext(ctx, method, u, r)
+	req, err := http.NewRequestWithContext(ctx, method, u, nil)
 	if err != nil {
 		return ociregistry.Descriptor{}, err
 	}
-	req.ContentLength = desc.Size
-	// Note: even though we know a better content type here, the spec
-	// says that we must always use application/octet-stream.
-	req.Header.Set("Content-Type", "application/octet-stream")
-	resp, err := c.do(req, http.StatusCreated, http.StatusAccepted)
+	resp, err := c.do(req, http.StatusAccepted)
 	if err != nil {
 		return ociregistry.Descriptor{}, err
 	}
 	resp.Body.Close()
-	if resp.StatusCode == http.StatusCreated {
-		return desc, nil
-	}
 	location, err := locationFromResponse(resp)
 	if err != nil {
 		return ociregistry.Descriptor{}, err
 	}
 
-	// Monolithic push not supported (the response is Accepted, not Created).
-	// Retry as a PUT request (the first request counts as a POST).
+	// We've got the upload location. Now PUT the content.
 
 	// Note: we can't use ocirequest.Request here because that's
 	// specific to the ociserver implementation in this case.
