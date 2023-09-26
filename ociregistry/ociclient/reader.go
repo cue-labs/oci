@@ -48,10 +48,7 @@ func (c *client) GetBlobRange(ctx context.Context, repo string, digest ociregist
 	if err != nil {
 		return nil, fmt.Errorf("invalid descriptor in response: %v", err)
 	}
-	return &blobReader{
-		ReadCloser: resp.Body,
-		desc:       desc,
-	}, nil
+	return newBlobReaderUnverified(resp.Body, desc), nil
 }
 
 func (c *client) ResolveBlob(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
@@ -117,8 +114,5 @@ func (c *client) read(ctx context.Context, rreq *ocirequest.Request) (_ ociregis
 	if err != nil {
 		return nil, fmt.Errorf("invalid descriptor in response: %v", err)
 	}
-	return &blobReader{
-		ReadCloser: resp.Body,
-		desc:       desc,
-	}, nil
+	return newBlobReader(resp.Body, desc), nil
 }
