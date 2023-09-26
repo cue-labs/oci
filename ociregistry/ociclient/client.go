@@ -33,6 +33,10 @@ type Options struct {
 	// Client is used to send HTTP requests. If it's nil,
 	// http.DefaultClient will be used.
 	Client HTTPDoer
+
+	// Insecure specifies whether an http scheme will be
+	// used to address the host instead of https.
+	Insecure bool
 }
 
 type HTTPDoer interface {
@@ -44,7 +48,10 @@ var debugID int32
 // New returns a registry implementation that uses the OCI
 // HTTP API. A nil opts parameter is equivalent to a pointer
 // to zero Options.
-func New(hostURL string, opts *Options) ociregistry.Interface {
+//
+// The host specifies the host name to talk to; it may
+// optionally be a host:port pair.
+func New(host string, opts *Options) (ociregistry.Interface, error) {
 	var opts1 Options
 	if opts != nil {
 		opts1 = *opts
@@ -55,22 +62,31 @@ func New(hostURL string, opts *Options) ociregistry.Interface {
 	if opts1.Client == nil {
 		opts1.Client = http.DefaultClient
 	}
-	u, err := url.Parse(hostURL)
+	// Check that it's a valid host by forming a URL from it and checking that it matches.
+	u, err := url.Parse("https://" + host + "/path")
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("invalid host %q", host)
+	}
+	if u.Host != host {
+		return nil, fmt.Errorf("invalid host %q (does not correctly form a host part of a URL)", host)
+	}
+	if opts.Insecure {
+		u.Scheme = "http"
 	}
 	return &client{
-		url:     u,
-		client:  opts1.Client,
-		debugID: opts1.DebugID,
-	}
+		httpHost:   host,
+		httpScheme: u.Scheme,
+		client:     opts1.Client,
+		debugID:    opts1.DebugID,
+	}, nil
 }
 
 type client struct {
 	*ociregistry.Funcs
-	url     *url.URL
-	client  HTTPDoer
-	debugID string
+	httpScheme string
+	httpHost   string
+	client     HTTPDoer
+	debugID    string
 }
 
 func descriptorFromResponse(resp *http.Response, knownDigest digest.Digest, requireSize bool) (ociregistry.Descriptor, error) {
@@ -222,10 +238,10 @@ func (c *client) doRequest(ctx context.Context, rreq *ocirequest.Request, okStat
 
 func (c *client) do(req *http.Request, okStatuses ...int) (*http.Response, error) {
 	if req.URL.Scheme == "" {
-		req.URL.Scheme = c.url.Scheme
+		req.URL.Scheme = c.httpScheme
 	}
 	if req.URL.Host == "" {
-		req.URL.Host = c.url.Host
+		req.URL.Host = c.httpHost
 	}
 	if req.Body != nil {
 		// Ensure that the body isn't consumed until the
