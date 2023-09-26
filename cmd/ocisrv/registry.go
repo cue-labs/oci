@@ -40,14 +40,16 @@ type registry interface {
 }
 
 type clientRegistry struct {
-	HostURL string `json:"hostURL"`
-	DebugID string `json:"debugID,omitempty"`
+	Host     string `json:"host"`
+	Insecure bool   `json:"insecure"`
+	DebugID  string `json:"debugID,omitempty"`
 }
 
 func (r clientRegistry) new() (ociregistry.Interface, error) {
-	return ociclient.New(r.HostURL, &ociclient.Options{
-		DebugID: r.DebugID,
-	}), nil
+	return ociclient.New(r.Host, &ociclient.Options{
+		DebugID:  r.DebugID,
+		Insecure: r.Insecure,
+	})
 }
 
 type selectRegistry struct {

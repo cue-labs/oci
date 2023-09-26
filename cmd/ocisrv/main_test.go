@@ -132,8 +132,7 @@ func connect(ts *testscript.TestScript) (ociregistry.Interface, error) {
 			return nil, fmt.Errorf("timed out waiting for server")
 		}
 	}
-	hostURL := "http://" + addr
-	resp, err := http.Get(hostURL + "/v2/")
+	resp, err := http.Get("http://" + addr + "/v2/")
 	if err != nil {
 		return nil, fmt.Errorf("cannot ping server: %v", err)
 	}
@@ -141,7 +140,9 @@ func connect(ts *testscript.TestScript) (ociregistry.Interface, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected ping status (%v)", resp.Status)
 	}
-	return ociclient.New(hostURL, nil), nil
+	return ociclient.New(addr, &ociclient.Options{
+		Insecure: true,
+	})
 }
 
 func writeNetAddrForTest(l net.Listener) {

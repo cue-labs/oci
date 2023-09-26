@@ -48,7 +48,7 @@ func TestClientAsProxy(t *testing.T) {
 			DebugID: "direct",
 		}))
 		t.Cleanup(direct.Close)
-		proxy := httptest.NewServer(ociserver.New(ociclient.New(direct.URL, nil), &ociserver.Options{
+		proxy := httptest.NewServer(ociserver.New(mustNewOCIClient(direct.URL, nil), &ociserver.Options{
 			DebugID: "proxy",
 		}))
 		t.Cleanup(proxy.Close)
@@ -97,10 +97,10 @@ func testUnifyingProxy(t *testing.T, opts *ociunify.Options) {
 		}))
 		t.Cleanup(direct1.Close)
 		proxy := httptest.NewServer(ociserver.New(debugWrap("proxy", ociunify.New(
-			debugWrap("proxy0", ociclient.New(direct0.URL, &ociclient.Options{
+			debugWrap("proxy0", mustNewOCIClient(direct0.URL, &ociclient.Options{
 				DebugID: "client0",
 			})),
-			debugWrap("proxy1", ociclient.New(direct1.URL, &ociclient.Options{
+			debugWrap("proxy1", mustNewOCIClient(direct1.URL, &ociclient.Options{
 				DebugID: "client1",
 			})),
 			opts,
@@ -246,10 +246,27 @@ func testExtraWithLocalClient(t *testing.T, startSrv func(*testing.T) string) {
 	for _, test := range extraWithLocalClientTests {
 		t.Run(test.testName, func(t *testing.T) {
 			srvURL := startSrv(t)
-			client := ociclient.New(srvURL, nil)
+			client := mustNewOCIClient(srvURL, nil)
 			test.run(t, client)
 		})
 	}
+}
+
+func mustNewOCIClient(srvURL string, opts *ociclient.Options) ociregistry.Interface {
+	if opts == nil {
+		opts = new(ociclient.Options)
+	}
+	u, err := url.Parse(srvURL)
+	if err != nil {
+		panic(err)
+	}
+	client, err := ociclient.New(u.Host, &ociclient.Options{
+		Insecure: u.Scheme == "http",
+	})
+	if err != nil {
+		panic(err)
+	}
+	return client
 }
 
 func testRangeInBounds(t *testing.T, reg ociregistry.Interface) {
