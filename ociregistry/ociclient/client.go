@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"hash"
 	"io"
 	"log"
 	"net/http"
@@ -118,13 +119,63 @@ func descriptorFromResponse(resp *http.Response, knownDigest digest.Digest, requ
 	}, nil
 }
 
+func newBlobReader(r io.ReadCloser, desc ociregistry.Descriptor) *blobReader {
+	return &blobReader{
+		r:        r,
+		digester: desc.Digest.Algorithm().Hash(),
+		desc:     desc,
+		verify:   true,
+	}
+}
+
+func newBlobReaderUnverified(r io.ReadCloser, desc ociregistry.Descriptor) *blobReader {
+	br := newBlobReader(r, desc)
+	br.verify = false
+	return br
+}
+
 type blobReader struct {
-	io.ReadCloser
-	desc ociregistry.Descriptor
+	r        io.ReadCloser
+	n        int64
+	digester hash.Hash
+	desc     ociregistry.Descriptor
+	verify   bool
 }
 
 func (r *blobReader) Descriptor() ociregistry.Descriptor {
 	return r.desc
+}
+
+func (r *blobReader) Read(buf []byte) (int, error) {
+	n, err := r.r.Read(buf)
+	r.n += int64(n)
+	r.digester.Write(buf[:n])
+	if err == nil {
+		if r.n > r.desc.Size {
+			// Fail early when the blob is too big; we can do that even
+			// when we're not verifying for other use cases.
+			return n, fmt.Errorf("blob size exceeds content length %d: %w", r.desc.Size, ociregistry.ErrSizeInvalid)
+		}
+		return n, nil
+	}
+	if err != io.EOF {
+		return n, err
+	}
+	if !r.verify {
+		return n, io.EOF
+	}
+	if r.n != r.desc.Size {
+		return n, fmt.Errorf("blob size mismatch (%d/%d): %w", r.n, r.desc.Size, ociregistry.ErrSizeInvalid)
+	}
+	gotDigest := digest.NewDigest(r.desc.Digest.Algorithm(), r.digester)
+	if gotDigest != r.desc.Digest {
+		return n, fmt.Errorf("digest mismatch when reading blob")
+	}
+	return n, io.EOF
+}
+
+func (r *blobReader) Close() error {
+	return r.r.Close()
 }
 
 func isValidDigest(d string) bool {
@@ -152,7 +203,7 @@ func (c *client) doRequest(ctx context.Context, rreq *ocirequest.Request, okStat
 	if err != nil {
 		return nil, err
 	}
-	if rreq.Kind == ocirequest.ReqManifestGet {
+	if rreq.Kind == ocirequest.ReqManifestGet || rreq.Kind == ocirequest.ReqManifestHead {
 		// When getting manifests, some servers won't return
 		// the content unless there's an Accept header, so
 		// add all the manifest kinds that we know about.
