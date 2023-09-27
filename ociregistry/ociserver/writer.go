@@ -16,6 +16,7 @@ package ociserver
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -161,6 +162,10 @@ func (r *registry) handleManifestPut(ctx context.Context, resp http.ResponseWrit
 			return ociregistry.ErrDigestInvalid
 		}
 	}
+	subjectDesc, err := subjectFromManifest(data)
+	if err != nil {
+		return fmt.Errorf("invalid manifest JSON: %v", err)
+	}
 	desc, err := r.backend.PushManifest(ctx, rreq.Repo, tag, data, mediaType)
 	if err != nil {
 		return err
@@ -168,9 +173,25 @@ func (r *registry) handleManifestPut(ctx context.Context, resp http.ResponseWrit
 	if err := r.setLocationHeader(resp, false, desc, "/v2/"+rreq.Repo+"/manifests/"+string(desc.Digest)); err != nil {
 		return err
 	}
+	if subjectDesc != nil {
+		resp.Header().Set("OCI-Subject", string(subjectDesc.Digest))
+	}
 	// TODO OCI-Subject header?
 	resp.WriteHeader(http.StatusCreated)
 	return nil
+}
+
+func subjectFromManifest(data []byte) (*ociregistry.Descriptor, error) {
+	var m struct {
+		Subject *ociregistry.Descriptor `json:"subject"`
+	}
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil, err
+	}
+	if m.Subject == nil {
+		return nil, nil
+	}
+	return m.Subject, nil
 }
 
 func (r *registry) locationForUploadID(repo string, uploadID string) string {

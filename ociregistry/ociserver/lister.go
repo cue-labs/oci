@@ -134,6 +134,7 @@ func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWr
 		return err
 	}
 	resp.Header().Set("Content-Length", fmt.Sprint(len(msg)))
+	resp.Header().Set("Content-Type", "application/vnd.oci.image.index.v1+json")
 	resp.WriteHeader(http.StatusOK)
 	resp.Write(msg)
 	return nil
