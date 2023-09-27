@@ -4,4 +4,5 @@ use (
 	./ociregistry
 	./ociregistry/internal/conformance
 	./cmd/ocisrv
+	./internal/ci
 )
