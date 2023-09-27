@@ -1,7 +1,7 @@
 go 1.21
 
 use (
+	./cmd/ocisrv
 	./ociregistry
 	./ociregistry/internal/conformance
-	./cmd/ocisrv
 )
