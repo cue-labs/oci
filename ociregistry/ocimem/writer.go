@@ -106,36 +106,96 @@ func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string
 	return desc, nil
 }
 
+// TODO support other manifest types.
+var manifestCheckers = map[string]func(repo *repository, data []byte) (digest.Digest, error){
+	ocispec.MediaTypeImageManifest: checkManifest(imageDescIter),
+	ocispec.MediaTypeImageIndex:    checkManifest(indexDescIter),
+}
+
 func (r *Registry) checkManifest(repoName string, mediaType string, data []byte) (ociregistry.Digest, error) {
-	// TODO support other manifest types.
-	if got, want := mediaType, ocispec.MediaTypeImageManifest; got != want {
-		// TODO complain about non-manifest media types
-		return "", nil
-	}
-	var m ociregistry.Manifest
-	if err := json.Unmarshal(data, &m); err != nil {
-		return "", err
-	}
 	repo, err := r.repo(repoName)
 	if err != nil {
 		return "", err
 	}
-	for i, layer := range m.Layers {
-		if err := CheckDescriptor(layer, nil); err != nil {
-			return "", fmt.Errorf("bad layer %d: %v", i, err)
+	checker, ok := manifestCheckers[mediaType]
+	if !ok {
+		// TODO complain about non-manifest media types
+		return "", nil
+	}
+	return checker(repo, data)
+}
+
+type digestCheck int
+
+const (
+	noCheck digestCheck = iota
+	blobMustExist
+	manifestMustExist
+)
+
+func checkManifest[T any](descIter func(T) func(func(string, ocispec.Descriptor, digestCheck) bool)) func(repo *repository, data []byte) (digest.Digest, error) {
+	return func(repo *repository, data []byte) (_ digest.Digest, retErr error) {
+		var x T
+		if err := json.Unmarshal(data, &x); err != nil {
+			return "", fmt.Errorf("cannot unmarshal into %T: %v", &x, err)
 		}
-		if repo.blobs[layer.Digest] == nil {
-			return "", fmt.Errorf("blob for layer %d not found; repo %s; digest %s", i, repoName, layer.Digest)
+		iter := descIter(x)
+		var subject digest.Digest
+		iter(func(about string, desc ocispec.Descriptor, check digestCheck) bool {
+			if about == "subject" {
+				subject = desc.Digest
+			}
+			if err := CheckDescriptor(desc, nil); err != nil {
+				retErr = fmt.Errorf("bad descriptor in %s: %v", about, err)
+				return false
+			}
+			switch check {
+			case blobMustExist:
+				if repo.blobs[desc.Digest] == nil {
+					retErr = fmt.Errorf("blob for %s not found", about)
+					return false
+				}
+			case manifestMustExist:
+				if repo.manifests[desc.Digest] == nil {
+					retErr = fmt.Errorf("manifest for %s not found", about)
+					return false
+				}
+			}
+			return true
+		})
+		return subject, retErr
+	}
+}
+
+func imageDescIter(m ociregistry.Manifest) func(func(string, ocispec.Descriptor, digestCheck) bool) {
+	return func(yield func(string, ocispec.Descriptor, digestCheck) bool) {
+		for i, layer := range m.Layers {
+			if !yield(fmt.Sprintf("layers[%d]", i), layer, blobMustExist) {
+				return
+			}
+		}
+		if !yield("config", m.Config, blobMustExist) {
+			return
+		}
+		if m.Subject != nil {
+			if !yield("subject", *m.Subject, noCheck) {
+				return
+			}
 		}
 	}
-	if err := CheckDescriptor(m.Config, nil); err != nil {
-		return "", fmt.Errorf("bad config descriptor: %v", err)
+}
+
+func indexDescIter(m ocispec.Index) func(func(string, ocispec.Descriptor, digestCheck) bool) {
+	return func(yield func(string, ocispec.Descriptor, digestCheck) bool) {
+		for i, manifest := range m.Manifests {
+			if !yield(fmt.Sprintf("manifests[%d]", i), manifest, manifestMustExist) {
+				return
+			}
+		}
+		if m.Subject != nil {
+			if !yield("subject", *m.Subject, noCheck) {
+				return
+			}
+		}
 	}
-	if repo.blobs[m.Config.Digest] == nil {
-		return "", fmt.Errorf("blob for config not found")
-	}
-	if m.Subject != nil {
-		return m.Subject.Digest, nil
-	}
-	return "", nil
 }

@@ -16,11 +16,13 @@ package ociserver
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/opencontainers/go-digest"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"cuelabs.dev/go/oci/ociregistry"
 	"cuelabs.dev/go/oci/ociregistry/internal/ocirequest"
@@ -161,6 +163,10 @@ func (r *registry) handleManifestPut(ctx context.Context, resp http.ResponseWrit
 			return ociregistry.ErrDigestInvalid
 		}
 	}
+	subjectDesc, err := subjectFromManifest(req.Header.Get("Content-Type"), data)
+	if err != nil {
+		return fmt.Errorf("invalid manifest JSON: %v", err)
+	}
 	desc, err := r.backend.PushManifest(ctx, rreq.Repo, tag, data, mediaType)
 	if err != nil {
 		return err
@@ -168,9 +174,33 @@ func (r *registry) handleManifestPut(ctx context.Context, resp http.ResponseWrit
 	if err := r.setLocationHeader(resp, false, desc, "/v2/"+rreq.Repo+"/manifests/"+string(desc.Digest)); err != nil {
 		return err
 	}
+	if subjectDesc != nil {
+		resp.Header().Set("OCI-Subject", string(subjectDesc.Digest))
+	}
 	// TODO OCI-Subject header?
 	resp.WriteHeader(http.StatusCreated)
 	return nil
+}
+
+func subjectFromManifest(contentType string, data []byte) (*ociregistry.Descriptor, error) {
+	switch contentType {
+	case ocispec.MediaTypeImageManifest,
+		ocispec.MediaTypeImageIndex:
+		break
+		// TODO other manifest media types.
+	default:
+		return nil, nil
+	}
+	var m struct {
+		Subject *ociregistry.Descriptor `json:"subject"`
+	}
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil, err
+	}
+	if m.Subject == nil {
+		return nil, nil
+	}
+	return m.Subject, nil
 }
 
 func (r *registry) locationForUploadID(repo string, uploadID string) string {

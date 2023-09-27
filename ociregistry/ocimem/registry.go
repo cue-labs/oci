@@ -108,9 +108,15 @@ func isValidTag(tag string) bool {
 	return tagPattern.MatchString(tag)
 }
 
+// SHA256("")
+const emptyHash = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
 // CheckDescriptor checks that the given descriptor matches the given data or,
 // if data is nil, that the descriptor looks sane.
 func CheckDescriptor(desc ociregistry.Descriptor, data []byte) error {
+	if err := desc.Digest.Validate(); err != nil {
+		return fmt.Errorf("invalid digest: %v", err)
+	}
 	if data != nil {
 		if digest.FromBytes(data) != desc.Digest {
 			return fmt.Errorf("digest mismatch")
@@ -119,8 +125,8 @@ func CheckDescriptor(desc ociregistry.Descriptor, data []byte) error {
 			return fmt.Errorf("size mismatch")
 		}
 	} else {
-		if desc.Size == 0 {
-			return fmt.Errorf("zero sized content")
+		if desc.Size == 0 && desc.Digest != emptyHash {
+			return fmt.Errorf("zero sized content with mismatching digest")
 		}
 	}
 	if desc.MediaType == "" {
