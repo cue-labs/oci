@@ -3,17 +3,17 @@
 
 module cuelabs.dev/go/oci/ociregistry/internal/conformance
 
-go 1.20
+go 1.21
 
 // Use the local repository for the ociregistry module.
 replace cuelabs.dev/go/oci/ociregistry => ../..
 
 require (
+	cuelabs.dev/go/oci/ociregistry v0.0.0-00010101000000-000000000000
 	github.com/go-quicktest/qt v1.100.0
 	github.com/opencontainers/distribution-spec/conformance v0.0.0-20230516164017-7fcdf80f3c8b
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.1.0-rc2
-	cuelabs.dev/go/oci/ociregistry v0.0.0-00010101000000-000000000000
+	github.com/opencontainers/image-spec v1.1.0-rc4
 	oras.land/oras-go/v2 v2.2.0
 )
 
@@ -30,11 +30,9 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
-	github.com/rogpeppe/go-internal v1.6.1 // indirect
+	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 )
-
-replace github.com/opencontainers/distribution-spec/conformance => /home/rogpeppe/other/oci-distribution-spec/conformance
