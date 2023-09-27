@@ -3,7 +3,9 @@
 package ocidebug
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -109,13 +111,46 @@ func (r *logger) PushBlobChunked(ctx context.Context, repoName string, resumeID 
 	}, err
 }
 
+type descriptor struct {
+	Digest string `json:"digest"`
+}
+
+type manifestData struct {
+	Debug     string       `json:"debug"`
+	Config    descriptor   `json:"config"`
+	Layers    []descriptor `json:"layers"`
+	Subject   descriptor   `json:"subject"`
+	Manifests []descriptor `json:"manifests"`
+}
+
 func (r *logger) PushManifest(ctx context.Context, repoName string, tag string, data []byte, mediaType string) (ociregistry.Descriptor, error) {
-	r.logf("PushManifest %s tag=%q mediaType=%q data=%q {", repoName, tag, data, mediaType)
+	r.logf("PushManifest %s tag=%q mediaType=%q data=%q {", repoName, tag, mediaType, data)
+	var m manifestData
+	if err := json.Unmarshal(data, &m); err != nil {
+		panic(err)
+	}
+	var buf bytes.Buffer
+	printDesc := func(name string, desc descriptor) {
+		if desc.Digest == "" {
+			return
+		}
+		fmt.Fprintf(&buf, "\t%s: %s\n", name, desc.Digest)
+	}
+	fmt.Fprintf(&buf, "PushManifest %s\n", m.Debug)
+	printDesc("config", m.Config)
+	for i, layer := range m.Layers {
+		printDesc(fmt.Sprintf("layer[%d]", i), layer)
+	}
+	for i, layer := range m.Manifests {
+		printDesc(fmt.Sprintf("manifests[%d]", i), layer)
+	}
+	printDesc("subject", m.Subject)
+	r.logf("%s", buf.String())
 	desc, err := r.r.PushManifest(ctx, repoName, tag, data, mediaType)
 	if err != nil {
 		r.logf("} -> %v", err)
 	} else {
-		r.logf("} -> %#v", desc)
+		r.logf("} -> %#v", desc.Digest)
 	}
 	return desc, err
 }
