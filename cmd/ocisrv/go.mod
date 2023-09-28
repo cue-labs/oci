@@ -3,7 +3,7 @@ module cuelabs.dev/go/oci/cmd/ocisrv
 go 1.21
 
 require (
-	cuelabs.dev/go/oci/ociregistry v0.0.0-20230629133716-70a19a72afe4
+	cuelabs.dev/go/oci/ociregistry v0.0.0-20230928144906-bef4f4e03886
 	github.com/cue-exp/cueconfig v0.0.1
 	github.com/go-json-experiment/json v0.0.0-20230324203220-04923b7a9528
 	github.com/opencontainers/go-digest v1.0.0
