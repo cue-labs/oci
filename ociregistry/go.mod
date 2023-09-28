@@ -1,6 +1,6 @@
 module cuelabs.dev/go/oci/ociregistry
 
-go 1.21
+go 1.20
 
 require (
 	github.com/go-quicktest/qt v1.100.0

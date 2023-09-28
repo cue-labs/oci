@@ -3,7 +3,7 @@
 
 module cuelabs.dev/go/oci/ociregistry/internal/conformance
 
-go 1.21
+go 1.20
 
 // Note that we use a replace directive for the ociregistry module
 // even though we're using a go.work workspace as well,
