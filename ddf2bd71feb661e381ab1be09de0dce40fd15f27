@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd743961_3e5eb834",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1020340
+      },
+      "writtenOn": "2023-09-28T09:38:21Z",
+      "side": 1,
+      "message": "Approving on behalf of myitcv, because we don\u0027t yet have CI in place to +1 the trybots.",
+      "revId": "ddf2bd71feb661e381ab1be09de0dce40fd15f27",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
