@@ -1,6 +1,6 @@
 module cuelabs.dev/go/oci/cmd/ocisrv
 
-go 1.21
+go 1.20
 
 require (
 	cuelabs.dev/go/oci/ociregistry v0.0.0-20230629133716-70a19a72afe4
