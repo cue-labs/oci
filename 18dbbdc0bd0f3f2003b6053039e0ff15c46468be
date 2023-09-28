@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "599aa516_a1c0fb5a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1020340
+      },
+      "writtenOn": "2023-09-28T10:16:22Z",
+      "side": 1,
+      "message": "+2 on behalf of myitcv; we don\u0027t yet have CI to give a trybot +1, hence need to bypass that check as chiefporcuepine",
+      "revId": "18dbbdc0bd0f3f2003b6053039e0ff15c46468be",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
