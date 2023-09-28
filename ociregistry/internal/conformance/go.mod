@@ -5,6 +5,12 @@ module cuelabs.dev/go/oci/ociregistry/internal/conformance
 
 go 1.21
 
+// Note that we use a replace directive for the ociregistry module
+// even though we're using a go.work workspace as well,
+// so that `go mod tidy` always uses ociregistry from the same repository.
+// Moreover, we always want the conformance tests to run against the local version.
+replace cuelabs.dev/go/oci/ociregistry => ../..
+
 require (
 	cuelabs.dev/go/oci/ociregistry v0.0.0-00010101000000-000000000000
 	github.com/go-quicktest/qt v1.100.0
