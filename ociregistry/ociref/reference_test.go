@@ -376,3 +376,40 @@ func TestParseReference(t *testing.T) {
 		})
 	}
 }
+
+var isValidHostTests = []struct {
+	host string
+	want bool
+}{{
+	host: "foo.com:5000",
+	want: true,
+}, {
+	host: "foo.com",
+	want: true,
+}, {
+	host: "localhost:1234",
+	want: true,
+}, {
+	host: "localhost",
+	want: false,
+}, {
+	host: "foo",
+	want: false,
+}, {
+	host: "foo..com",
+	want: false,
+}, {
+	host: "[::1]",
+	want: true,
+}, {
+	host: "[::1]:3456",
+	want: true,
+}}
+
+func TestIsValidHost(t *testing.T) {
+	for _, test := range isValidHostTests {
+		t.Run(test.host, func(t *testing.T) {
+			qt.Assert(t, qt.Equals(IsValidHost(test.host), test.want))
+		})
+	}
+}
