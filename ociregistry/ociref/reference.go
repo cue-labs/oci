@@ -100,11 +100,13 @@ var referencePat = regexp.MustCompile(
 		`)$`,
 )
 
+var hostPat = regexp.MustCompile(`^(?:` + domainAndPort + `)$`)
+
 // Reference represents an entry in an OCI repository.
 type Reference struct {
 	// Host holds the host name of the registry
-	// within which the repository is stored. This might
-	// be empty.
+	// within which the repository is stored, optionally in
+	// the form host:port. This might be empty.
 	Host string
 
 	// Repository holds the repository name.
@@ -120,10 +122,15 @@ type Reference struct {
 	Digest ociregistry.Digest
 }
 
+// IsValidHost reports whether s is a valid host (or host:port) part of a reference string.
+func IsValidHost(s string) bool {
+	return hostPat.MatchString(s)
+}
+
 // Parse parses a reference string that must include
-// a host name component.
+// a host name (or host:port pair) component.
 //
-// It is represented in string form as HOST/NAME[:TAG|@DIGEST]
+// It is represented in string form as HOST[:PORT]/NAME[:TAG|@DIGEST]
 // form: the same syntax accepted by "docker pull".
 // Unlike "docker pull" however, there is no default registry: when
 // presented with a bare repository name, Parse will return an error.
@@ -141,7 +148,7 @@ func Parse(refStr string) (Reference, error) {
 // ParseRelative parses a reference string that may
 // or may not include a host name component.
 //
-// It is represented in string form as [HOST/]NAME[:TAG|@DIGEST]
+// It is represented in string form as [HOST[:PORT]/]NAME[:TAG|@DIGEST]
 // form: the same syntax accepted by "docker pull".
 // Unlike "docker pull" however, there is no default registry: when
 // presented with a bare repository name, the Host field will be empty.
