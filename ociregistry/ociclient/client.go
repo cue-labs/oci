@@ -66,15 +66,14 @@ var debugID int32
 // The host specifies the host name to talk to; it may
 // optionally be a host:port pair.
 func New(host string, opts *Options) (ociregistry.Interface, error) {
-	var opts1 Options
-	if opts != nil {
-		opts1 = *opts
+	if opts == nil {
+		opts = &Options{}
 	}
-	if opts1.DebugID == "" {
-		opts1.DebugID = fmt.Sprintf("id%d", atomic.AddInt32(&debugID, 1))
+	if opts.DebugID == "" {
+		opts.DebugID = fmt.Sprintf("id%d", atomic.AddInt32(&debugID, 1))
 	}
-	if opts1.Client == nil {
-		opts1.Client = http.DefaultClient
+	if opts.Client == nil {
+		opts.Client = http.DefaultClient
 	}
 	// Check that it's a valid host by forming a URL from it and checking that it matches.
 	u, err := url.Parse("https://" + host + "/path")
@@ -90,8 +89,8 @@ func New(host string, opts *Options) (ociregistry.Interface, error) {
 	return &client{
 		httpHost:   host,
 		httpScheme: u.Scheme,
-		client:     opts1.Client,
-		debugID:    opts1.DebugID,
+		client:     opts.Client,
+		debugID:    opts.DebugID,
 	}, nil
 }
 
