@@ -95,6 +95,10 @@ func (b *Buffer) Size() int64 {
 	return int64(len(b.buf))
 }
 
+func (b *Buffer) ChunkSize() int {
+	return 8 * 1024 // 8KiB; not really important
+}
+
 // GetBlob returns any committed data and is descriptor. It returns an error
 // if the data hasn't been committed or there was an error doing so.
 func (b *Buffer) GetBlob() (ociregistry.Descriptor, []byte, error) {
