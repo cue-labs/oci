@@ -150,10 +150,7 @@ type Writer interface {
 	PushBlob(ctx context.Context, repo string, desc Descriptor, r io.Reader) (Descriptor, error)
 
 	// PushBlobChunked starts to push a blob to the given repository.
-	// The returned BlobWriter can be used to stream the upload and resume on temporary errors.
-	// If id is non-zero, it should be the value returned from BlobWriter.ID
-	// from a previous PushBlobChunked call and will be used to resume that blob
-	// write.
+	// The returned [BlobWriter] can be used to stream the upload and resume on temporary errors.
 	//
 	// The chunkSize parameter provides a hint for the chunk size to use
 	// when writing to the registry. If it's zero, a suitable default will be chosen.
@@ -161,7 +158,25 @@ type Writer interface {
 	//
 	// The context remains active as long as the BlobWriter is around: if it's
 	// cancelled, it should cause any blocked BlobWriter operations to terminate.
-	PushBlobChunked(ctx context.Context, repo string, id string, chunkSize int) (BlobWriter, error)
+	PushBlobChunked(ctx context.Context, repo string, chunkSize int) (BlobWriter, error)
+
+	// If id is non-zero, it should be the value returned from [BlobWriter.ID]
+	// from a previous PushBlobChunked call and will be used to resume that blob write.
+	// When resuming a blob write, you should typically provide the previous [BlobWriter.Size] as the offset.
+	// If that's not possible, use an offset of -1 to continue where the last write left off.
+
+	// PushBlobChunkedResume resumes a previous push of a blob started with PushBlobChunked.
+	// The id should be the value returned from [BlobWriter.ID] from the previous push.
+	// and the offset should be the value returned from [BlobWriter.Size].
+	//
+	// The offset and chunkSize should similarly be obtained from the previous [BlobWriter]
+	// via the [BlobWriter.Size] and [BlobWriter.ChunkSize] methods.
+	// Alternatively, set offset to -1 to continue where the last write left off,
+	// and to only use chunkSize as a hint like in PushBlobChunked.
+	//
+	// The context remains active as long as the BlobWriter is around: if it's
+	// cancelled, it should cause any blocked BlobWriter operations to terminate.
+	PushBlobChunkedResume(ctx context.Context, repo, id string, offset int64, chunkSize int) (BlobWriter, error)
 
 	// MountBlob makes a blob with the given digest that's in fromRepo available
 	// in toRepo and returns its canonical descriptor.
@@ -216,7 +231,7 @@ type Lister interface {
 	Referrers(ctx context.Context, repo string, digest Digest, artifactType string) Iter[Descriptor]
 }
 
-// BlobWriter provides a handle for inserting data into a blob store.
+// BlobWriter provides a handle for uploading a blob to a registry.
 type BlobWriter interface {
 	// Write writes more data to the blob. When resuming, the
 	// caller must start writing data from Size bytes into the content.
@@ -228,6 +243,11 @@ type BlobWriter interface {
 
 	// Size returns the number of bytes written to this blob.
 	Size() int64
+
+	// ChunkSize returns the maximum number of bytes to upload at a single time.
+	// This number must meet the minimum given by the registry
+	// and should otherwise follow the hint given by the user.
+	ChunkSize() int64
 
 	// ID returns the opaque identifier for this writer. The returned value
 	// can be passed to PushBlobChunked to resume the write.

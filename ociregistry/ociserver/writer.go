@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -51,7 +52,8 @@ func (r *registry) handleBlobUploadBlob(ctx context.Context, resp http.ResponseW
 }
 
 func (r *registry) handleBlobStartUpload(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, "", 0)
+	// start a chunked upload; this should only do a POST
+	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, 0)
 	if err != nil {
 		return err
 	}
@@ -59,18 +61,21 @@ func (r *registry) handleBlobStartUpload(ctx context.Context, resp http.Response
 
 	resp.Header().Set("Location", r.locationForUploadID(rreq.Repo, w.ID()))
 	resp.Header().Set("Range", "0-0")
+	resp.Header().Set("OCI-Chunk-Min-Length", strconv.FormatInt(w.ChunkSize(), 10))
 	resp.WriteHeader(http.StatusAccepted)
 	return nil
 }
 
 func (r *registry) handleBlobUploadInfo(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, rreq.UploadID, 0)
+	// resume the chunk without actually writing to it; this should only do a GET
+	w, err := r.backend.PushBlobChunkedResume(ctx, rreq.Repo, rreq.UploadID, -1, 0)
 	if err != nil {
 		return err
 	}
 	defer w.Close()
 	resp.Header().Set("Location", r.locationForUploadID(rreq.Repo, w.ID()))
 	resp.Header().Set("Range", rangeString(0, w.Size()))
+	resp.Header().Set("OCI-Chunk-Min-Length", strconv.FormatInt(w.ChunkSize(), 10))
 	resp.WriteHeader(http.StatusNoContent)
 	return nil
 }
@@ -88,7 +93,8 @@ func (r *registry) handleBlobUploadChunk(ctx context.Context, resp http.Response
 			return badAPIUseError("We don't understand your Content-Range")
 		}
 	}
-	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, rreq.UploadID, 0)
+	// TODO: set the right offset so we avoid a GET request before PATCH/PUT
+	w, err := r.backend.PushBlobChunkedResume(ctx, rreq.Repo, rreq.UploadID, -1, 0)
 	if err != nil {
 		return err
 	}
@@ -111,7 +117,8 @@ func (r *registry) handleBlobUploadChunk(ctx context.Context, resp http.Response
 }
 
 func (r *registry) handleBlobCompleteUpload(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	w, err := r.backend.PushBlobChunked(ctx, rreq.Repo, rreq.UploadID, 0)
+	// TODO: set the right offset so we avoid a GET request before PATCH/PUT
+	w, err := r.backend.PushBlobChunkedResume(ctx, rreq.Repo, rreq.UploadID, -1, 0)
 	if err != nil {
 		return err
 	}

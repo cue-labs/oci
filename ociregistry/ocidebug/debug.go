@@ -111,10 +111,22 @@ func (r *logger) PushBlob(ctx context.Context, repoName string, desc ociregistry
 	return desc, err
 }
 
-func (r *logger) PushBlobChunked(ctx context.Context, repoName string, resumeID string, chunkSize int) (ociregistry.BlobWriter, error) {
+func (r *logger) PushBlobChunked(ctx context.Context, repoName string, chunkSize int) (ociregistry.BlobWriter, error) {
 	bwid := fmt.Sprintf("bw%d", atomic.AddInt32(&blobWriterID, 1))
-	r.logf("PushBlobChunked %s resumeID=%q chunkSize=%d {", repoName, resumeID, chunkSize)
-	w, err := r.r.PushBlobChunked(ctx, repoName, resumeID, chunkSize)
+	r.logf("PushBlobChunked %s chunkSize=%d {", repoName, chunkSize)
+	w, err := r.r.PushBlobChunked(ctx, repoName, chunkSize)
+	r.logf("} -> %T(%s), %v", w, bwid, err)
+	return blobWriter{
+		id: bwid,
+		w:  w,
+		r:  r,
+	}, err
+}
+
+func (r *logger) PushBlobChunkedResume(ctx context.Context, repoName, id string, offset int64, chunkSize int) (ociregistry.BlobWriter, error) {
+	bwid := fmt.Sprintf("bw%d", atomic.AddInt32(&blobWriterID, 1))
+	r.logf("PushBlobChunkedResume %s id=%q chunkSize=%d {", repoName, id, chunkSize)
+	w, err := r.r.PushBlobChunkedResume(ctx, repoName, id, offset, chunkSize)
 	r.logf("} -> %T(%s), %v", w, bwid, err)
 	return blobWriter{
 		id: bwid,
@@ -207,6 +219,12 @@ func (w blobWriter) Size() int64 {
 	size := w.w.Size()
 	w.logf("Size -> %v", size)
 	return size
+}
+
+func (w blobWriter) ChunkSize() int64 {
+	chunkSize := w.w.ChunkSize()
+	w.logf("ChunkSize -> %v", chunkSize)
+	return chunkSize
 }
 
 func (w blobWriter) Close() error {

@@ -133,59 +133,77 @@ func (c *client) PushBlob(ctx context.Context, repo string, desc ociregistry.Des
 // weigh up in-memory cost vs round-trip overhead.
 const defaultChunkSize = 64 * 1024
 
-func (c *client) PushBlobChunked(ctx context.Context, repo string, id string, chunkSize int) (ociregistry.BlobWriter, error) {
+func (c *client) PushBlobChunked(ctx context.Context, repo string, chunkSize int) (ociregistry.BlobWriter, error) {
 	if chunkSize <= 0 {
 		chunkSize = defaultChunkSize
 	}
-	if id == "" {
-		resp, err := c.doRequest(ctx, &ocirequest.Request{
-			Kind: ocirequest.ReqBlobStartUpload,
-			Repo: repo,
-		}, http.StatusAccepted)
-		if err != nil {
-			return nil, err
-		}
-		resp.Body.Close()
-		location, err := locationFromResponse(resp)
-		if err != nil {
-			return nil, err
-		}
-		return &blobWriter{
-			ctx:       ctx,
-			client:    c,
-			chunkSize: chunkSizeFromResponse(resp, chunkSize),
-			chunk:     make([]byte, 0, chunkSize),
-			location:  location,
-		}, nil
-	}
-	// Try to find what offset we're meant to be writing at
-	// by doing a GET to the location.
-	req, err := http.NewRequest("GET", id, nil)
+	resp, err := c.doRequest(ctx, &ocirequest.Request{
+		Kind: ocirequest.ReqBlobStartUpload,
+		Repo: repo,
+	}, http.StatusAccepted)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.do(req, http.StatusNoContent)
-	if err != nil {
-		return nil, fmt.Errorf("cannot recover chunk offset: %v", err)
-	}
+	resp.Body.Close()
 	location, err := locationFromResponse(resp)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get location from response: %v", err)
-	}
-	rangeStr := resp.Header.Get("Range")
-	p0, p1, ok := parseRange(rangeStr)
-	if !ok {
-		return nil, fmt.Errorf("invalid range %q in response", rangeStr)
-	}
-	if p0 != 0 {
-		return nil, fmt.Errorf("range %q does not start with 0", rangeStr)
+		return nil, err
 	}
 	return &blobWriter{
 		ctx:       ctx,
 		client:    c,
 		chunkSize: chunkSizeFromResponse(resp, chunkSize),
-		size:      p1,
-		flushed:   p1,
+		chunk:     make([]byte, 0, chunkSize),
+		location:  location,
+	}, nil
+}
+
+func (c *client) PushBlobChunkedResume(ctx context.Context, repo string, id string, offset int64, chunkSize int) (ociregistry.BlobWriter, error) {
+	if id == "" {
+		return nil, fmt.Errorf("id must be set to resume a chunked upload")
+	}
+	var location *url.URL
+	switch {
+	case offset == -1:
+		// Try to find what offset we're meant to be writing at
+		// by doing a GET to the location.
+		req, err := http.NewRequest("GET", id, nil)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.do(req, http.StatusNoContent)
+		if err != nil {
+			return nil, fmt.Errorf("cannot recover chunk offset: %v", err)
+		}
+		location, err = locationFromResponse(resp)
+		if err != nil {
+			return nil, fmt.Errorf("cannot get location from response: %v", err)
+		}
+		rangeStr := resp.Header.Get("Range")
+		p0, p1, ok := parseRange(rangeStr)
+		if !ok {
+			return nil, fmt.Errorf("invalid range %q in response", rangeStr)
+		}
+		if p0 != 0 {
+			return nil, fmt.Errorf("range %q does not start with 0", rangeStr)
+		}
+		chunkSize = chunkSizeFromResponse(resp, chunkSize)
+		offset = p1
+	case offset < 0:
+		return nil, fmt.Errorf("invalid offset; must be -1, 0, or positive")
+	default:
+		var err error
+		location, err = url.Parse(id) // Note that this mirrors [BlobWriter.ID].
+		if err != nil {
+			return nil, fmt.Errorf("provided ID is not a valid location URL")
+		}
+	}
+	return &blobWriter{
+		ctx:       ctx,
+		client:    c,
+		chunkSize: chunkSize,
+		size:      offset,
+		flushed:   offset,
 		location:  location,
 	}, nil
 }
@@ -282,6 +300,12 @@ func (w *blobWriter) Close() error {
 }
 
 func (w *blobWriter) Size() int64 {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.size
+}
+
+func (w *blobWriter) ChunkSize() int64 {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return w.size
