@@ -80,6 +80,7 @@ var errorStatuses = map[string]int{
 	ociregistry.ErrDenied.Code():              http.StatusForbidden,
 	ociregistry.ErrUnsupported.Code():         http.StatusBadRequest,
 	ociregistry.ErrTooManyRequests.Code():     http.StatusTooManyRequests,
+	ociregistry.ErrRangeInvalid.Code():        http.StatusRequestedRangeNotSatisfiable,
 }
 
 func badAPIUseError(f string, a ...any) error {
