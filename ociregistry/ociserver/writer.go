@@ -34,7 +34,7 @@ func (r *registry) handleBlobUploadBlob(ctx context.Context, resp http.ResponseW
 		return r.handleBlobStartUpload(ctx, resp, req, rreq)
 	}
 	// TODO check that Content-Type is application/octet-stream?
-	mediaType := "application/octet-stream"
+	mediaType := mediaTypeOctetStream
 
 	desc, err := r.backend.PushBlob(req.Context(), rreq.Repo, ociregistry.Descriptor{
 		MediaType: mediaType,
@@ -78,33 +78,23 @@ func (r *registry) handleBlobUploadInfo(ctx context.Context, resp http.ResponseW
 	}
 	defer w.Close()
 	resp.Header().Set("Location", r.locationForUploadID(rreq.Repo, w.ID()))
-	resp.Header().Set("Range", rangeString(0, w.Size()))
+	resp.Header().Set("Range", ocirequest.RangeString(0, w.Size()))
 	resp.WriteHeader(http.StatusNoContent)
 	return nil
 }
 
 func (r *registry) handleBlobUploadChunk(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	// TODO technically it seems like there should always be
-	// a content range for a PATCH request but the existing tests
-	// seem to be lax about it, and we can just assume for the
-	// first patch that the range is 0-(contentLength-1)
-	start := int64(0)
-	contentRange := req.Header.Get("Content-Range")
-	if contentRange != "" {
-		var end int64
-		if n, err := fmt.Sscanf(contentRange, "%d-%d", &start, &end); err != nil || n != 2 {
-			return badAPIUseError("We don't understand your Content-Range")
-		}
-	}
-	// TODO: set the right offset so we avoid a GET request before PATCH/PUT
-	w, err := r.backend.PushBlobChunkedResume(ctx, rreq.Repo, rreq.UploadID, -1, 0)
+	// Note that the spec requires chunked upload PATCH requests to include Content-Range,
+	// but the conformance tests do not actually follow that as of the time of writing.
+	// Allow the missing header to result in start=0, meaning we assume it's the first chunk.
+	start, end, err := chunkRange(req)
 	if err != nil {
 		return err
 	}
-	// TODO this is potentially racy if multiple clients are doing this concurrently.
-	// Perhaps the PushBlobChunked call should take a "startAt" parameter?
-	if start != w.Size() {
-		return fmt.Errorf("write at invalid starting point %d; actual start %d: %w", start, w.Size(), withHTTPCode(http.StatusRequestedRangeNotSatisfiable, ociregistry.ErrBlobUploadInvalid))
+
+	w, err := r.backend.PushBlobChunkedResume(ctx, rreq.Repo, rreq.UploadID, start, int(end-start))
+	if err != nil {
+		return err
 	}
 	if _, err := io.Copy(w, req.Body); err != nil {
 		w.Close()
@@ -114,14 +104,31 @@ func (r *registry) handleBlobUploadChunk(ctx context.Context, resp http.Response
 		return fmt.Errorf("cannot close BlobWriter: %w", err)
 	}
 	resp.Header().Set("Location", r.locationForUploadID(rreq.Repo, w.ID()))
-	resp.Header().Set("Range", rangeString(0, w.Size()))
+	resp.Header().Set("Range", ocirequest.RangeString(0, w.Size()))
 	resp.WriteHeader(http.StatusAccepted)
 	return nil
 }
 
 func (r *registry) handleBlobCompleteUpload(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	// TODO: set the right offset so we avoid a GET request before PATCH/PUT
-	w, err := r.backend.PushBlobChunkedResume(ctx, rreq.Repo, rreq.UploadID, -1, 0)
+	// We are handling a PUT as part of one of:
+	//
+	// 1) An entire blob via POST-then-PUT.
+	// 2) The last chunk of a chunked upload as part of the closing PUT, with a valid Content-Range.
+	// 3) Closing a finished chunked upload with an empty-bodied PUT.
+	//
+	// We can't actually tell these apart upfront;
+	// for example, 3 can have an octet-stream content type even though it has no body,
+	// meaning that it looks exactly like 1, as seen in the conformance tests.
+	// For that reason, we simply forward the range start as the offset in case 2,
+	// while using an offset of 0 in cases 1 and 3 without a range, to avoid a GET in ociclient.
+	//
+	// Note that we don't check "ok" here, letting "start" default to 0 due to the above.
+	start, end, err := chunkRange(req)
+	if err != nil {
+		return err
+	}
+
+	w, err := r.backend.PushBlobChunkedResume(ctx, rreq.Repo, rreq.UploadID, start, int(end-start))
 	if err != nil {
 		return err
 	}
@@ -156,7 +163,7 @@ func (r *registry) handleBlobMount(ctx context.Context, resp http.ResponseWriter
 func (r *registry) handleManifestPut(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	mediaType := req.Header.Get("Content-Type")
 	if mediaType == "" {
-		mediaType = "application/octet-stream"
+		mediaType = mediaTypeOctetStream
 	}
 	// TODO check that the media type is valid?
 	// TODO size limit
@@ -219,10 +226,23 @@ func (r *registry) locationForUploadID(repo string, uploadID string) string {
 	return loc
 }
 
-func rangeString(x0, x1 int64) string {
-	x1--
-	if x1 < 0 {
-		x1 = 0
+func chunkRange(req *http.Request) (start, end int64, _ error) {
+	var rangeOK bool
+	if s := req.Header.Get("Content-Range"); s != "" {
+		start, end, rangeOK = ocirequest.ParseRange(s)
+		if !rangeOK {
+			return 0, 0, badAPIUseError("we don't understand your Content-Range")
+		}
 	}
-	return fmt.Sprintf("%d-%d", x0, x1)
+
+	// The registry here is stateless, so it doesn't remember what minimum chunk size
+	// the backend registry suggested that we should use.
+	// We rely on the HTTP client to remember that minimum and use it,
+	// which would mean that each PATCH chunk before the last should be at least as large.
+	// Extract that size from either Content-Range or Content-Length;
+	// if neither is set, we fall back to 0, letting the backend assume a default.
+	if !rangeOK && req.ContentLength >= 0 {
+		end = req.ContentLength
+	}
+	return start, end, nil
 }
