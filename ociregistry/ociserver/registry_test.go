@@ -588,15 +588,15 @@ func TestCalls(t *testing.T) {
 			}
 
 			for upload, contents := range tc.BlobStream {
-				u, err := url.Parse(fmt.Sprintf("%s/v2/foo/blobs/uploads/%s", s.URL, upload))
+				req, err := http.NewRequest(
+					"PATCH",
+					fmt.Sprintf("%s/v2/foo/blobs/uploads/%s", s.URL, upload),
+					io.NopCloser(strings.NewReader(contents)),
+				)
 				if err != nil {
-					t.Fatalf("Error parsing %q: %v", s.URL+tc.URL, err)
+					t.Fatal(err)
 				}
-				req := &http.Request{
-					Method: "PATCH",
-					URL:    u,
-					Body:   io.NopCloser(strings.NewReader(contents)),
-				}
+				req.Header.Add("Content-Range", fmt.Sprintf("0-%d", len(contents)-1))
 				t.Log(req.Method, req.URL)
 				resp, err := s.Client().Do(req)
 				if err != nil {
