@@ -55,13 +55,14 @@ func (r *bytesReader) Read(data []byte) (int, error) {
 
 // Buffer holds an in-memory implementation of ociregistry.BlobWriter.
 type Buffer struct {
-	commit    func(b *Buffer) error
-	mu        sync.Mutex
-	buf       []byte
-	uuid      string
-	committed bool
-	desc      ociregistry.Descriptor
-	commitErr error
+	commit           func(b *Buffer) error
+	mu               sync.Mutex
+	buf              []byte
+	checkStartOffset int64
+	uuid             string
+	committed        bool
+	desc             ociregistry.Descriptor
+	commitErr        error
 }
 
 // NewBuffer returns a buffer that calls commit with the
@@ -117,6 +118,14 @@ func (b *Buffer) GetBlob() (ociregistry.Descriptor, []byte, error) {
 func (b *Buffer) Write(data []byte) (int, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
+	if offset := b.checkStartOffset; offset != -1 {
+		// Can't call Buffer.Size, since we are already holding the mutex.
+		if int64(len(b.buf)) != offset {
+			return 0, ociregistry.ErrRangeNotSatisfiable
+		}
+		// Only check on the first write, since it's the start offset.
+		b.checkStartOffset = -1
+	}
 	b.buf = append(b.buf, data...)
 	return len(data), nil
 }
