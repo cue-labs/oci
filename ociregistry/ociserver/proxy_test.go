@@ -76,7 +76,6 @@ var proxyTests = []struct {
 		},
 		backendRequests: []string{
 			"POST len=0",
-			"GET len=0",
 			"PATCH len=10",
 			"PUT len=0",
 		},
@@ -97,10 +96,7 @@ var proxyTests = []struct {
 		},
 		backendRequests: []string{
 			"POST len=0",
-			"GET len=0",
-			"PATCH len=65536",
-			"PATCH len=65536",
-			"PATCH len=22528",
+			"PATCH len=153600",
 			"PUT len=0",
 		},
 	},
@@ -126,11 +122,9 @@ var proxyTests = []struct {
 		},
 		backendRequests: []string{
 			"POST len=0",
-			"GET len=0",
 			"PATCH len=65536",
 			"PATCH len=65536",
 			"PATCH len=22528",
-			"GET len=0",
 			"PUT len=0",
 		},
 	},
