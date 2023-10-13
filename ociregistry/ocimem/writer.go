@@ -74,6 +74,7 @@ func (r *Registry) PushBlobChunkedResume(ctx context.Context, repoName, id strin
 		}, id)
 		repo.uploads[b.ID()] = b
 	}
+	b.checkStartOffset = offset
 	return b, nil
 }
 
