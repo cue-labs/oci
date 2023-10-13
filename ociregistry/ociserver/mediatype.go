@@ -25,4 +25,5 @@ const (
 	mediaTypeOCIManifestSchema1             = ocispec.MediaTypeImageManifest
 	mediaTypeOCIConfigJSON                  = ocispec.MediaTypeImageConfig
 	mediaTypeDockerConfigJSON               = "application/vnd.docker.container.image.v1+json"
+	mediaTypeOctetStream                    = "application/octet-stream"
 )

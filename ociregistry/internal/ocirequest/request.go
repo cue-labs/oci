@@ -435,3 +435,30 @@ func isValidDigest(d string) bool {
 	_, err := digest.Parse(d)
 	return err == nil
 }
+
+// ParseRange extracts the start and end offsets from a Content-Range string.
+// The resulting start is inclusive and the end exclusive, to match Go convention,
+// whereas Content-Range is inclusive on both ends.
+func ParseRange(s string) (start, end int64, ok bool) {
+	p0s, p1s, ok := strings.Cut(s, "-")
+	if !ok {
+		return 0, 0, false
+	}
+	p0, err0 := strconv.ParseInt(p0s, 10, 64)
+	p1, err1 := strconv.ParseInt(p1s, 10, 64)
+	if p1 > 0 {
+		p1++
+	}
+	return p0, p1, err0 == nil && err1 == nil
+}
+
+// RangeString formats a pair of start and end offsets in the Content-Range form.
+// The input start is inclusive and the end exclusive, to match Go convention,
+// whereas Content-Range is inclusive on both ends.
+func RangeString(start, end int64) string {
+	end--
+	if end < 0 {
+		end = 0
+	}
+	return fmt.Sprintf("%d-%d", start, end)
+}
