@@ -55,6 +55,15 @@ var (
 	ErrDenied              = NewError("requested access to the resource is denied", "DENIED", nil)
 	ErrUnsupported         = NewError("the operation is unsupported", "UNSUPPORTED", nil)
 	ErrTooManyRequests     = NewError("too many requests", "TOOMANYREQUESTS", nil)
+
+	// ErrRangeInvalid allows Interface implementations to reject invalid ranges,
+	// such as a chunked upload PATCH not following the range from a previous PATCH.
+	// ociserver relies on this error to return 416 HTTP status codes.
+	//
+	// It is separate from the Error type since the spec only dictates its HTTP status code,
+	// but does not assign any error code to it.
+	// We borrowed RANGE_INVALID from the Docker registry implementation, a de facto standard.
+	ErrRangeInvalid = NewError("invalid content range", "RANGE_INVALID", nil)
 )
 
 type registryError struct {
