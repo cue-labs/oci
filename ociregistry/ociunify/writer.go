@@ -58,22 +58,37 @@ func (u unifier) PushManifest(ctx context.Context, repo string, tag string, cont
 	return ociregistry.Descriptor{}, fmt.Errorf("one push succeeded where the other failed (TODO better error)")
 }
 
-func (u unifier) PushBlobChunked(ctx context.Context, repo string, id string, chunkSize int) (ociregistry.BlobWriter, error) {
-	ids := []string{"", ""}
-	if id != "" {
-		data, err := base64.RawURLEncoding.DecodeString(id)
-		if err != nil {
-			return nil, fmt.Errorf("malformed ID: %v", err)
-		}
-		if err := json.Unmarshal(data, &ids); err != nil {
-			return nil, fmt.Errorf("malformed ID %q: %v", id, err)
-		}
-		if len(ids) != 2 {
-			return nil, fmt.Errorf("malformed ID %q (expected two elements)", id)
-		}
+func (u unifier) PushBlobChunked(ctx context.Context, repo string, chunkSize int) (ociregistry.BlobWriter, error) {
+	r0, r1 := both(u, func(r ociregistry.Interface, i int) t2[ociregistry.BlobWriter] {
+		return mk2(r.PushBlobChunked(ctx, repo, chunkSize))
+	})
+	if r0.err != nil || r1.err != nil {
+		r0.close()
+		r1.close()
+		return nil, bothResults(r0, r1).err
+	}
+	w0, w1 := r0.x, r1.x
+	size := w0.Size() // assumed to agree with w1.Size
+	return &unifiedBlobWriter{
+		w:    [2]ociregistry.BlobWriter{w0, w1},
+		size: size,
+	}, nil
+}
+
+func (u unifier) PushBlobChunkedResume(ctx context.Context, repo, id string, offset int64, chunkSize int) (ociregistry.BlobWriter, error) {
+	data, err := base64.RawURLEncoding.DecodeString(id)
+	if err != nil {
+		return nil, fmt.Errorf("malformed ID: %v", err)
+	}
+	var ids []string
+	if err := json.Unmarshal(data, &ids); err != nil {
+		return nil, fmt.Errorf("malformed ID %q: %v", id, err)
+	}
+	if len(ids) != 2 {
+		return nil, fmt.Errorf("malformed ID %q (expected two elements)", id)
 	}
 	r0, r1 := both(u, func(r ociregistry.Interface, i int) t2[ociregistry.BlobWriter] {
-		return mk2(r.PushBlobChunked(ctx, repo, ids[i], chunkSize))
+		return mk2(r.PushBlobChunkedResume(ctx, repo, ids[i], offset, chunkSize))
 	})
 	if r0.err != nil || r1.err != nil {
 		r0.close()
@@ -132,6 +147,17 @@ func (w *unifiedBlobWriter) Cancel() error {
 
 func (w *unifiedBlobWriter) Size() int64 {
 	return w.size
+}
+
+func (w *unifiedBlobWriter) ChunkSize() int {
+	// ChunkSize can be derived from the server's required minimum, so take the maximum between both.
+	// ChunkSize is usually a cheap method, so there's no need to call both concurrently.
+	// TODO(mvdan): replace with max when we can assume Go 1.21
+	s1, s2 := w.w[0].ChunkSize(), w.w[1].ChunkSize()
+	if s2 > s1 {
+		return s2
+	}
+	return s1
 }
 
 func (w *unifiedBlobWriter) ID() string {

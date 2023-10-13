@@ -46,24 +46,34 @@ func (r *Registry) PushBlob(ctx context.Context, repoName string, desc ociregist
 	return desc, nil
 }
 
-func (r *Registry) PushBlobChunked(ctx context.Context, repoName string, resumeID string, chunkSize int) (ociregistry.BlobWriter, error) {
+func (r *Registry) PushBlobChunked(ctx context.Context, repoName string, chunkSize int) (ociregistry.BlobWriter, error) {
+	// TODO(mvdan): Why does the ocimem implementation allow a PATCH on an upload ID which doesn't exist?
+	// The tests in ociserver make this assumption, so they break without this bit of code.
+	//
+	// Ideally they should start a new chunked upload to get a new ID, then use that for PATCH/PUT.
+	// Alternatively, add a new method to ocimem outside of the interface to start a chunked upload with a predefined ID.
+	// Either way, this case should be an error, per the spec.
+	return r.PushBlobChunkedResume(ctx, repoName, "", 0, chunkSize)
+}
+
+func (r *Registry) PushBlobChunkedResume(ctx context.Context, repoName, id string, offset int64, chunkSize int) (ociregistry.BlobWriter, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	repo, err := r.makeRepo(repoName)
 	if err != nil {
 		return nil, err
 	}
-	if b := repo.uploads[resumeID]; b != nil {
-		return b, nil
+	b := repo.uploads[id]
+	if b == nil {
+		b = NewBuffer(func(b *Buffer) error {
+			r.mu.Lock()
+			defer r.mu.Unlock()
+			desc, data, _ := b.GetBlob()
+			repo.blobs[desc.Digest] = &blob{mediaType: desc.MediaType, data: data}
+			return nil
+		}, id)
+		repo.uploads[b.ID()] = b
 	}
-	b := NewBuffer(func(b *Buffer) error {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		desc, data, _ := b.GetBlob()
-		repo.blobs[desc.Digest] = &blob{mediaType: desc.MediaType, data: data}
-		return nil
-	}, resumeID)
-	repo.uploads[b.ID()] = b
 	return b, nil
 }
 
