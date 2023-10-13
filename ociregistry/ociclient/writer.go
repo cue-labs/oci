@@ -119,7 +119,7 @@ func (c *client) PushBlob(ctx context.Context, repo string, desc ociregistry.Des
 	req.URL = urlWithDigest(location, string(desc.Digest))
 	req.ContentLength = desc.Size
 	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("Content-Range", rangeString(0, desc.Size))
+	req.Header.Set("Content-Range", ocirequest.RangeString(0, desc.Size))
 	resp, err = c.do(req, http.StatusCreated)
 	if err != nil {
 		return ociregistry.Descriptor{}, err
@@ -183,7 +183,7 @@ func (c *client) PushBlobChunkedResume(ctx context.Context, repo string, id stri
 			return nil, fmt.Errorf("cannot get location from response: %v", err)
 		}
 		rangeStr := resp.Header.Get("Range")
-		p0, p1, ok := parseRange(rangeStr)
+		p0, p1, ok := ocirequest.ParseRange(rangeStr)
 		if !ok {
 			return nil, fmt.Errorf("invalid range %q in response", rangeStr)
 		}
@@ -272,7 +272,7 @@ func (w *blobWriter) flush(buf []byte) error {
 	}
 	req.URL = w.location
 	req.ContentLength = int64(len(w.chunk) + len(buf))
-	req.Header.Set("Content-Range", rangeString(w.flushed, w.flushed+int64(len(w.chunkInProgress))))
+	req.Header.Set("Content-Range", ocirequest.RangeString(w.flushed, w.flushed+int64(len(w.chunkInProgress))))
 	resp, err := w.client.do(req, http.StatusAccepted)
 	if err != nil {
 		return err

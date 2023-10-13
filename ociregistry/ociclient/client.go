@@ -327,27 +327,6 @@ func isOKStatus(code int) bool {
 	return code/100 == 2
 }
 
-func rangeString(x0, x1 int64) string {
-	x1--
-	if x1 < 0 {
-		x1 = 0
-	}
-	return fmt.Sprintf("%d-%d", x0, x1)
-}
-
-func parseRange(s string) (int64, int64, bool) {
-	p0s, p1s, ok := strings.Cut(s, "-")
-	if !ok {
-		return 0, 0, false
-	}
-	p0, err0 := strconv.ParseInt(p0s, 10, 64)
-	p1, err1 := strconv.ParseInt(p1s, 10, 64)
-	if p1 > 0 {
-		p1++
-	}
-	return p0, p1, err0 == nil && err1 == nil
-}
-
 func closeOnError(err *error, r io.Closer) {
 	if *err != nil {
 		r.Close()
