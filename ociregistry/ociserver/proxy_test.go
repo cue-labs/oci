@@ -107,7 +107,7 @@ var proxyTests = []struct {
 	{
 		name: "PushBlobChunked_large_oneWrite",
 		clientDo: func(ctx context.Context, client ociregistry.Interface) error {
-			bw, err := client.PushBlobChunked(ctx, "foo/bar", "", 0)
+			bw, err := client.PushBlobChunked(ctx, "foo/bar", 0)
 			if err != nil {
 				return err
 			}

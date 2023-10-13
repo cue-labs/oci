@@ -37,23 +37,24 @@ import (
 type Funcs struct {
 	NewError func(ctx context.Context, methodName, repo string) error
 
-	GetBlob_         func(ctx context.Context, repo string, digest Digest) (BlobReader, error)
-	GetBlobRange_    func(ctx context.Context, repo string, digest Digest, offset0, offset1 int64) (BlobReader, error)
-	GetManifest_     func(ctx context.Context, repo string, digest Digest) (BlobReader, error)
-	GetTag_          func(ctx context.Context, repo string, tagName string) (BlobReader, error)
-	ResolveBlob_     func(ctx context.Context, repo string, digest Digest) (Descriptor, error)
-	ResolveManifest_ func(ctx context.Context, repo string, digest Digest) (Descriptor, error)
-	ResolveTag_      func(ctx context.Context, repo string, tagName string) (Descriptor, error)
-	PushBlob_        func(ctx context.Context, repo string, desc Descriptor, r io.Reader) (Descriptor, error)
-	PushBlobChunked_ func(ctx context.Context, repo string, id string, chunkSize int) (BlobWriter, error)
-	MountBlob_       func(ctx context.Context, fromRepo, toRepo string, digest Digest) (Descriptor, error)
-	PushManifest_    func(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (Descriptor, error)
-	DeleteBlob_      func(ctx context.Context, repo string, digest Digest) error
-	DeleteManifest_  func(ctx context.Context, repo string, digest Digest) error
-	DeleteTag_       func(ctx context.Context, repo string, name string) error
-	Repositories_    func(ctx context.Context) Iter[string]
-	Tags_            func(ctx context.Context, repo string) Iter[string]
-	Referrers_       func(ctx context.Context, repo string, digest Digest, artifactType string) Iter[Descriptor]
+	GetBlob_               func(ctx context.Context, repo string, digest Digest) (BlobReader, error)
+	GetBlobRange_          func(ctx context.Context, repo string, digest Digest, offset0, offset1 int64) (BlobReader, error)
+	GetManifest_           func(ctx context.Context, repo string, digest Digest) (BlobReader, error)
+	GetTag_                func(ctx context.Context, repo string, tagName string) (BlobReader, error)
+	ResolveBlob_           func(ctx context.Context, repo string, digest Digest) (Descriptor, error)
+	ResolveManifest_       func(ctx context.Context, repo string, digest Digest) (Descriptor, error)
+	ResolveTag_            func(ctx context.Context, repo string, tagName string) (Descriptor, error)
+	PushBlob_              func(ctx context.Context, repo string, desc Descriptor, r io.Reader) (Descriptor, error)
+	PushBlobChunked_       func(ctx context.Context, repo string, chunkSize int) (BlobWriter, error)
+	PushBlobChunkedResume_ func(ctx context.Context, repo, id string, offset int64, chunkSize int) (BlobWriter, error)
+	MountBlob_             func(ctx context.Context, fromRepo, toRepo string, digest Digest) (Descriptor, error)
+	PushManifest_          func(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (Descriptor, error)
+	DeleteBlob_            func(ctx context.Context, repo string, digest Digest) error
+	DeleteManifest_        func(ctx context.Context, repo string, digest Digest) error
+	DeleteTag_             func(ctx context.Context, repo string, name string) error
+	Repositories_          func(ctx context.Context) Iter[string]
+	Tags_                  func(ctx context.Context, repo string) Iter[string]
+	Referrers_             func(ctx context.Context, repo string, digest Digest, artifactType string) Iter[Descriptor]
 }
 
 // This blesses Funcs as the canonical Interface implementation.
@@ -122,9 +123,16 @@ func (f *Funcs) PushBlob(ctx context.Context, repo string, desc Descriptor, r io
 	return Descriptor{}, f.newError(ctx, "PushBlob", repo)
 }
 
-func (f *Funcs) PushBlobChunked(ctx context.Context, repo string, id string, chunkSize int) (BlobWriter, error) {
+func (f *Funcs) PushBlobChunked(ctx context.Context, repo string, chunkSize int) (BlobWriter, error) {
 	if f != nil && f.PushBlobChunked_ != nil {
-		return f.PushBlobChunked_(ctx, repo, id, chunkSize)
+		return f.PushBlobChunked_(ctx, repo, chunkSize)
+	}
+	return nil, f.newError(ctx, "PushBlobChunked", repo)
+}
+
+func (f *Funcs) PushBlobChunkedResume(ctx context.Context, repo, id string, offset int64, chunkSize int) (BlobWriter, error) {
+	if f != nil && f.PushBlobChunked_ != nil {
+		return f.PushBlobChunkedResume_(ctx, repo, id, offset, chunkSize)
 	}
 	return nil, f.newError(ctx, "PushBlobChunked", repo)
 }
