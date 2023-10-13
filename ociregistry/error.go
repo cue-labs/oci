@@ -14,6 +14,8 @@
 
 package ociregistry
 
+import "fmt"
+
 // NewError returns a new error with the given code, message and detail.
 func NewError(msg string, code string, detail any) Error {
 	return &registryError{
@@ -74,3 +76,12 @@ func (e *registryError) Error() string {
 func (e *registryError) Detail() any {
 	return e.detail
 }
+
+// RangeNotSatisfiableError allows Interface implementations to reject invalid ranges,
+// such as a chunked upload PATCH not following the range from a previous PATCH.
+// ociserver relies on this error to return 416 HTTP status codes.
+//
+// It is separate from the Error type since the spec only dictates its HTTP status code,
+// but does not assign any error code to it.
+// Unlike Error, ociclient implements errors.Is via the HTTP status code directly.
+var ErrRangeNotSatisfiable = fmt.Errorf("requested range not satisfiable")

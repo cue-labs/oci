@@ -22,6 +22,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -86,8 +87,8 @@ func (e *wireError) Is(err error) bool {
 }
 
 type wireErrors struct {
-	httpStatus string
-	Errors     []wireError `json:"errors"`
+	httpStatusCode int
+	Errors         []wireError `json:"errors"`
 }
 
 func (e *wireErrors) Unwrap() []error {
@@ -99,9 +100,21 @@ func (e *wireErrors) Unwrap() []error {
 	return errs
 }
 
+// Is makes it possible for users to write `if errors.Is(err, ociregistry.ErrRangeNotSatisfiable)`
+// even when the error hasn't exactly wrapped that error.
+func (e *wireErrors) Is(err error) bool {
+	switch e.httpStatusCode {
+	case http.StatusRequestedRangeNotSatisfiable:
+		return err == ociregistry.ErrRangeNotSatisfiable
+	}
+	return false
+}
+
 func (e *wireErrors) Error() string {
 	var buf strings.Builder
-	buf.WriteString(e.httpStatus)
+	buf.WriteString(strconv.Itoa(e.httpStatusCode))
+	buf.WriteString(" ")
+	buf.WriteString(http.StatusText(e.httpStatusCode))
 	buf.WriteString(": ")
 	buf.WriteString(e.Errors[0].Error())
 	for i := range e.Errors[1:] {
@@ -154,7 +167,7 @@ func makeError(resp *http.Response) error {
 	if len(errs.Errors) == 0 {
 		return fmt.Errorf("%s: no errors in body (probably a server issue)", resp.Status)
 	}
-	errs.httpStatus = resp.Status
+	errs.httpStatusCode = resp.StatusCode
 	return &errs
 }
 

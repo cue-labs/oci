@@ -50,6 +50,8 @@ func writeError(resp http.ResponseWriter, err error) {
 	var statusErr *httpStatusError
 	if errors.As(err, &statusErr) {
 		httpStatus = statusErr.status
+	} else if errors.Is(err, ociregistry.ErrRangeNotSatisfiable) {
+		httpStatus = http.StatusRequestedRangeNotSatisfiable
 	} else if status, ok := errorStatuses[e.Code]; ok {
 		httpStatus = status
 	}
