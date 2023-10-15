@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "77fcf6ed_bacf9af6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:27:28Z",
+      "side": 1,
+      "message": "Isn\u0027t HTTP lovely? 😊",
+      "revId": "86ee802118d9c7ec36741e52481575ea3042a545",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c59f370b_bc5e138c",
+        "filename": "ociregistry/ociserver/registry_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 599,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:27:28Z",
+      "side": 1,
+      "message": "I think this off by one: Content-Range is inclusive, not half-open. See the `rangeString` function.",
+      "revId": "86ee802118d9c7ec36741e52481575ea3042a545",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
