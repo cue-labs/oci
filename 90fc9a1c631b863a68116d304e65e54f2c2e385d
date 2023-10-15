@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce81a79b_258d8868",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:21:57Z",
+      "side": 1,
+      "message": "I _think_ we can be a bit less special-casey about this. WDYT?",
+      "revId": "90fc9a1c631b863a68116d304e65e54f2c2e385d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dfe70f6b_dbbdeb47",
+        "filename": "ociregistry/error.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:21:57Z",
+      "side": 1,
+      "message": "Despite the spec only mentioning some error codes, others are possible (the docker registry, for example, produces many error codes that aren\u0027t mentioned in the spec).\n\nI\u0027d be inclined to see what the docker registry implementation does, because that\u0027s a \"de facto\" implementation that other clients will definitely be compatible with.\n\nA brief inspection of that code turns up this: https://github.com/distribution/distribution/blob/8d12329a8f2d4d0371eea2df2091f867d370dcb9/registry/api/errcode/register.go#L112\n\n```\n\t// ErrorCodeRangeInvalid is returned when uploading a blob if the provided\n\t// content range is invalid.\n\tErrorCodeRangeInvalid \u003d register(errGroup, ErrorDescriptor{\n\t\tValue:   \"RANGE_INVALID\",\n\t\tMessage: \"invalid content range\",\n\t\tDescription: `When a layer is uploaded, the provided range is checked\n\t\tagainst the uploaded chunk. This error is returned if the range is\n\t\tout of order.`,\n\t\tHTTPStatusCode: http.StatusRequestedRangeNotSatisfiable,\n\t})\n```\n\nSo how about using `RANGE_INVALID` as the error code and including it in the set of errors above, along with a comment saying that it\u0027s not mentioned in the standard?",
+      "revId": "90fc9a1c631b863a68116d304e65e54f2c2e385d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "109cf883_553b6719",
+        "filename": "ociregistry/ociclient/error.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:21:57Z",
+      "side": 1,
+      "message": "This is an interesting consideration. It seems perhaps overly specific (why do this for 416 and not 403, for example?)\n\nIn the same way that ociserver has a map from error to HTTP status code, I wonder whether ociclient should map the other way when there\u0027s an error that has a significant status code but doesn\u0027t have a JSON error code that we recognise.",
+      "revId": "90fc9a1c631b863a68116d304e65e54f2c2e385d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d152712_ab04d61a",
+        "filename": "ociregistry/ociserver/error.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:21:57Z",
+      "side": 1,
+      "message": "I\u0027m not sure this needs to be a special case here.",
+      "revId": "90fc9a1c631b863a68116d304e65e54f2c2e385d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
