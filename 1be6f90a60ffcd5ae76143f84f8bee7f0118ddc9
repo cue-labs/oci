@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "79c9a2d0_a62a6750",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:49:00Z",
+      "side": 1,
+      "message": "Nice direction, thanks, but I think we can do slightly better with chunk size, at any rate.",
+      "revId": "1be6f90a60ffcd5ae76143f84f8bee7f0118ddc9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ec5b332f_a9c2fe92",
+        "filename": "ociregistry/ociserver/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:49:00Z",
+      "side": 1,
+      "message": "When there\u0027s a content range, we\u0027re not going to check that the chunk size is sufficient, which isn\u0027t perhaps ideal. I think we can do a little bit better if we assume that most clients have enough state to remember the chunk size from when they started the upload, and that the usual pattern for uploading chunks is to upload n-1 chunks of the same chunk size followed by a final chunk of some arbitrary size. In that case, we can just use the content range size as the chunk size argument (falling back to ContentLength if there\u0027s no content range), which will in any case be strictly not worse than using zero.\nWDYT?",
+      "revId": "1be6f90a60ffcd5ae76143f84f8bee7f0118ddc9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f8f1628c_9ab666fb",
+        "filename": "ociregistry/ociserver/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:49:00Z",
+      "side": 1,
+      "message": "I know that Content-Range is an inclusive range, but I\u0027ve been tending to use a half-open range to match with the usual Go convention and lessen the likelihood of off-by-one errors (see rangeString above for example).\n\nSo I\u0027d suggest returning a half-open range here too. How about just copying `ociclient.parseRange` ? Or even factoring `rangeString` and `parseRange` into their own (internal) package somewhere?\n\nThat would mean putting the special case for testing whether Content-Range exists outside, the parseRange function, but I think that probably works more nicely anyway.",
+      "revId": "1be6f90a60ffcd5ae76143f84f8bee7f0118ddc9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
