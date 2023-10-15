@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a652086_7e197ce7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:34:38Z",
+      "side": 1,
+      "message": "LGTM with one minor suggestion, thanks!",
+      "revId": "9367662a34e944dab9be30cd2bd8552609218a6d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c0e12a3d_69a198e6",
+        "filename": "ociregistry/ocimem/blob.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:34:38Z",
+      "side": 1,
+      "message": "How about returning an error that\u0027s a bit more helpful. I can imagine this error being hard to debug! Something like this, perhaps?\n\nreturn 0, fmt.Errorf(\"invalid offset %d in resumed upload (actual offset %d): %w\", offset, len(b.buf), ociregistry.ErrRangeNotSatisfiable)",
+      "revId": "9367662a34e944dab9be30cd2bd8552609218a6d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
