@@ -1,0 +1,225 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9627b224_f9d9316b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:02:13Z",
+      "side": 1,
+      "message": "This looks great in general, modulo a bunch of relatively minor comments and suggestions, thanks!",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "86864b3a_c7f65f69",
+        "filename": "ociregistry/interface.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:02:13Z",
+      "side": 1,
+      "message": "This looks like it\u0027s left over from before.",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d76773d1_23f4fe21",
+        "filename": "ociregistry/ociclient/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:02:13Z",
+      "side": 1,
+      "message": "s/set/non-empty/ ?",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24cdddaa_5be591ca",
+        "filename": "ociregistry/ociclient/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:02:13Z",
+      "side": 1,
+      "message": "must be -1 or non-negative\n\n?",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5b0ab1dd_7a663245",
+        "filename": "ociregistry/ociclient/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:02:13Z",
+      "side": 1,
+      "message": "No need for the mutex here AFAICS. As indicated by the comments in the struct, chunkSize isn\u0027t covered by the mutex.",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "427a6b83_5c377acd",
+        "filename": "ociregistry/ociclient/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:02:13Z",
+      "side": 1,
+      "message": "I presume you mean w.chunkSize here. 😊",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cbc2e308_d465556c",
+        "filename": "ociregistry/ocidebug/debug.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:02:13Z",
+      "side": 1,
+      "message": "Let\u0027s include the offset here too, please.",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "39aa60b9_876532f5",
+        "filename": "ociregistry/ocimem/blob.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:02:13Z",
+      "side": 1,
+      "message": "FWIW I\u0027d find 8192 or 8*1024 a more intuitive way of saying 8KiB.\n\nreturn 8192    // not really important\n?",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "66455f7b_cec29d55",
+        "filename": "ociregistry/ocimem/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:02:13Z",
+      "side": 1,
+      "message": "I agree. The ociserver tests are perhaps the single largest thing that remains largely unchanged from the previous server implementation and they\u0027re not great in some respects.\n\nThat said, I\u0027m not that keen on duplicating this non-trivial code. How about just making PushBlobChunked invoke PushBlobChunkedResume, and include the bulk of this comment to justifiably gripe about the situation?\n\nOne other thing: this method just ignores the offset. I _think_ it should probably return an error if offset is not -1 and doesn\u0027t match the actual offset.",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "837c19a6_7f2fcd61",
+        "filename": "ociregistry/ociserver/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:02:13Z",
+      "side": 1,
+      "message": "nit: s/start/Start/\n\nAlso, I\u0027m not sure it\u0027s appropriate to talk about the POST made by an underlying implementation which could be doing anything under the hood (ocimem doesn\u0027t make any HTTP requests, for example).\n\nThat said, I can see why it might be useful to give the reader of the code hints about what might happen in some circumstances.\n\nHow about:\n\n```\n// Start a chunked upload. When r.backend is ociclient, this should\n// just result in a single POST request that starts the upload.\n```\n?",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "05f8e6a9_4a1d85b6",
+        "filename": "ociregistry/ociserver/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:02:13Z",
+      "side": 1,
+      "message": "Similarly:\n```\n// Resume the upload without actually writing to it, passing -1 for the offset\n// to cause the backend to retrieve the associated upload information.\n// When r.backend is ociclient, this should result in a single GET request\n// to retrieve upload info.\n```\n?",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2e47cd71_e1873ae8",
+        "filename": "ociregistry/ociserver/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:02:13Z",
+      "side": 1,
+      "message": "Out of interest, have you verified that any real-world OCI servers do actually set this header in response to this endpoint?",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b6edf245_a9686a6d",
+        "filename": "ociregistry/ociunify/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-15T18:02:13Z",
+      "side": 1,
+      "message": "Given that we\u0027re starting a new upload here, I think it\u0027s reasonable to assume that both backends will start at zero, so I\u0027d remove this check.",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
