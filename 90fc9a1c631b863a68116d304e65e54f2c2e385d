@@ -35,6 +35,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "977278d9_ef0c4390",
+        "filename": "ociregistry/error.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "I thought about making up an error code string on my own but it felt wrong - but given that there already is a de facto string like you say, using it SGTM, and then the code needs fewer special cases.",
+      "parentUuid": "dfe70f6b_dbbdeb47",
+      "revId": "90fc9a1c631b863a68116d304e65e54f2c2e385d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "109cf883_553b6719",
@@ -52,6 +70,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "88d94a17_0fc8d0d6",
+        "filename": "ociregistry/ociclient/error.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "Sure, we could do that - however it only really matters for this 416 case, because it\u0027s the only one that doesn\u0027t have a JSON error code we can rely on :) So it seems to me like introducing a map is unnecessary right now, at least for N\u003d1 special cases.\n\nAs to why not do it for other error codes - 403 _must_ use one of the error code strings in the spec, so unlike 416, we can rely on that.",
+      "parentUuid": "109cf883_553b6719",
+      "revId": "90fc9a1c631b863a68116d304e65e54f2c2e385d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0d152712_ab04d61a",
@@ -65,6 +101,24 @@
       "writtenOn": "2023-10-15T18:21:57Z",
       "side": 1,
       "message": "I\u0027m not sure this needs to be a special case here.",
+      "revId": "90fc9a1c631b863a68116d304e65e54f2c2e385d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5097c2ed_34f61aff",
+        "filename": "ociregistry/ociserver/error.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "indeed doesn\u0027t need to be anymore, with the error code string - added an entry to errorStatuses",
+      "parentUuid": "0d152712_ab04d61a",
       "revId": "90fc9a1c631b863a68116d304e65e54f2c2e385d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
