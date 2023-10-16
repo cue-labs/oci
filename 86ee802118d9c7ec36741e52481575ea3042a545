@@ -33,6 +33,24 @@
       "message": "I think this off by one: Content-Range is inclusive, not half-open. See the `rangeString` function.",
       "revId": "86ee802118d9c7ec36741e52481575ea3042a545",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "36541d29_6ba5d855",
+        "filename": "ociregistry/ociserver/registry_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 599,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c59f370b_bc5e138c",
+      "revId": "86ee802118d9c7ec36741e52481575ea3042a545",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
