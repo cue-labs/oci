@@ -35,6 +35,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8321afe0_8c345caf",
+        "filename": "ociregistry/ociserver/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "Well spotted; I had this in mind, but completely forgot to actually implement it.",
+      "parentUuid": "ec5b332f_a9c2fe92",
+      "revId": "1be6f90a60ffcd5ae76143f84f8bee7f0118ddc9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f8f1628c_9ab666fb",
@@ -48,6 +66,24 @@
       "writtenOn": "2023-10-15T18:49:00Z",
       "side": 1,
       "message": "I know that Content-Range is an inclusive range, but I\u0027ve been tending to use a half-open range to match with the usual Go convention and lessen the likelihood of off-by-one errors (see rangeString above for example).\n\nSo I\u0027d suggest returning a half-open range here too. How about just copying `ociclient.parseRange` ? Or even factoring `rangeString` and `parseRange` into their own (internal) package somewhere?\n\nThat would mean putting the special case for testing whether Content-Range exists outside, the parseRange function, but I think that probably works more nicely anyway.",
+      "revId": "1be6f90a60ffcd5ae76143f84f8bee7f0118ddc9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e4c75de_37f85df7",
+        "filename": "ociregistry/ociserver/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "Good point, I didn\u0027t notice your funcs used the Go convention. It\u0027s consistent now.\n\nMoved the APIs to ocirequest, and now both use it. See the new last paragraph in the commit message.",
+      "parentUuid": "f8f1628c_9ab666fb",
       "revId": "1be6f90a60ffcd5ae76143f84f8bee7f0118ddc9",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
