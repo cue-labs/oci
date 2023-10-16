@@ -35,6 +35,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3b8a7cc4_01408b6f",
+        "filename": "ociregistry/interface.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86864b3a_c7f65f69",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d76773d1_23f4fe21",
@@ -48,6 +66,24 @@
       "writtenOn": "2023-10-15T18:02:13Z",
       "side": 1,
       "message": "s/set/non-empty/ ?",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "051abfcc_e13c657f",
+        "filename": "ociregistry/ociclient/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d76773d1_23f4fe21",
       "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -69,6 +105,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fa9875da_bd2c0d07",
+        "filename": "ociregistry/ociclient/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "24cdddaa_5be591ca",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5b0ab1dd_7a663245",
@@ -82,6 +136,24 @@
       "writtenOn": "2023-10-15T18:02:13Z",
       "side": 1,
       "message": "No need for the mutex here AFAICS. As indicated by the comments in the struct, chunkSize isn\u0027t covered by the mutex.",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4d517388_853fd123",
+        "filename": "ociregistry/ociclient/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5b0ab1dd_7a663245",
       "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -103,6 +175,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "38dbd928_20c1625c",
+        "filename": "ociregistry/ociclient/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "427a6b83_5c377acd",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cbc2e308_d465556c",
@@ -116,6 +206,24 @@
       "writtenOn": "2023-10-15T18:02:13Z",
       "side": 1,
       "message": "Let\u0027s include the offset here too, please.",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "92e99eee_5f3c4561",
+        "filename": "ociregistry/ocidebug/debug.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cbc2e308_d465556c",
       "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -137,6 +245,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca0922a6_7601690e",
+        "filename": "ociregistry/ocimem/blob.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "I find shifting easier than multiplying by 1024, but sure, they\u0027re quite similar :) done",
+      "parentUuid": "39aa60b9_876532f5",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "66455f7b_cec29d55",
@@ -150,6 +276,24 @@
       "writtenOn": "2023-10-15T18:02:13Z",
       "side": 1,
       "message": "I agree. The ociserver tests are perhaps the single largest thing that remains largely unchanged from the previous server implementation and they\u0027re not great in some respects.\n\nThat said, I\u0027m not that keen on duplicating this non-trivial code. How about just making PushBlobChunked invoke PushBlobChunkedResume, and include the bulk of this comment to justifiably gripe about the situation?\n\nOne other thing: this method just ignores the offset. I _think_ it should probably return an error if offset is not -1 and doesn\u0027t match the actual offset.",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b1c06fc5_2b255a9f",
+        "filename": "ociregistry/ocimem/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "Done in terms of the deduplication.\n\nNot doing the offset checking in ocimem here; this is already being done in a later CL, since I needed to add the \"out of range\" error definition.",
+      "parentUuid": "66455f7b_cec29d55",
       "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -171,6 +315,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b86c0e2c_e03802d6",
+        "filename": "ociregistry/ociserver/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "837c19a6_7f2fcd61",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "05f8e6a9_4a1d85b6",
@@ -184,6 +346,24 @@
       "writtenOn": "2023-10-15T18:02:13Z",
       "side": 1,
       "message": "Similarly:\n```\n// Resume the upload without actually writing to it, passing -1 for the offset\n// to cause the backend to retrieve the associated upload information.\n// When r.backend is ociclient, this should result in a single GET request\n// to retrieve upload info.\n```\n?",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4c369975_8337c005",
+        "filename": "ociregistry/ociserver/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "05f8e6a9_4a1d85b6",
       "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -205,6 +385,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7079f889_3ab1e969",
+        "filename": "ociregistry/ociserver/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "per my PR to the spec, we confirmed that it\u0027s only meant to be in the POST response; removed",
+      "parentUuid": "2e47cd71_e1873ae8",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b6edf245_a9686a6d",
@@ -218,6 +416,24 @@
       "writtenOn": "2023-10-15T18:02:13Z",
       "side": 1,
       "message": "Given that we\u0027re starting a new upload here, I think it\u0027s reasonable to assume that both backends will start at zero, so I\u0027d remove this check.",
+      "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "924d8424_bb12a9a7",
+        "filename": "ociregistry/ociunify/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-16T13:33:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b6edf245_a9686a6d",
       "revId": "abc0efec03581c20fc1552cd3ca4ad00487aa8cd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
