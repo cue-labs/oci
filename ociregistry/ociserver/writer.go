@@ -62,6 +62,9 @@ func (r *registry) handleBlobStartUpload(ctx context.Context, resp http.Response
 
 	resp.Header().Set("Location", r.locationForUploadID(rreq.Repo, w.ID()))
 	resp.Header().Set("Range", "0-0")
+	// TODO: reject chunks which don't follow this minimum length.
+	// If any reasonable clients are broken by this, we can always reconsider,
+	// perhaps by making the strictness on chunk sizes opt-in.
 	resp.Header().Set("OCI-Chunk-Min-Length", strconv.Itoa(w.ChunkSize()))
 	resp.WriteHeader(http.StatusAccepted)
 	return nil
