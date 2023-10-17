@@ -33,6 +33,24 @@
       "message": "req.ContentLength 😊\nAlso, maybe change this function to be \n  func chunkRange(req *http.Request) (int64, int64, error)\nfalling back to req.ContentLength when Content-Range isn\u0027t found.",
       "revId": "d3dc4bdeebf6971395454307303dd9a2a79e005e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2bd4cdfd_11d707cd",
+        "filename": "ociregistry/ociserver/writer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-17T08:42:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c4891847_47b956c2",
+      "revId": "d3dc4bdeebf6971395454307303dd9a2a79e005e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
