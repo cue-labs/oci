@@ -217,11 +217,10 @@ type blobWriter struct {
 	ctx       context.Context
 
 	// mu guards the fields below it.
-	mu              sync.Mutex
-	closed          bool
-	chunk           []byte
-	chunkInProgress []byte
-	closeErr        error
+	mu       sync.Mutex
+	closed   bool
+	chunk    []byte
+	closeErr error
 
 	// size holds the size of the entire upload as seen from the
 	// client perspective. Each call to Write increases this immediately.
@@ -272,7 +271,7 @@ func (w *blobWriter) flush(buf []byte) error {
 	}
 	req.URL = w.location
 	req.ContentLength = int64(len(w.chunk) + len(buf))
-	req.Header.Set("Content-Range", ocirequest.RangeString(w.flushed, w.flushed+int64(len(w.chunkInProgress))))
+	req.Header.Set("Content-Range", ocirequest.RangeString(w.flushed, w.flushed+req.ContentLength))
 	resp, err := w.client.do(req, http.StatusAccepted)
 	if err != nil {
 		return err
