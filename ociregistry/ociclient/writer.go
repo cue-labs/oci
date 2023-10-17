@@ -119,6 +119,7 @@ func (c *client) PushBlob(ctx context.Context, repo string, desc ociregistry.Des
 	req.URL = urlWithDigest(location, string(desc.Digest))
 	req.ContentLength = desc.Size
 	req.Header.Set("Content-Type", "application/octet-stream")
+	// TODO: per the spec, the content-range header here is unnecessary.
 	req.Header.Set("Content-Range", ocirequest.RangeString(0, desc.Size))
 	resp, err = c.do(req, http.StatusCreated)
 	if err != nil {
@@ -242,8 +243,13 @@ type doResult struct {
 func (w *blobWriter) Write(buf []byte) (int, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if len(w.chunk)+len(buf) >= w.chunkSize {
-		if err := w.flush(buf); err != nil {
+
+	// We use > rather than >= here so that using a chunk size of 100
+	// and writing 100 bytes does not actually flush, which would result in a PATCH
+	// then followed by an empty-bodied PUT with the call to Commit.
+	// Instead, we want the writes to not flush at all, and Commit to PUT the entire chunk.
+	if len(w.chunk)+len(buf) > w.chunkSize {
+		if err := w.flush(buf, ""); err != nil {
 			return 0, err
 		}
 	} else {
@@ -257,23 +263,36 @@ func (w *blobWriter) Write(buf []byte) (int, error) {
 }
 
 // flush flushes any outstanding upload data to the server.
-func (w *blobWriter) flush(buf []byte) error {
-	if len(buf)+len(w.chunk) == 0 {
+// If commitDigest is non-empty, this is the final segment of data in the blob:
+// the blob is being committed and the digest should hold the digest of the entire blob content.
+func (w *blobWriter) flush(buf []byte, commitDigest ociregistry.Digest) error {
+	if commitDigest == "" && len(buf)+len(w.chunk) == 0 {
 		return nil
 	}
 	// Start a new PATCH request to send the currently outstanding data.
-	// It'll send on w.response when done
-	req, err := http.NewRequestWithContext(w.ctx, "PATCH", "", io.MultiReader(
-		bytes.NewReader(w.chunk),
-		bytes.NewReader(buf),
-	))
+	// It'll send on w.response when done.
+	method := "PATCH"
+	expect := http.StatusAccepted
+	if commitDigest != "" {
+		// This is the final piece of data, so send it as the final PUT request
+		// (committing the whole blob) which avoids an extra round trip.
+		method = "PUT"
+		expect = http.StatusCreated
+	}
+	req, err := http.NewRequestWithContext(w.ctx, method, "", concatBody(w.chunk, buf))
 	if err != nil {
 		return fmt.Errorf("cannot make PATCH request: %v", err)
 	}
-	req.URL = w.location
 	req.ContentLength = int64(len(w.chunk) + len(buf))
+	if commitDigest != "" { // PUT
+		req.URL = urlWithDigest(w.location, string(commitDigest))
+	} else { // PATCH
+		req.URL = w.location
+	}
+	// TODO: per the spec, the content-range header here is unnecessary
+	// if we are doing a final PUT without a body.
 	req.Header.Set("Content-Range", ocirequest.RangeString(w.flushed, w.flushed+req.ContentLength))
-	resp, err := w.client.do(req, http.StatusAccepted)
+	resp, err := w.client.do(req, expect)
 	if err != nil {
 		return err
 	}
@@ -290,13 +309,29 @@ func (w *blobWriter) flush(buf []byte) error {
 	return nil
 }
 
+func concatBody(b1, b2 []byte) io.Reader {
+	if len(b1)+len(b2) == 0 {
+		return nil // note that net/http treats a nil request body differently
+	}
+	if len(b1) == 0 {
+		return bytes.NewReader(b2)
+	}
+	if len(b2) == 0 {
+		return bytes.NewReader(b1)
+	}
+	return io.MultiReader(
+		bytes.NewReader(b1),
+		bytes.NewReader(b2),
+	)
+}
+
 func (w *blobWriter) Close() error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if w.closed {
 		return w.closeErr
 	}
-	err := w.flush(nil)
+	err := w.flush(nil, "")
 	w.closed = true
 	w.closeErr = err
 	return err
@@ -321,13 +356,8 @@ func (w *blobWriter) ID() string {
 func (w *blobWriter) Commit(digest ociregistry.Digest) (ociregistry.Descriptor, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if err := w.flush(nil); err != nil {
+	if err := w.flush(nil, digest); err != nil {
 		return ociregistry.Descriptor{}, fmt.Errorf("cannot flush data before commit: %v", err)
-	}
-	req, _ := http.NewRequestWithContext(w.ctx, "PUT", "", nil)
-	req.URL = urlWithDigest(w.location, string(digest))
-	if _, err := w.client.do(req, http.StatusCreated); err != nil {
-		return ociregistry.Descriptor{}, err
 	}
 	return ociregistry.Descriptor{
 		MediaType: "application/octet-stream",
