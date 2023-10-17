@@ -391,7 +391,7 @@ func TestCalls(t *testing.T) {
 			Description:   "Chunk_upload_start",
 			Method:        "PATCH",
 			URL:           "/v2/foo/blobs/uploads/MQ",
-			RequestHeader: map[string]string{"Content-Range": "0-3"},
+			RequestHeader: map[string]string{"Content-Range": "0-2"},
 			WantCode:      http.StatusAccepted,
 			Body:          "foo",
 			WantHeader: map[string]string{
@@ -413,7 +413,7 @@ func TestCalls(t *testing.T) {
 			Method:        "PATCH",
 			URL:           "/v2/foo/blobs/uploads/MQ",
 			BlobStream:    map[string]string{"MQ": "foo"},
-			RequestHeader: map[string]string{"Content-Range": "2-5"},
+			RequestHeader: map[string]string{"Content-Range": "2-4"},
 			WantCode:      http.StatusRequestedRangeNotSatisfiable,
 			Body:          "bar",
 		},
@@ -422,7 +422,7 @@ func TestCalls(t *testing.T) {
 			Method:        "PATCH",
 			URL:           "/v2/foo/blobs/uploads/MQ",
 			BlobStream:    map[string]string{"MQ": "foo"},
-			RequestHeader: map[string]string{"Content-Range": "3-6"},
+			RequestHeader: map[string]string{"Content-Range": "3-5"},
 			WantCode:      http.StatusAccepted,
 			Body:          "bar",
 			WantHeader: map[string]string{

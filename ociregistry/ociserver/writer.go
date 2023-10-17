@@ -235,6 +235,13 @@ func chunkRange(req *http.Request) (start, end int64, _ error) {
 		}
 	}
 
+	if rangeOK && req.ContentLength >= 0 {
+		rangeLength := end - start
+		if rangeLength != req.ContentLength {
+			return 0, 0, badAPIUseError("Content-Range implies a length of %d but Content-Length is %d", rangeLength, req.ContentLength)
+		}
+	}
+
 	// The registry here is stateless, so it doesn't remember what minimum chunk size
 	// the backend registry suggested that we should use.
 	// We rely on the HTTP client to remember that minimum and use it,
