@@ -131,6 +131,7 @@ func (c *client) PushBlob(ctx context.Context, repo string, desc ociregistry.Des
 
 // TODO is this a reasonable default? We have to
 // weigh up in-memory cost vs round-trip overhead.
+// TODO: make this default configurable.
 const defaultChunkSize = 64 * 1024
 
 func (c *client) PushBlobChunked(ctx context.Context, repo string, chunkSize int) (ociregistry.BlobWriter, error) {
