@@ -35,6 +35,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ad3da21_4487f295",
+        "filename": "ociregistry/ociserver/proxy_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-17T12:30:55Z",
+      "side": 1,
+      "message": "ack; not doing this now due to conflicts in the stack",
+      "parentUuid": "971998e2_0b6ae543",
+      "revId": "715ebecd42be92d2fe212c89128dedb5dc1940a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a3e6d131_6cd541ab",
@@ -48,6 +66,24 @@
       "writtenOn": "2023-10-17T12:12:37Z",
       "side": 1,
       "message": "This can be omitted. As the docs for ociregistry.Interface say, \"Only the desc.Digest and desc.Size fields are used.\"",
+      "revId": "715ebecd42be92d2fe212c89128dedb5dc1940a7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c17b642a_82afa0cb",
+        "filename": "ociregistry/ociserver/proxy_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-17T12:30:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a3e6d131_6cd541ab",
       "revId": "715ebecd42be92d2fe212c89128dedb5dc1940a7",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
