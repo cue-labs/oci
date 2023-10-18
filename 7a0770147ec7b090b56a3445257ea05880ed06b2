@@ -18,6 +18,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5dae7345_92029977",
+        "filename": "ociregistry/ociclient/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-18T09:58:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5d6e80f5_c7fde1df",
+      "revId": "7a0770147ec7b090b56a3445257ea05880ed06b2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1a753962_1e027207",
@@ -31,6 +49,24 @@
       "writtenOn": "2023-10-18T09:50:10Z",
       "side": 1,
       "message": "// This is the final piece of data, so send it as the final\n// PUT request (committing the whole blob) which avoids an\n// extra round trip.\n\n?",
+      "revId": "7a0770147ec7b090b56a3445257ea05880ed06b2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "49ea4ffb_b9d7086c",
+        "filename": "ociregistry/ociclient/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-18T09:58:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1a753962_1e027207",
       "revId": "7a0770147ec7b090b56a3445257ea05880ed06b2",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
