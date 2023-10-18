@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e8e1378d_ef09d0e1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-18T09:50:10Z",
+      "side": 1,
+      "message": "LGTM with a couple of comment suggestions, thanks!",
+      "revId": "c41535ef0fa42b356088ef9c2e3d248b6134ffaa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ee630c19_3a508aa9",
+        "filename": "ociregistry/ociclient/writer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-18T09:50:10Z",
+      "side": 1,
+      "message": "// if we are doing a final PUT without a body, or if this is the final\n// PUT request and there have been no previous PATCH requests.\n\n?",
+      "revId": "c41535ef0fa42b356088ef9c2e3d248b6134ffaa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
