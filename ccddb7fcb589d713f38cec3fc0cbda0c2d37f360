@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c008bace_89c4a456",
+        "filename": "ociregistry/ocitest/ocitest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-18T08:45:36Z",
+      "side": 1,
+      "message": "I guess the named results aren\u0027t really necessary?",
+      "revId": "ccddb7fcb589d713f38cec3fc0cbda0c2d37f360",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
