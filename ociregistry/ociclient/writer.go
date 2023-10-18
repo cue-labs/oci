@@ -273,22 +273,20 @@ func (w *blobWriter) flush(buf []byte, commitDigest ociregistry.Digest) error {
 	// It'll send on w.response when done.
 	method := "PATCH"
 	expect := http.StatusAccepted
+	reqURL := w.location
 	if commitDigest != "" {
 		// This is the final piece of data, so send it as the final PUT request
 		// (committing the whole blob) which avoids an extra round trip.
 		method = "PUT"
 		expect = http.StatusCreated
+		reqURL = urlWithDigest(reqURL, string(commitDigest))
 	}
 	req, err := http.NewRequestWithContext(w.ctx, method, "", concatBody(w.chunk, buf))
 	if err != nil {
 		return fmt.Errorf("cannot make PATCH request: %v", err)
 	}
+	req.URL = reqURL
 	req.ContentLength = int64(len(w.chunk) + len(buf))
-	if commitDigest != "" { // PUT
-		req.URL = urlWithDigest(w.location, string(commitDigest))
-	} else { // PATCH
-		req.URL = w.location
-	}
 	// TODO: per the spec, the content-range header here is unnecessary
 	// if we are doing a final PUT without a body.
 	req.Header.Set("Content-Range", ocirequest.RangeString(w.flushed, w.flushed+req.ContentLength))
@@ -354,6 +352,9 @@ func (w *blobWriter) ID() string {
 }
 
 func (w *blobWriter) Commit(digest ociregistry.Digest) (ociregistry.Descriptor, error) {
+	if digest == "" {
+		return ociregistry.Descriptor{}, fmt.Errorf("cannot commit with an empty digest")
+	}
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if err := w.flush(nil, digest); err != nil {
