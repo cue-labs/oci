@@ -26,8 +26,8 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/internal/ocitest"
 	"cuelabs.dev/go/oci/ociregistry/ocimem"
+	"cuelabs.dev/go/oci/ociregistry/ocitest"
 )
 
 func TestTrimPrefix(t *testing.T) {
