@@ -16,6 +16,24 @@
       "message": "I guess the named results aren\u0027t really necessary?",
       "revId": "ccddb7fcb589d713f38cec3fc0cbda0c2d37f360",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b7cf3b8_a1745231",
+        "filename": "ociregistry/ocitest/ocitest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-18T09:03:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c008bace_89c4a456",
+      "revId": "ccddb7fcb589d713f38cec3fc0cbda0c2d37f360",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
