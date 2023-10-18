@@ -39,6 +39,11 @@ type Registry struct {
 	R ociregistry.Interface
 }
 
+// NewRegistry returns a Registry instance that wraps r, providing
+// convenience methods for pushing and checking content
+// inside the given test instance.
+//
+// When a Must* method fails, it will fail using t.
 func NewRegistry(t *testing.T, r ociregistry.Interface) Registry {
 	return Registry{t, r}
 }
@@ -60,61 +65,88 @@ type RepoContent struct {
 	// Manifests maps from manifest identifier to the contents of the manifest.
 	// TODO support manifest lists too.
 	Manifests map[string]ociregistry.Manifest
+
 	// Blobs maps from blob identifer to the contents of the blob.
 	Blobs map[string]string
+
 	// Tags maps from tag name to manifest identifier.
 	Tags map[string]string
 }
 
-// PushContent pushes all the content in rc to r.
-func (r Registry) MustPushContent(rc RegistryContent) {
-	for repo, repoc := range rc {
-		err := pushRepoContent(r.R, repo, repoc)
-		qt.Assert(r.T, qt.IsNil(err))
-	}
+// PushedRepoContent mirrors RepoContent but, instead
+// of describing content that is to be pushed, describes the
+// content that has been pushed.
+type PushedRepoContent struct {
+	// Manifests holds an entry for each manifest identifier
+	// with the descriptor for that manifest.
+	Manifests map[string]ociregistry.Descriptor
+
+	// Blobs holds an entry for each blob identifier
+	// with the descriptor for that manifest.
+	Blobs map[string]ociregistry.Descriptor
 }
 
-func pushRepoContent(r ociregistry.Interface, repo string, repoc RepoContent) error {
+// PushContent pushes all the content in rc to r.
+//
+// It returns a map mapping repository name to the descriptors
+// describing the content that has actually been pushed.
+func (r Registry) MustPushContent(rc RegistryContent) map[string]PushedRepoContent {
+	regContent := make(map[string]PushedRepoContent)
+	for repo, repoc := range rc {
+		prc, err := pushRepoContent(r.R, repo, repoc)
+		qt.Assert(r.T, qt.IsNil(err))
+		regContent[repo] = prc
+	}
+	return regContent
+}
+
+func pushRepoContent(r ociregistry.Interface, repo string, repoc RepoContent) (prc PushedRepoContent, _ error) {
 	ctx := context.Background()
-	// blobs maps blob name to the descriptor for that blob.
-	blobs := make(map[string]ociregistry.Descriptor)
+	prc = PushedRepoContent{
+		Manifests: make(map[string]ociregistry.Descriptor),
+		Blobs:     make(map[string]ociregistry.Descriptor),
+	}
+
 	for id, blob := range repoc.Blobs {
-		blobs[id] = ociregistry.Descriptor{
+		prc.Blobs[id] = ociregistry.Descriptor{
 			Digest:    digest.FromString(blob),
 			Size:      int64(len(blob)),
 			MediaType: "application/binary",
 		}
 	}
-	manifests, manifestSeq, err := completedManifests(repoc, blobs)
+	manifests, manifestSeq, err := completedManifests(repoc, prc.Blobs)
 	if err != nil {
-		return err
+		return PushedRepoContent{}, err
+	}
+	for id, content := range manifests {
+		prc.Manifests[id] = content.desc
 	}
 	// First push all the blobs:
 	for id, content := range repoc.Blobs {
-		_, err := r.PushBlob(ctx, repo, blobs[id], strings.NewReader(content))
+		_, err := r.PushBlob(ctx, repo, prc.Blobs[id], strings.NewReader(content))
 		if err != nil {
-			return fmt.Errorf("cannot push blob %q in repo %q", id, repo)
+			return PushedRepoContent{}, fmt.Errorf("cannot push blob %q in repo %q", id, repo)
 		}
 	}
 	// Then push the manifests that refer to the blobs.
 	for _, mc := range manifestSeq {
 		_, err := r.PushManifest(ctx, repo, "", mc.data, mc.desc.MediaType)
 		if err != nil {
-			return fmt.Errorf("cannot push manifest %q in repo %q", mc.id, repo)
+			return PushedRepoContent{}, fmt.Errorf("cannot push manifest %q in repo %q", mc.id, repo)
 		}
 	}
 	// Then push any tags.
 	for tag, id := range repoc.Tags {
 		mc, ok := manifests[id]
 		if !ok {
-			return fmt.Errorf("tag %q refers to unknown manifest id %q", tag, id)
+			return PushedRepoContent{}, fmt.Errorf("tag %q refers to unknown manifest id %q", tag, id)
 		}
 		_, err := r.PushManifest(ctx, repo, tag, mc.data, mc.desc.MediaType)
 		if err != nil {
-			return fmt.Errorf("cannot push tag %q in repo %q", id, repo)
+			return PushedRepoContent{}, fmt.Errorf("cannot push tag %q in repo %q", id, repo)
 		}
 	}
-	return nil
+	return prc, nil
 }
 
 type manifestContent struct {
@@ -235,33 +267,10 @@ func (r Registry) MustPushManifest(repo string, jsonObject any, tag string) ([]b
 	return data, desc1
 }
 
-func (r Registry) HasBlob(repo string, wantData []byte) qt.Checker {
-	panic("TODO")
-}
-func (r Registry) HasManifest(repo string, wantData []byte, wantContentType string) qt.Checker {
-	panic("TODO")
-}
-func (r Registry) Repo(repo string) Repo {
-	panic("TODO")
-}
-
 type Repo struct {
 	T    *testing.T
 	Name string
 	R    ociregistry.Interface
-}
-
-func (r Repo) MustPushBlob(data []byte) ociregistry.Descriptor {
-	panic("TODO")
-}
-func (r Repo) MustPushManifest(jsonObject any, tag string) ([]byte, ociregistry.Descriptor) {
-	panic("TODO")
-}
-func (r Repo) HasBlob(wantData []byte) qt.Checker {
-	panic("TODO")
-}
-func (r Repo) HasManifest(wantData []byte, wantContentType string) qt.Checker {
-	panic("TODO")
 }
 
 // HasContent returns a checker that checks r matches the expected
