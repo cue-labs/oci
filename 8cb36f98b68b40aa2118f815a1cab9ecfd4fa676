@@ -1,0 +1,198 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "49ca9c7d_8157f98c",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-19T08:55:36Z",
+      "side": 1,
+      "message": "how about:\n\n```\ntype RunHelper \u003d func(name, serverURL string) (AuthInfo, error)\n```\n\nmore obvious (what is an oauthconfig.Runner?), and not particularly long either, since now you don\u0027t need to repeat \"helper\" in the parameter name.",
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "51c6beff_399670fb",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-19T08:55:36Z",
+      "side": 1,
+      "message": "I assume omitempty tags don\u0027t matter since we only decode.",
+      "range": {
+        "startLine": 50,
+        "startChar": 54,
+        "endLine": 50,
+        "endChar": 63
+      },
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b9333066_2ec8b45e",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-19T08:55:36Z",
+      "side": 1,
+      "message": "might as well linkify :)",
+      "range": {
+        "startLine": 73,
+        "startChar": 11,
+        "endLine": 73,
+        "endChar": 21
+      },
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6d9975b5_625388cd",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-19T08:55:36Z",
+      "side": 1,
+      "message": "unnecessary line?",
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "df303606_e0476234",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-19T08:55:36Z",
+      "side": 1,
+      "message": "say \"Mimics\" to not hint at any minor copyright issues? :)",
+      "range": {
+        "startLine": 205,
+        "startChar": 3,
+        "endLine": 205,
+        "endChar": 14
+      },
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0dcb6c8_1732f0a0",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-19T08:55:36Z",
+      "side": 1,
+      "message": "I\u0027d just say Docker here.",
+      "range": {
+        "startLine": 206,
+        "startChar": 33,
+        "endLine": 206,
+        "endChar": 37
+      },
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "04ee1bce_3cf62e62",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-19T08:55:36Z",
+      "side": 1,
+      "message": "why are you trimming zero bytes? if it\u0027s really necessary, I\u0027d document why, because it seems odd to me",
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "951957dc_21f02b57",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-19T08:55:36Z",
+      "side": 1,
+      "message": "you could call `cmd.Output`, which will then leave any stderr as part of ExitError - I think that would be the easiest for you. you want the output as a buffer anyway, and I assume the JSON response should always be in stdout, not stderr.",
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4450185e_cb15a462",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-19T08:55:36Z",
+      "side": 1,
+      "message": "note that json v1 always falls back to case insensitive matching of JSON keys with Go fields, so this code of yours will still happily decode \"username\" or \"USERNAME\" as long as there isn\u0027t an exact match like \"Username\" first.\n\nin other words, as long as we are OK with being case insensitive for decoding, and I think we want to be to mimic Docker, we could omit literally all json tags in this implementation, because they only really matter for encoding in json v1.\n\nor if you do want to keep the tags to match Docker\u0027s type definitions, then remove this TODO, because you are already matching case insensitive keys here. you literally cannot avoid json v1 from doing case insensitive key matching on decode.",
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a64c8257_016c9a97",
+        "filename": "ociregistry/ociauthconfig/authfile_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-10-19T08:55:36Z",
+      "side": 1,
+      "message": "I find the combination of Sprintf and concatenating strings odd - just Sprintf the whole thing?",
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
