@@ -60,11 +60,15 @@ workflows: trybot: _repo.bashWorkflow & {
 
 				_repo.earlyChecks,
 
+				for _, v in perModuleChecks {v},
+
+				// Run "go work sync" after we have checked and tested every module.
+				// This way, if a "go test" command fails, it is much easier for the developer
+				// to reproduce on their machine without having to remember "go work sync".
+				// If "go work sync" makes any changes, then the git clean check below will fail anyway.
 				json.#step & {
 					run: "go work sync"
 				},
-
-				for _, v in perModuleChecks {v},
 
 				_repo.checkGitClean,
 			]
@@ -78,7 +82,7 @@ workflows: trybot: _repo.bashWorkflow & {
 		for _, gowork in ["", if !modIsInternal {"off"}]
 		for _, step in [_#goGenerate, _#goTest, _#goCheck] {
 			step & {
-				#name:               modDir
+				#name:               modDir + [if gowork != "" {" with GOWORK=\(gowork)"}, ""][0]
 				"working-directory": modDir
 				env: {
 					GOWORK: gowork
