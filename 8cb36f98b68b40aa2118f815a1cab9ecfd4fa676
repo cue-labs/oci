@@ -18,6 +18,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5716148b_c5aa7b6b",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-19T12:21:10Z",
+      "side": 1,
+      "message": "I went with the somewhat longer HelperRunner, as it\u0027s not a commonly referred-to name (so brevity isn\u0027t so important) and RunHelper sounds more like a function that does something rather than a type.",
+      "parentUuid": "49ca9c7d_8157f98c",
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "51c6beff_399670fb",
@@ -31,6 +49,30 @@
       "writtenOn": "2023-10-19T08:55:36Z",
       "side": 1,
       "message": "I assume omitempty tags don\u0027t matter since we only decode.",
+      "range": {
+        "startLine": 50,
+        "startChar": 54,
+        "endLine": 50,
+        "endChar": 63
+      },
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dba31340_fd87a1b1",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-19T12:21:10Z",
+      "side": 1,
+      "message": "Yeah, it\u0027s more as a reminder that the fields aren\u0027t required (CUE\u0027s unmarshaling logic uses it similarly).",
+      "parentUuid": "51c6beff_399670fb",
       "range": {
         "startLine": 50,
         "startChar": 54,
@@ -64,6 +106,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "329195e7_47ee92a8",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-19T12:21:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b9333066_2ec8b45e",
+      "range": {
+        "startLine": 73,
+        "startChar": 11,
+        "endLine": 73,
+        "endChar": 21
+      },
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6d9975b5_625388cd",
@@ -81,6 +147,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9700cd30_dccf7de3",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-19T12:21:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6d9975b5_625388cd",
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "df303606_e0476234",
@@ -94,6 +178,30 @@
       "writtenOn": "2023-10-19T08:55:36Z",
       "side": 1,
       "message": "say \"Mimics\" to not hint at any minor copyright issues? :)",
+      "range": {
+        "startLine": 205,
+        "startChar": 3,
+        "endLine": 205,
+        "endChar": 14
+      },
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a6160b5e_f92e2c16",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-19T12:21:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "df303606_e0476234",
       "range": {
         "startLine": 205,
         "startChar": 3,
@@ -127,6 +235,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a46c2c3_41dc0f51",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-19T12:21:10Z",
+      "side": 1,
+      "message": "I think it\u0027s worth saying exactly where it is, because otherwise it\u0027s hard to check the correspondence, especially as the function name is different.",
+      "parentUuid": "a0dcb6c8_1732f0a0",
+      "range": {
+        "startLine": 206,
+        "startChar": 33,
+        "endLine": 206,
+        "endChar": 37
+      },
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "04ee1bce_3cf62e62",
@@ -140,6 +272,24 @@
       "writtenOn": "2023-10-19T08:55:36Z",
       "side": 1,
       "message": "why are you trimming zero bytes? if it\u0027s really necessary, I\u0027d document why, because it seems odd to me",
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5cd1ee5a_a173a7e0",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-19T12:21:10Z",
+      "side": 1,
+      "message": "It\u0027s mimicking the behaviour of the docker CLI logic: https://github.com/docker/cli/blob/98fdcd769bcd137f7538f898b37348f919536ea4/cli/config/configfile/file.go#L247\nI\u0027ll document it to that effect.",
+      "parentUuid": "04ee1bce_3cf62e62",
       "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -161,6 +311,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1b15f539_11c2da08",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-19T12:21:10Z",
+      "side": 1,
+      "message": "Unfortunately the error text is not always printed to stderr (the tests specifically test for this), so I think it\u0027s better to combine stdout and stderr.\n(note that this particular line is irrelevant and overridden on line 242 - I\u0027ve removed it now)",
+      "parentUuid": "951957dc_21f02b57",
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4450185e_cb15a462",
@@ -178,6 +346,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "26dceeec_54ca6c0d",
+        "filename": "ociregistry/ociauthconfig/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-19T12:21:10Z",
+      "side": 1,
+      "message": "I\u0027ve removed the TODO and the json tags.",
+      "parentUuid": "4450185e_cb15a462",
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a64c8257_016c9a97",
@@ -191,6 +377,24 @@
       "writtenOn": "2023-10-19T08:55:36Z",
       "side": 1,
       "message": "I find the combination of Sprintf and concatenating strings odd - just Sprintf the whole thing?",
+      "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2e74c034_1ffafefb",
+        "filename": "ociregistry/ociauthconfig/authfile_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-10-19T12:21:10Z",
+      "side": 1,
+      "message": "I kinda prefer keeping the %q near to its argument, so i\u0027ll leave as is.",
+      "parentUuid": "a64c8257_016c9a97",
       "revId": "8cb36f98b68b40aa2118f815a1cab9ecfd4fa676",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
