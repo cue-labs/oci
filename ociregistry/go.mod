@@ -7,6 +7,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc4
 	github.com/rogpeppe/go-internal v1.10.1-0.20230524175051-ec119421bb97
+	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 )
 
 require (
