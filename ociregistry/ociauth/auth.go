@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -81,6 +80,9 @@ type registry struct {
 	initOnce   sync.Once
 	initErr    error
 
+	// mu guards the fields that follow it.
+	mu sync.Mutex
+
 	// wwwAuthenticate holds the Www-Authenticate header from
 	// the most recent 401 response. If there was a 401 response
 	// that didn't hold such a header, this will still be non-nil
@@ -132,7 +134,9 @@ func (a *StdAuthorizer) DoRequest(req *http.Request, requiredScope, wantScope Sc
 	return r.doRequest(req.Context(), req, requiredScope, wantScope)
 }
 
+// doRequest performs the given request on the registry r.
 func (r *registry) doRequest(ctx context.Context, req *http.Request, requiredScope, wantScope Scope) (*http.Response, error) {
+	// TODO set up request body so that we can rewind it when retrying if necessary.
 	if err := r.setAuthorization(ctx, req, requiredScope, wantScope); err != nil {
 		return nil, err
 	}
@@ -148,27 +152,23 @@ func (r *registry) doRequest(ctx context.Context, req *http.Request, requiredSco
 	if challenge == nil {
 		return resp, nil
 	}
-	r.wwwAuthenticate = challenge
-
-	if r.wwwAuthenticate.scheme == "bearer" {
-		scope := ParseScope(r.wwwAuthenticate.params["scope"])
-		scope = scope.Union(requiredScope).Union(wantScope)
-		log.Printf("srvScope %v; requiredScope %v; wantScope %v", scope, requiredScope, wantScope)
-		log.Printf("acquiring token with full scope %v", scope)
-		accessToken, err := r.acquireAccessToken(ctx, scope)
-		if err != nil {
-			log.Printf("-> cannot acquire token: %v", err)
-			return nil, err
-		}
-		log.Printf("-> token %q", accessToken)
-		req.Header.Set("Authorization", "Bearer "+accessToken)
-	} else if r.basic != nil {
-		req.SetBasicAuth(r.basic.username, r.basic.password)
+	authAdded, err := r.setAuthorizationFromChallenge(ctx, req, challenge, requiredScope, wantScope)
+	if err != nil {
+		return nil, err
 	}
+	if !authAdded {
+		// Couldn't acquire any more authorization than we had initially.
+		return resp, nil
+	}
+	// TODO rewind request body if needed.
 	return r.authorizer.httpClient.Do(req)
 }
 
+// setAuthorization sets up authorization on the given request using any
+// auth information currently available.
 func (r *registry) setAuthorization(ctx context.Context, req *http.Request, requiredScope, wantScope Scope) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	// Remove tokens that have expired or will expire soon so that
 	// the caller doesn't start using a token only for it to expire while it's
 	// making the request.
@@ -184,18 +184,11 @@ func (r *registry) setAuthorization(ctx context.Context, req *http.Request, requ
 		// acquire an access token and we've seen a Www-Authenticate response
 		// that tells us how we can use it.
 
-		// TODO
-		// maybe we should look at r.wwwAuthenticate.params["scope"] and
-		// union it with requiredScope, but maybe not:
-		// the scope is (probably) specific to a given request and that's
-		// not necessarily the same as the request we're making here.
+		// TODO we're holding the lock (r.mu) here, which is precluding
+		// acquiring several tokens concurrently. We should relax the lock
+		// to allow that.
 
-		// TODO we could also somehow manage acquisition of tokens in parallel.
-		// although maybe we don't want to do that - we could just serialize
-		// all token acquisition for a given registry for now. the client can
-		// guard against multiple round trips by setting up the scope appropriately.
-
-		accessToken, err := r.acquireAccessToken(ctx, requiredScope.Union(wantScope))
+		accessToken, err := r.acquireAccessToken(ctx, requiredScope, wantScope)
 		if err != nil {
 			return err
 		}
@@ -214,6 +207,29 @@ func (r *registry) setAuthorization(ctx context.Context, req *http.Request, requ
 		return nil
 	}
 	return nil
+}
+
+func (r *registry) setAuthorizationFromChallenge(ctx context.Context, req *http.Request, challenge *authHeader, requiredScope, wantScope Scope) (bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.wwwAuthenticate = challenge
+
+	switch {
+	case r.wwwAuthenticate.scheme == "bearer":
+		scope := ParseScope(r.wwwAuthenticate.params["scope"])
+		// At this point we can ignore requiredScope because the server
+		// has told us exactly what scope is required.
+		accessToken, err := r.acquireAccessToken(ctx, scope, wantScope)
+		if err != nil {
+			return false, err
+		}
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		return true, nil
+	case r.basic != nil:
+		req.SetBasicAuth(r.basic.username, r.basic.password)
+		return true, nil
+	}
+	return false, nil
 }
 
 // init initializes the registry instance by acquiring auth information from
@@ -251,13 +267,41 @@ func (r *registry) init() error {
 }
 
 // acquireAccessToken tries to acquire an access token for authorizing a request.
-// The token will be acquired with the given scope.
+// The requiredScopeStr parameter indicates the scope that's definitely
+// required. This is a string because apparently some servers are picky
+// about getting exactly the same scope in the auth request that was
+// returned in the challenge. The wantScope parameter indicates
+// what scope might be required in the future.
 //
 // This method assumes that there has been a previous 401 response with
 // a Www-Authenticate: Bearer... header.
-func (r *registry) acquireAccessToken(ctx context.Context, scope Scope) (string, error) {
+func (r *registry) acquireAccessToken(ctx context.Context, requiredScope, wantScope Scope) (string, error) {
+	scope := requiredScope.Union(wantScope)
 	tok, err := r.acquireToken(ctx, scope)
 	if err != nil {
+		var rerr *responseError
+		if !errors.As(err, &rerr) || rerr.statusCode != http.StatusUnauthorized {
+			return "", err
+		}
+		// The documentation says this:
+		//
+		//	If the client only has a subset of the requested
+		// 	access it _must not be considered an error_ as it is
+		//	not the responsibility of the token server to
+		//	indicate authorization errors as part of this
+		//	workflow.
+		//
+		// However it's apparently not uncommon for servers to reject
+		// such requests anyway, so if we've got an unauthorized error
+		// and wantScope goes beyond requiredScope, it may be because
+		// the server is rejecting the request.
+		scope = requiredScope
+		tok, err = r.acquireToken(ctx, scope)
+		if err != nil {
+			return "", err
+		}
+		// TODO mark the registry as picky about tokens so we don't
+		// attempt twice every time?
 		return "", err
 	}
 	if tok.RefreshToken != "" {
@@ -287,7 +331,6 @@ func (r *registry) acquireAccessToken(ctx context.Context, scope Scope) (string,
 }
 
 func (r *registry) acquireToken(ctx context.Context, scope Scope) (*wireToken, error) {
-	log.Printf("acquireToken, basic: %#v", r.basic)
 	realm := r.wwwAuthenticate.params["realm"]
 	if realm == "" {
 		return nil, fmt.Errorf("malformed Www-Authenticate header (missing realm)")
