@@ -34,6 +34,7 @@ import (
 
 	"cuelabs.dev/go/oci/ociregistry"
 	"cuelabs.dev/go/oci/ociregistry/internal/ocirequest"
+	"cuelabs.dev/go/oci/ociregistry/ociauth"
 )
 
 // debug enables logging.
@@ -44,9 +45,12 @@ type Options struct {
 	// DebugID is used to prefix any log messages printed by the client.
 	DebugID string
 
-	// Client is used to send HTTP requests. If it's nil,
+	// HTTPClient is used to send HTTP requests. If it's nil,
 	// http.DefaultClient will be used.
-	Client HTTPDoer
+	HTTPClient HTTPDoer
+
+	// Authorizer is used to acquire authorization for making requests.
+	Authorizer ociauth.Authorizer
 
 	// Insecure specifies whether an http scheme will be
 	// used to address the host instead of https.
@@ -72,8 +76,8 @@ func New(host string, opts *Options) (ociregistry.Interface, error) {
 	if opts.DebugID == "" {
 		opts.DebugID = fmt.Sprintf("id%d", atomic.AddInt32(&debugID, 1))
 	}
-	if opts.Client == nil {
-		opts.Client = http.DefaultClient
+	if opts.HTTPClient == nil {
+		opts.HTTPClient = http.DefaultClient
 	}
 	// Check that it's a valid host by forming a URL from it and checking that it matches.
 	u, err := url.Parse("https://" + host + "/path")
@@ -89,7 +93,8 @@ func New(host string, opts *Options) (ociregistry.Interface, error) {
 	return &client{
 		httpHost:   host,
 		httpScheme: u.Scheme,
-		client:     opts.Client,
+		client:     opts.HTTPClient,
+		authorizer: opts.Authorizer,
 		debugID:    opts.DebugID,
 	}, nil
 }
@@ -99,6 +104,7 @@ type client struct {
 	httpScheme string
 	httpHost   string
 	client     HTTPDoer
+	authorizer ociauth.Authorizer
 	debugID    string
 }
 
@@ -238,7 +244,7 @@ func (c *client) doRequest(ctx context.Context, rreq *ocirequest.Request, okStat
 		// add all the manifest kinds that we know about.
 		req.Header["Accept"] = knownManifestMediaTypes
 	}
-	resp, err := c.do(req, okStatuses...)
+	resp, err := c.do(req, scopeForRequest(rreq), okStatuses...)
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +255,7 @@ func (c *client) doRequest(ctx context.Context, rreq *ocirequest.Request, okStat
 	return nil, makeError(resp)
 }
 
-func (c *client) do(req *http.Request, okStatuses ...int) (*http.Response, error) {
+func (c *client) do(req *http.Request, needScope ociauth.Scope, okStatuses ...int) (*http.Response, error) {
 	if req.URL.Scheme == "" {
 		req.URL.Scheme = c.httpScheme
 	}
@@ -273,7 +279,13 @@ func (c *client) do(req *http.Request, okStatuses ...int) (*http.Response, error
 		}
 		c.logf("%s", buf.Bytes())
 	}
-	resp, err := c.client.Do(req)
+	var resp *http.Response
+	var err error
+	if c.authorizer != nil {
+		resp, err = c.authorizer.DoRequest(req, needScope)
+	} else {
+		resp, err = c.client.Do(req)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("cannot do HTTP request: %w", err)
 	}
@@ -335,4 +347,49 @@ func closeOnError(err *error, r io.Closer) {
 
 func unexpectedStatusError(code int) error {
 	return fmt.Errorf("unexpected HTTP response code %d", code)
+}
+
+func scopeForRequest(r *ocirequest.Request) ociauth.Scope {
+	switch r.Kind {
+	case ocirequest.ReqPing:
+		return ociauth.Scope{}
+	case ocirequest.ReqBlobGet,
+		ocirequest.ReqBlobHead,
+		ocirequest.ReqManifestGet,
+		ocirequest.ReqManifestHead,
+		ocirequest.ReqTagsList,
+		ocirequest.ReqReferrersList:
+		return ociauth.NewScope(ociauth.ResourceScope{
+			ResourceType: ociauth.TypeRepository,
+			Resource:     r.Repo,
+			Action:       ociauth.ActionPull,
+		})
+	case ocirequest.ReqBlobDelete,
+		ocirequest.ReqBlobStartUpload,
+		ocirequest.ReqBlobUploadBlob,
+		ocirequest.ReqBlobUploadInfo,
+		ocirequest.ReqBlobUploadChunk,
+		ocirequest.ReqBlobCompleteUpload,
+		ocirequest.ReqManifestPut,
+		ocirequest.ReqManifestDelete:
+		return ociauth.NewScope(ociauth.ResourceScope{
+			ResourceType: ociauth.TypeRepository,
+			Resource:     r.Repo,
+			Action:       ociauth.ActionPush,
+		})
+	case ocirequest.ReqBlobMount:
+		return ociauth.NewScope(ociauth.ResourceScope{
+			ResourceType: ociauth.TypeRepository,
+			Resource:     r.Repo,
+			Action:       ociauth.ActionPush,
+		}, ociauth.ResourceScope{
+			ResourceType: ociauth.TypeRepository,
+			Resource:     r.FromRepo,
+			Action:       ociauth.ActionPull,
+		})
+	case ocirequest.ReqCatalogList:
+		return ociauth.NewScope(ociauth.CatalogScope)
+	default:
+		panic(fmt.Errorf("unexpected request kind %v", r.Kind))
+	}
 }
