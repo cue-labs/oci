@@ -1,4 +1,4 @@
-package ociauthconfig
+package ociauth
 
 import (
 	"bytes"
@@ -13,26 +13,36 @@ import (
 	"strings"
 )
 
-// Config holds auth information for OCI registries as read from a configuration file.
-type Config struct {
-	data   configData
-	runner HelperRunner
+// AuthConfig represents access to system level (e.g. config-file or command-execution based)
+// configuration information.
+//
+// It's OK to call EntryForRegistry concurrently.
+type Config interface {
+	// EntryForRegistry returns auth information for the given host.
+	// If there's no information available, it should return the zero ConfigEntry
+	// and nil.
+	EntryForRegistry(host string) (ConfigEntry, error)
 }
 
-// AuthInfo holds authorization information that can be used to connect
-// to a registry.
-type AuthInfo struct {
-	// IdentityToken holds a token for use in OAuth flows; if this is empty,
-	// Username and Password will hold basic auth credentials.
-	IdentityToken string
-
+// ConfigEntry holds auth information for a registry.
+// It mirrors the information obtainable from the .docker/config.json
+// file and from the docker credential helper protocol
+type ConfigEntry struct {
+	// RefreshToken holds a token that can be used to obtain an access token.
+	RefreshToken string
+	// AccessToken holds a bearer token to be sent to a registry.
+	AccessToken string
 	// Username holds the username for use with basic auth.
-	// This is only valid if IdentityToken is empty. If it's empty,
-	// no auth information is configured.
-	Username string `json:"username,omitempty"`
-
+	Username string
 	// Password holds the password for use with Username.
-	Password string `json:"password,omitempty"`
+	Password string
+}
+
+// ConfigFile holds auth information for OCI registries as read from a configuration file.
+// It implements [Config].
+type ConfigFile struct {
+	data   configData
+	runner HelperRunner
 }
 
 // HelperRunner is the function used to execute auth "helper"
@@ -41,7 +51,7 @@ type AuthInfo struct {
 //
 // If the credentials are not found, it should return the zero AuthInfo
 // and no error.
-type HelperRunner = func(helperName string, serverURL string) (AuthInfo, error)
+type HelperRunner = func(helperName string, serverURL string) (ConfigEntry, error)
 
 // configData holds the part of ~/.docker/config.json that pertains to auth.
 type configData struct {
@@ -58,7 +68,9 @@ type authConfig struct {
 
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
-	Auth     string `json:"auth,omitempty"`
+	// Auth is an alternative way of specifying username and password
+	// (in base64(username:password) form.
+	Auth string `json:"auth,omitempty"`
 
 	// IdentityToken is used to authenticate the user and get
 	// an access token for the registry.
@@ -76,7 +88,7 @@ type authConfig struct {
 // - $DOCKER_CONFIG/config.json
 // - ~/.docker/config.json
 // - $XDG_RUNTIME_DIR/containers/auth.json
-func Load(runner HelperRunner) (*Config, error) {
+func Load(runner HelperRunner) (*ConfigFile, error) {
 	if runner == nil {
 		runner = ExecHelper
 	}
@@ -92,16 +104,16 @@ func Load(runner HelperRunner) (*Config, error) {
 			}
 			return nil, err
 		}
-		f, err := decodeConfig(data)
+		f, err := decodeConfigFile(data)
 		if err != nil {
 			return nil, fmt.Errorf("invalid config file %q: %v", filename, err)
 		}
-		return &Config{
+		return &ConfigFile{
 			data:   f,
 			runner: runner,
 		}, nil
 	}
-	return &Config{
+	return &ConfigFile{
 		runner: runner,
 	}, nil
 }
@@ -134,9 +146,9 @@ var configFileLocations = []func() string{
 	},
 }
 
-// AuthInfoForRegistry returns auth information for connecting to the registry with the
-// given host name. If no registry is found, it returns the zero AuthInfo and a nil error.
-func (c *Config) AuthInfoForRegistry(registryHostname string) (AuthInfo, error) {
+// EntryForRegistry implements [Authorizer.InfoForRegistry].
+// If no registry is found, it returns the zero [ConfigEntry] and a nil error.
+func (c *ConfigFile) EntryForRegistry(registryHostname string) (ConfigEntry, error) {
 	helper, ok := c.data.CredHelpers[registryHostname]
 	if !ok {
 		helper = c.data.CredsStore
@@ -146,20 +158,21 @@ func (c *Config) AuthInfoForRegistry(registryHostname string) (AuthInfo, error) 
 	}
 	auth := c.data.Auths[registryHostname]
 	if auth.IdentityToken != "" && auth.Username != "" {
-		return AuthInfo{}, fmt.Errorf("ambiguous auth credentials")
+		return ConfigEntry{}, fmt.Errorf("ambiguous auth credentials")
 	}
 	if len(auth.derivedFrom) > 1 {
-		return AuthInfo{}, fmt.Errorf("more than one auths entry for %q (%s)", registryHostname, strings.Join(auth.derivedFrom, ", "))
+		return ConfigEntry{}, fmt.Errorf("more than one auths entry for %q (%s)", registryHostname, strings.Join(auth.derivedFrom, ", "))
 	}
 
-	return AuthInfo{
-		IdentityToken: auth.IdentityToken,
-		Username:      auth.Username,
-		Password:      auth.Password,
+	return ConfigEntry{
+		RefreshToken: auth.IdentityToken,
+		AccessToken:  auth.RegistryToken,
+		Username:     auth.Username,
+		Password:     auth.Password,
 	}, nil
 }
 
-func decodeConfig(data []byte) (configData, error) {
+func decodeConfigFile(data []byte) (configData, error) {
 	var f configData
 	if err := json.Unmarshal(data, &f); err != nil {
 		return configData{}, fmt.Errorf("decode failed: %v", err)
@@ -232,7 +245,7 @@ func decodeAuth(authStr string) (string, string, error) {
 
 // ExecHelper executes an external program to get the credentials from a native store.
 // It implements HelperRunner.
-func ExecHelper(helperName string, serverURL string) (AuthInfo, error) {
+func ExecHelper(helperName string, serverURL string) (ConfigEntry, error) {
 	var out bytes.Buffer
 	cmd := exec.Command("docker-credential-"+helperName, "get")
 	// TODO this doesn't produce a decent error message for
@@ -242,13 +255,13 @@ func ExecHelper(helperName string, serverURL string) (AuthInfo, error) {
 	cmd.Stderr = &out
 	if err := cmd.Run(); err != nil {
 		if !errors.As(err, new(*exec.ExitError)) {
-			return AuthInfo{}, fmt.Errorf("cannot run auth helper: %v", err)
+			return ConfigEntry{}, fmt.Errorf("cannot run auth helper: %v", err)
 		}
 		t := strings.TrimSpace(out.String())
 		if t == "credentials not found in native keychain" {
-			return AuthInfo{}, nil
+			return ConfigEntry{}, nil
 		}
-		return AuthInfo{}, fmt.Errorf("error getting credentials: %s", t)
+		return ConfigEntry{}, fmt.Errorf("error getting credentials: %s", t)
 	}
 
 	// helperCredentials defines the JSON encoding of the data printed
@@ -259,14 +272,14 @@ func ExecHelper(helperName string, serverURL string) (AuthInfo, error) {
 	}
 	var creds helperCredentials
 	if err := json.Unmarshal(out.Bytes(), &creds); err != nil {
-		return AuthInfo{}, err
+		return ConfigEntry{}, err
 	}
 	if creds.Username == "<token>" {
-		return AuthInfo{
-			IdentityToken: creds.Secret,
+		return ConfigEntry{
+			RefreshToken: creds.Secret,
 		}, nil
 	}
-	return AuthInfo{
+	return ConfigEntry{
 		Password: creds.Secret,
 		Username: creds.Username,
 	}, nil
