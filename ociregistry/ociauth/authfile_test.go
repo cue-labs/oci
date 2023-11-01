@@ -1,4 +1,4 @@
-package ociauthconfig
+package ociauth
 
 import (
 	"flag"
@@ -30,9 +30,9 @@ func TestLoadWithNoConfig(t *testing.T) {
 	t.Setenv("XDG_RUNTIME_DIR", "")
 	c, err := Load(noRunner)
 	qt.Assert(t, qt.IsNil(err))
-	info, err := c.AuthInfoForRegistry("some.org")
+	info, err := c.InfoForRegistry("some.org")
 	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, AuthInfo{}))
+	qt.Assert(t, qt.Equals(info, ConfigInfo{}))
 }
 
 func TestLoad(t *testing.T) {
@@ -81,9 +81,9 @@ func TestLoad(t *testing.T) {
 		t.Run(loc.env, func(t *testing.T) {
 			c, err := Load(noRunner)
 			qt.Assert(t, qt.IsNil(err))
-			info, err := c.AuthInfoForRegistry("someregistry.example.com")
+			info, err := c.InfoForRegistry("someregistry.example.com")
 			qt.Assert(t, qt.IsNil(err))
-			qt.Assert(t, qt.Equals(info, AuthInfo{
+			qt.Assert(t, qt.Equals(info, ConfigInfo{
 				Username: loc.env,
 				Password: "somepassword",
 			}))
@@ -99,9 +99,9 @@ func TestLoad(t *testing.T) {
 	c, err := Load(noRunner)
 	qt.Assert(t, qt.IsNil(err))
 
-	info, err := c.AuthInfoForRegistry("someregistry.example.com")
+	info, err := c.InfoForRegistry("someregistry.example.com")
 	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, AuthInfo{}))
+	qt.Assert(t, qt.Equals(info, ConfigInfo{}))
 }
 
 func TestWithBase64Auth(t *testing.T) {
@@ -114,9 +114,9 @@ func TestWithBase64Auth(t *testing.T) {
 	}
 }`)
 	qt.Assert(t, qt.IsNil(err))
-	info, err := c.AuthInfoForRegistry("someregistry.example.com")
+	info, err := c.InfoForRegistry("someregistry.example.com")
 	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, AuthInfo{
+	qt.Assert(t, qt.Equals(info, ConfigInfo{
 		Username: "testuser",
 		Password: "password",
 	}))
@@ -147,8 +147,8 @@ func TestWithAuthAndUsername(t *testing.T) {
 	}
 }`)
 	qt.Assert(t, qt.IsNil(err))
-	info, err := c.AuthInfoForRegistry("someregistry.example.com")
-	qt.Assert(t, qt.Equals(info, AuthInfo{
+	info, err := c.InfoForRegistry("someregistry.example.com")
+	qt.Assert(t, qt.Equals(info, ConfigInfo{
 		Username: "testuser",
 		Password: "password",
 	}))
@@ -165,9 +165,9 @@ func TestWithURLEntry(t *testing.T) {
 	}
 }`)
 	qt.Assert(t, qt.IsNil(err))
-	info, err := c.AuthInfoForRegistry("someregistry.example.com")
+	info, err := c.InfoForRegistry("someregistry.example.com")
 	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, AuthInfo{
+	qt.Assert(t, qt.Equals(info, ConfigInfo{
 		Username: "foo",
 		Password: "bar",
 	}))
@@ -188,15 +188,15 @@ func TestWithURLEntryAndExplicitHost(t *testing.T) {
 	}
 }`)
 	qt.Assert(t, qt.IsNil(err))
-	info, err := c.AuthInfoForRegistry("someregistry.example.com")
+	info, err := c.InfoForRegistry("someregistry.example.com")
 	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, AuthInfo{
+	qt.Assert(t, qt.Equals(info, ConfigInfo{
 		Username: "baz",
 		Password: "arble",
 	}))
-	info, err = c.AuthInfoForRegistry("https://someregistry.example.com/v1")
+	info, err = c.InfoForRegistry("https://someregistry.example.com/v1")
 	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, AuthInfo{
+	qt.Assert(t, qt.Equals(info, ConfigInfo{
 		Username: "foo",
 		Password: "bar",
 	}))
@@ -221,7 +221,7 @@ func TestWithMultipleURLsAndSameHost(t *testing.T) {
 	}
 }`)
 	qt.Assert(t, qt.IsNil(err))
-	_, err = c.AuthInfoForRegistry("someregistry.example.com")
+	_, err = c.InfoForRegistry("someregistry.example.com")
 	qt.Assert(t, qt.ErrorMatches(err, `more than one auths entry for "someregistry.example.com" \(http://someregistry.example.com/v1, http://someregistry.example.com/v2, https://someregistry.example.com/v1\)`))
 }
 
@@ -235,9 +235,9 @@ func TestWithHelperBasic(t *testing.T) {
 }
 `)
 	qt.Assert(t, qt.IsNil(err))
-	info, err := c.AuthInfoForRegistry("registry-with-basic-auth.com")
+	info, err := c.InfoForRegistry("registry-with-basic-auth.com")
 	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, AuthInfo{
+	qt.Assert(t, qt.Equals(info, ConfigInfo{
 		Username: "someuser",
 		Password: "somesecret",
 	}))
@@ -253,10 +253,10 @@ func TestWithHelperToken(t *testing.T) {
 }
 `)
 	qt.Assert(t, qt.IsNil(err))
-	info, err := c.AuthInfoForRegistry("registry-with-token.com")
+	info, err := c.InfoForRegistry("registry-with-token.com")
 	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, AuthInfo{
-		IdentityToken: "sometoken",
+	qt.Assert(t, qt.Equals(info, ConfigInfo{
+		RefreshToken: "sometoken",
 	}))
 }
 
@@ -270,9 +270,9 @@ func TestWithHelperRegistryNotFound(t *testing.T) {
 }
 `)
 	qt.Assert(t, qt.IsNil(err))
-	info, err := c.AuthInfoForRegistry("other.com")
+	info, err := c.InfoForRegistry("other.com")
 	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, AuthInfo{}))
+	qt.Assert(t, qt.Equals(info, ConfigInfo{}))
 }
 
 func TestWithHelperRegistryOtherError(t *testing.T) {
@@ -285,11 +285,11 @@ func TestWithHelperRegistryOtherError(t *testing.T) {
 }
 `)
 	qt.Assert(t, qt.IsNil(err))
-	_, err = c.AuthInfoForRegistry("registry-with-error.com")
+	_, err = c.InfoForRegistry("registry-with-error.com")
 	qt.Assert(t, qt.ErrorMatches(err, `error getting credentials: some error`))
 }
 
-func load(t *testing.T, runner HelperRunner, cfgData string) (*Config, error) {
+func load(t *testing.T, runner HelperRunner, cfgData string) (Config, error) {
 	d := t.TempDir()
 	t.Setenv("DOCKER_CONFIG", d)
 	err := os.WriteFile(filepath.Join(d, "config.json"), []byte(cfgData), 0o666)
@@ -297,7 +297,7 @@ func load(t *testing.T, runner HelperRunner, cfgData string) (*Config, error) {
 	return Load(runner)
 }
 
-func noRunner(helperName string, serverURL string) (AuthInfo, error) {
+func noRunner(helperName string, serverURL string) (ConfigInfo, error) {
 	panic("no helpers available")
 }
 
