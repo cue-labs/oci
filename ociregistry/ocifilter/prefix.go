@@ -52,6 +52,8 @@ func Sub(r ociregistry.Interface, pathPrefix string) ociregistry.Interface {
 	}
 }
 
+// TODO adjust any auth scopes in the context as they pass through.
+
 type subRegistry struct {
 	*ociregistry.Funcs
 	prefix string
