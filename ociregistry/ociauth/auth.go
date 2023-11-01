@@ -216,8 +216,6 @@ func (r *registry) setAuthorizationFromChallenge(ctx context.Context, req *http.
 	switch {
 	case r.wwwAuthenticate.scheme == "bearer":
 		scope := ParseScope(r.wwwAuthenticate.params["scope"])
-		// At this point we can ignore requiredScope because the server
-		// has told us exactly what scope is required.
 		accessToken, err := r.acquireAccessToken(ctx, scope, wantScope.Union(requiredScope))
 		if err != nil {
 			return false, err
