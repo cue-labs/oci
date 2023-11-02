@@ -33,6 +33,24 @@
       "message": "How about `ForRegistry(host string) (ConfigEntry, error)`?\n\nalternatively RegistryConfig; I just don\u0027t think \"info\" adds anything to the names.",
       "revId": "b1ac778293175cb369875029009077e9d8431f63",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cc3387db_31c458bf",
+        "filename": "ociregistry/ociauth/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-11-02T11:52:02Z",
+      "side": 1,
+      "message": "Fair enough, I wasn\u0027t that keen either 😊. I\u0027ve gone with ConfigEntry and EntryForRegistry, as I don\u0027t feel just \"ForRegistry\" is quite descriptive enough for an interface method.",
+      "parentUuid": "59dbd5df_4ff92e42",
+      "revId": "b1ac778293175cb369875029009077e9d8431f63",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
