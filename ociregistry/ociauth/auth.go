@@ -25,12 +25,12 @@ type Authorizer interface {
 	// gets consumed.
 	//
 	// It ensures that the authorization token used will have at least
-	// the capability to execute operations in requiredScope; wantScope may contain
-	// other operations that may be executed in the future: if a new
-	// token is acquired, that will be taken into account too.
+	// the capability to execute operations in requiredScope; any scope
+	// inside the context (see [ContextWithScope]) may also be taken
+	// into account when acquiring new tokens.
 	//
 	// It's OK to call AuthorizeRequest concurrently.
-	DoRequest(req *http.Request, requiredScope, wantScope Scope) (*http.Response, error)
+	DoRequest(req *http.Request, requiredScope Scope) (*http.Response, error)
 }
 
 var ErrNoAuth = fmt.Errorf("no authorization token available to add to request")
@@ -116,7 +116,7 @@ type userPass struct {
 var forever = time.Date(99999, time.January, 1, 0, 0, 0, 0, time.UTC)
 
 // AuthorizeRequest implements [Authorizer].DoRequest.
-func (a *StdAuthorizer) DoRequest(req *http.Request, requiredScope, wantScope Scope) (*http.Response, error) {
+func (a *StdAuthorizer) DoRequest(req *http.Request, requiredScope Scope) (*http.Response, error) {
 	a.mu.Lock()
 	r := a.registries[req.URL.Host]
 	if r == nil {
@@ -130,7 +130,8 @@ func (a *StdAuthorizer) DoRequest(req *http.Request, requiredScope, wantScope Sc
 	if err := r.init(); err != nil {
 		return nil, err
 	}
-	// TODO think about locking in general
+
+	wantScope := ScopeFromContext(req.Context())
 	return r.doRequest(req.Context(), req, requiredScope, wantScope)
 }
 

@@ -282,9 +282,7 @@ func (c *client) do(req *http.Request, needScope ociauth.Scope, okStatuses ...in
 	var resp *http.Response
 	var err error
 	if c.authorizer != nil {
-
-		// TODO extract wantScope from ctx and pass it in here.
-		resp, err = c.authorizer.DoRequest(req, needScope, ociauth.Scope{})
+		resp, err = c.authorizer.DoRequest(req, needScope)
 	} else {
 		resp, err = c.client.Do(req)
 	}
