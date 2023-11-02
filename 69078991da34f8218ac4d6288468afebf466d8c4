@@ -37,6 +37,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "419c75d0_514512d6",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-11-02T12:53:32Z",
+      "side": 1,
+      "message": "Yes. I\u0027m only importing it for the slices package. Maybe I should just vendor it for now until we can use Go 1.21. wdyt?",
+      "parentUuid": "34bd05f6_e46d849f",
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "729fafc7_407a2bc0",
         "filename": "ociregistry/ociauth/scope.go",
         "patchSetId": 6
@@ -48,6 +66,24 @@
       "writtenOn": "2023-11-02T11:49:38Z",
       "side": 1,
       "message": "the repository and registry constants are spread across the file - personally I\u0027d make them named constants",
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cea71f64_5fc4a1f7",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-11-02T12:53:32Z",
+      "side": 1,
+      "message": "Yeah, I\u0027m always a bit on the fence about this (because I think it makes the code a bit less clear when the constants are well known). Done.",
+      "parentUuid": "729fafc7_407a2bc0",
       "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -75,6 +111,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8730b3b9_0c3a9266",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-11-02T12:53:32Z",
+      "side": 1,
+      "message": "It\u0027s not really the OCI spec, so as far as that\u0027s concerned, this is a bit arbitrary... I\u0027ve gone with \"in the Docker distribution spec\" ?",
+      "parentUuid": "749b9ce0_f86d036a",
+      "range": {
+        "startLine": 104,
+        "startChar": 41,
+        "endLine": 104,
+        "endChar": 45
+      },
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2c3d8997_b7dfd365",
@@ -88,6 +148,24 @@
       "writtenOn": "2023-11-02T11:49:38Z",
       "side": 1,
       "message": "why make this a func? e.g. CatalogScope isn\u0027t and I don\u0027t think we need to be defensive against globals being modifiable.",
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7f299e43_fc88ee1e",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-11-02T12:53:32Z",
+      "side": 1,
+      "message": "I thought it seemed reasonable like this because all other ways to create a Scope are via a function (so all the constructors will be listed in the same place in the docs), whereas a ResourceScope is a transparent data type.\n\nIt\u0027s a shame that they\u0027re both named so similarly even though one\u0027s a set and the other\u0027s a member of a set. I just haven\u0027t managed to think of a good name for the single item (CatalogResourceScope seemed a bit on the verbose side).\n\nTBH I\u0027d probably veer more towards making CatalogScope a function than the other way around, (or maybe just unexport it - it\u0027s mostly useful because it\u0027s a special case in the implementation).\n\nI\u0027ve moved it to a different place and added a doc comment.",
+      "parentUuid": "2c3d8997_b7dfd365",
       "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -109,6 +187,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "92e30067_c96f6085",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-11-02T12:53:32Z",
+      "side": 1,
+      "message": "Yeah, I thought about this. Here\u0027s precedent: https://github.com/golang/go/issues/61934\n\nIn general, I thought it was better to use a function that returns a new function because when iter.Seq is defined (when type parameterised type aliases are allowed), this can be rewritten as:\n```\nfunc (s Scope) Iter() iter.Iter[ResourceScope]\n```\n\nwhich is then IMHO clearer (and less effort to write) than:\n\n```\nfunc (s Scope) Iter(yield func(ResourceScope) bool)\n```\n\nI think the performance overhead of both will likely be identical (in both cases, a closure is created that closes over `s`).",
+      "parentUuid": "1ba7ccda_2e508b23",
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "275805eb_05df1542",
@@ -122,6 +218,24 @@
       "writtenOn": "2023-11-02T11:49:38Z",
       "side": 1,
       "message": "out of curiosity, why have IsUnlimited as a method but CatalogScope is treated as a singleton to compare against? AFAICT they could both work the same at the API level",
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4b8db61d_7d5bdcf7",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-11-02T12:53:32Z",
+      "side": 1,
+      "message": "They\u0027re different kinds of thing. Scope is a set and can\u0027t be compared. CatalogScope is one of the items in the set and can be compared.",
+      "parentUuid": "275805eb_05df1542",
       "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
