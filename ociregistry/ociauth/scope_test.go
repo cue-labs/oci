@@ -7,23 +7,23 @@ import (
 )
 
 var parseScopeTests = []struct {
-	testName   string
-	in         string
-	wantString string
-	wantScopes []ResourceScope
+	testName        string
+	in              string
+	canonicalString string
+	wantScopes      []ResourceScope
 }{{
-	testName:   "SingleRepository",
-	in:         "repository:foo/bar/baz:pull",
-	wantString: "repository:foo/bar/baz:pull",
+	testName:        "SingleRepository",
+	in:              "repository:foo/bar/baz:pull",
+	canonicalString: "repository:foo/bar/baz:pull",
 	wantScopes: []ResourceScope{{
 		ResourceType: "repository",
 		Resource:     "foo/bar/baz",
 		Action:       "pull",
 	}},
 }, {
-	testName:   "SingleRepository",
-	in:         "repository:foo/bar/baz:push,pull",
-	wantString: "repository:foo/bar/baz:pull,push",
+	testName:        "SingleRepositoryMultipleAction",
+	in:              "repository:foo/bar/baz:push,pull",
+	canonicalString: "repository:foo/bar/baz:pull,push",
 	wantScopes: []ResourceScope{{
 		ResourceType: "repository",
 		Resource:     "foo/bar/baz",
@@ -34,9 +34,9 @@ var parseScopeTests = []struct {
 		Action:       "push",
 	}},
 }, {
-	testName:   "MultipleRepositories",
-	in:         "repository:foo/bar/baz:push,pull repository:other:pull",
-	wantString: "repository:foo/bar/baz:pull,push repository:other:pull",
+	testName:        "MultipleRepositories",
+	in:              "repository:foo/bar/baz:push,pull repository:other:pull",
+	canonicalString: "repository:foo/bar/baz:pull,push repository:other:pull",
 	wantScopes: []ResourceScope{{
 		ResourceType: "repository",
 		Resource:     "foo/bar/baz",
@@ -51,9 +51,9 @@ var parseScopeTests = []struct {
 		Action:       "pull",
 	}},
 }, {
-	testName:   "MultipleRepositoriesWithCatalog",
-	in:         "repository:foo/bar/baz:push,pull registry:catalog:* repository:other:pull",
-	wantString: "registry:catalog:* repository:foo/bar/baz:pull,push repository:other:pull",
+	testName:        "MultipleRepositoriesWithCatalog",
+	in:              "repository:foo/bar/baz:push,pull registry:catalog:* repository:other:pull",
+	canonicalString: "registry:catalog:* repository:foo/bar/baz:pull,push repository:other:pull",
 	wantScopes: []ResourceScope{CatalogScope, {
 		ResourceType: "repository",
 		Resource:     "foo/bar/baz",
@@ -68,16 +68,16 @@ var parseScopeTests = []struct {
 		Action:       "pull",
 	}},
 }, {
-	testName:   "UnknownScope",
-	in:         "otherScope",
-	wantString: "otherScope",
+	testName:        "UnknownScope",
+	in:              "otherScope",
+	canonicalString: "otherScope",
 	wantScopes: []ResourceScope{{
 		ResourceType: "otherScope",
 	}},
 }, {
-	testName:   "UnknownAction",
-	in:         "repository:foo/bar/baz:delete,push,pull",
-	wantString: "repository:foo/bar/baz:delete,pull,push",
+	testName:        "UnknownAction",
+	in:              "repository:foo/bar/baz:delete,push,pull",
+	canonicalString: "repository:foo/bar/baz:delete,pull,push",
 	wantScopes: []ResourceScope{{
 		ResourceType: "repository",
 		Resource:     "foo/bar/baz",
@@ -92,9 +92,9 @@ var parseScopeTests = []struct {
 		Action:       "push",
 	}},
 }, {
-	testName:   "SeveralUnknown",
-	in:         "repository:foo/bar/baz:delete,pull,push repository:other:pull otherScope",
-	wantString: "otherScope repository:foo/bar/baz:delete,pull,push repository:other:pull",
+	testName:        "SeveralUnknown",
+	in:              "repository:foo/bar/baz:delete,pull,push repository:other:pull otherScope",
+	canonicalString: "otherScope repository:foo/bar/baz:delete,pull,push repository:other:pull",
 	wantScopes: []ResourceScope{{
 		ResourceType: "otherScope",
 	}, {
@@ -115,9 +115,9 @@ var parseScopeTests = []struct {
 		Action:       "pull",
 	}},
 }, {
-	testName:   "duplicates",
-	in:         "repository:foo/bar/baz:delete,pull,push otherScope repository:foo/bar/baz:pull,push repository:other:pull otherScope",
-	wantString: "otherScope repository:foo/bar/baz:delete,pull,push repository:other:pull",
+	testName:        "duplicates",
+	in:              "repository:foo/bar/baz:delete,pull,push otherScope repository:foo/bar/baz:pull,push repository:other:pull otherScope",
+	canonicalString: "otherScope repository:foo/bar/baz:delete,pull,push repository:other:pull",
 	wantScopes: []ResourceScope{{
 		ResourceType: "otherScope",
 	}, {
@@ -144,7 +144,8 @@ func TestParseScope(t *testing.T) {
 		t.Run(test.testName, func(t *testing.T) {
 			scope := ParseScope(test.in)
 			t.Logf("parsed scope: %#v", scope)
-			qt.Check(t, qt.Equals(scope.String(), test.wantString))
+			qt.Check(t, qt.Equals(scope.Canonical().String(), test.canonicalString))
+			qt.Check(t, qt.Equals(scope.String(), test.in))
 			qt.Check(t, qt.DeepEquals(all(scope.Iter()), test.wantScopes))
 			checkStrictOrder(t, scope.Iter(), ResourceScope.Compare)
 			// Check that it does actually preserve identity on round-trip.
@@ -208,6 +209,11 @@ var scopeUnionTests = []struct {
 	s1:       "otherScope registry:catalog:* repository:bar/baz:pull repository:foo:delete yetAnotherScope",
 	s2:       "otherScope registry:catalog:* repository:bar/baz:pull repository:foo:delete yetAnotherScope",
 	want:     "otherScope registry:catalog:* repository:bar/baz:pull repository:foo:delete yetAnotherScope",
+}, {
+	testName: "StringPreservedWhenResultEqual",
+	s1:       "repository:bar/baz:something,pull arble",
+	s2:       "arble",
+	want:     "repository:bar/baz:something,pull arble",
 }}
 
 func TestScopeUnion(t *testing.T) {
