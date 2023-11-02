@@ -53,6 +53,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "473b6350_327f9907",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-02T13:03:15Z",
+      "side": 1,
+      "message": "It\u0027s just a few months and we\u0027re the only user so far so I think it\u0027s fine either way.",
+      "parentUuid": "419c75d0_514512d6",
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "729fafc7_407a2bc0",
@@ -135,6 +153,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9b6ea11f_fae1698a",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-02T13:03:15Z",
+      "side": 1,
+      "message": "ack",
+      "parentUuid": "8730b3b9_0c3a9266",
+      "range": {
+        "startLine": 104,
+        "startChar": 41,
+        "endLine": 104,
+        "endChar": 45
+      },
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2c3d8997_b7dfd365",
@@ -201,6 +243,24 @@
       "side": 1,
       "message": "Yeah, I thought about this. Here\u0027s precedent: https://github.com/golang/go/issues/61934\n\nIn general, I thought it was better to use a function that returns a new function because when iter.Seq is defined (when type parameterised type aliases are allowed), this can be rewritten as:\n```\nfunc (s Scope) Iter() iter.Iter[ResourceScope]\n```\n\nwhich is then IMHO clearer (and less effort to write) than:\n\n```\nfunc (s Scope) Iter(yield func(ResourceScope) bool)\n```\n\nI think the performance overhead of both will likely be identical (in both cases, a closure is created that closes over `s`).",
       "parentUuid": "1ba7ccda_2e508b23",
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a9a9879d_ff93d5f2",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-02T13:03:15Z",
+      "side": 1,
+      "message": "ah, right, iterators. SGTM",
+      "parentUuid": "92e30067_c96f6085",
       "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
