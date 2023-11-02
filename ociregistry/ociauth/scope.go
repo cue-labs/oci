@@ -99,6 +99,11 @@ func (rs ResourceScope) isKnown() bool {
 // Scope holds a set of [ResourceScope] values. The zero value
 // represents the empty set.
 type Scope struct {
+	// original holds the original string from which
+	// this Scope was parsed. This maintains the string
+	// representation unchanged as far as possible.
+	original string
+
 	// unlimited holds whether this scope is considered to include all
 	// other scopes.
 	unlimited bool
@@ -144,7 +149,9 @@ func ParseScope(s string) Scope {
 			})
 		}
 	}
-	return NewScope(rscopes...)
+	scope := NewScope(rscopes...)
+	scope.original = s
+	return scope
 }
 
 // NewScope returns a Scope value that holds the set of everything in rss.
@@ -190,6 +197,13 @@ func UnlimitedScope() Scope {
 // IsUnlimited reports whether s is unlimited in scope.
 func (s Scope) IsUnlimited() bool {
 	return s.unlimited
+}
+
+// IsEmpty reports whether the scope holds the empty set.
+func (s Scope) IsEmpty() bool {
+	return len(s.repositories) == 0 &&
+		len(s.others) == 0 &&
+		!s.unlimited
 }
 
 // Iter returns an iterator over all the individual scopes that are
@@ -247,10 +261,15 @@ func (s Scope) Iter() func(yield func(ResourceScope) bool) {
 }
 
 // Union returns a scope consisting of all the resource scopes from
-// both s1 and s2.
+// both s1 and s2. If the result is the same as s1, its
+// string representation will also be the same as s1.
 func (s1 Scope) Union(s2 Scope) Scope {
 	if s1.IsUnlimited() || s2.IsUnlimited() {
 		return UnlimitedScope()
+	}
+	// Cheap test that we can return the original unchanged.
+	if s2.IsEmpty() || s1.Equal(s2) {
+		return s1
 	}
 	r := Scope{
 		repositories: make([]string, 0, len(s1.repositories)+len(s2.repositories)),
@@ -309,6 +328,10 @@ func (s1 Scope) Union(s2 Scope) Scope {
 	case i2 < len(s2.others):
 		r.others = append(r.others, s2.others[i2:]...)
 	}
+	if r.Equal(s1) {
+		// Maintain the string representation.
+		return s1
+	}
 	return r
 }
 
@@ -337,6 +360,7 @@ func (s Scope) Holds(r ResourceScope) bool {
 	return ok
 }
 
+// Contains reports whether s1 is a (non-strict) superset of s2.
 func (s1 Scope) Contains(s2 Scope) bool {
 	if s1.IsUnlimited() {
 		return true
@@ -394,6 +418,15 @@ func (s1 Scope) Equal(s2 Scope) bool {
 		slices.Equal(s1.others, s2.others)
 }
 
+// Canonical returns s with the same contents
+// but with its string form made canonical (the
+// default is to mirror exactly the string that it was
+// created with).
+func (s Scope) Canonical() Scope {
+	s.original = ""
+	return s
+}
+
 // String returns the string representation of the scope, as suitable
 // for passing to the token refresh "scopes" attribute.
 func (s Scope) String() string {
@@ -402,6 +435,9 @@ func (s Scope) String() string {
 		// we shouldn't be passing an unlimited scope
 		// as a scopes attribute anyway.
 		return "*"
+	}
+	if s.original != "" || s.IsEmpty() {
+		return s.original
 	}
 	var buf strings.Builder
 	var prev ResourceScope
