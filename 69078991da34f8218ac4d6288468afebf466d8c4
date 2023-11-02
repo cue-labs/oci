@@ -1,0 +1,129 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6afc0d2a_728f4b5d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-02T11:49:38Z",
+      "side": 1,
+      "message": "SGTM. There\u0027s a lot of code here so I admit I skimmed through some of the CL for the sake of not spending hours on this.",
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "34bd05f6_e46d849f",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-02T11:49:38Z",
+      "side": 1,
+      "message": "the ociregistry module is meant to be a library, where depending on x/exp is a bit odd for backwards compatibility. I assume the intent is to remove it sooner than later once we are able to update Go.",
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "729fafc7_407a2bc0",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-02T11:49:38Z",
+      "side": 1,
+      "message": "the repository and registry constants are spread across the file - personally I\u0027d make them named constants",
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "749b9ce0_f86d036a",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-02T11:49:38Z",
+      "side": 1,
+      "message": "in the spec?",
+      "range": {
+        "startLine": 104,
+        "startChar": 41,
+        "endLine": 104,
+        "endChar": 45
+      },
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c3d8997_b7dfd365",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-02T11:49:38Z",
+      "side": 1,
+      "message": "why make this a func? e.g. CatalogScope isn\u0027t and I don\u0027t think we need to be defensive against globals being modifiable.",
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1ba7ccda_2e508b23",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-02T11:49:38Z",
+      "side": 1,
+      "message": "why does Iter return a new function when it could be the function itself? as far as I can tell it would work exactly the same, just easier to call for the user and you\u0027d be able to simplify this func body and signature.",
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "275805eb_05df1542",
+        "filename": "ociregistry/ociauth/scope.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-02T11:49:38Z",
+      "side": 1,
+      "message": "out of curiosity, why have IsUnlimited as a method but CatalogScope is treated as a singleton to compare against? AFAICT they could both work the same at the API level",
+      "revId": "69078991da34f8218ac4d6288468afebf466d8c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
