@@ -362,6 +362,39 @@ func TestScopeContains(t *testing.T) {
 	}
 }
 
+var scopeLenTests = []struct {
+	scope Scope
+	want  int
+}{{
+	scope: ParseScope("repository:foo:pull,push repository:bar:pull,delete other registry:catalog:*"),
+	want:  6,
+}, {
+	scope: NewScope(),
+	want:  0,
+}, {
+	scope: ParseScope("repository:foo:pull,push repository:bar:pull,delete other").Union(
+		ParseScope("repository:bar:pull repository:bar:push repository:baz:pull more"),
+	),
+	want: 8,
+}, {
+	scope: NewScope(CatalogScope),
+	want:  1,
+}}
+
+func TestScopeLen(t *testing.T) {
+	for _, test := range scopeLenTests {
+		t.Run(test.scope.String(), func(t *testing.T) {
+			qt.Assert(t, qt.Equals(test.scope.Len(), test.want), qt.Commentf("%v", test.scope))
+		})
+	}
+}
+
+func TestScopeLenOnUnlimitedScopePanics(t *testing.T) {
+	qt.Assert(t, qt.PanicMatches(func() {
+		UnlimitedScope().Len()
+	}, "Len called on unlimited scope"))
+}
+
 func parseScopeMaybeUnlimited(s string) Scope {
 	if s == "*" {
 		return UnlimitedScope()

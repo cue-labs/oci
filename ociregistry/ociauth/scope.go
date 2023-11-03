@@ -1,6 +1,7 @@
 package ociauth
 
 import (
+	"math/bits"
 	"strings"
 
 	"golang.org/x/exp/slices"
@@ -116,6 +117,8 @@ type Scope struct {
 	// actions holds an element for each element in repositories
 	// defining the set of allowed actions for that repository
 	// as a bitmask of 1<<knownAction bytes.
+	// For CatalogScope, this is 1<<pullAction so that
+	// the bit count reflects the number of resource scopes.
 	actions []byte
 
 	// others holds actions that don't fit into
@@ -168,7 +171,7 @@ func NewScope(rss ...ResourceScope) Scope {
 		if rs.ResourceType == TypeRegistry {
 			// CatalogScope
 			s.repositories = append(s.repositories, "")
-			s.actions = append(s.actions, 0)
+			s.actions = append(s.actions, 1<<pullAction)
 			continue
 		}
 		actionMask := byte(1 << parseKnownAction(rs.Action))
@@ -182,6 +185,19 @@ func NewScope(rss ...ResourceScope) Scope {
 	slices.SortFunc(s.others, ResourceScope.Compare)
 	s.others = slices.Compact(s.others)
 	return s
+}
+
+// Len returns the number of ResourceScopes in the scope set.
+// It panics if the scope is unlimited.
+func (s Scope) Len() int {
+	if s.IsUnlimited() {
+		panic("Len called on unlimited scope")
+	}
+	n := len(s.others)
+	for _, b := range s.actions {
+		n += bits.OnesCount8(b)
+	}
+	return n
 }
 
 // UnlimitedScope returns a scope that contains all other
