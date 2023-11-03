@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"cuelabs.dev/go/oci/ociregistry"
+	"cuelabs.dev/go/oci/ociregistry/ociauth"
 )
 
 // Sub returns r wrapped so that it addresses only
@@ -61,66 +62,82 @@ type subRegistry struct {
 }
 
 func (r *subRegistry) GetBlob(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.BlobReader, error) {
+	ctx = r.mapScopes(ctx)
 	return r.r.GetBlob(ctx, r.repo(repo), digest)
 }
 
 func (r *subRegistry) GetBlobRange(ctx context.Context, repo string, digest ociregistry.Digest, offset0, offset1 int64) (ociregistry.BlobReader, error) {
+	ctx = r.mapScopes(ctx)
 	return r.r.GetBlobRange(ctx, r.repo(repo), digest, offset0, offset1)
 }
 
 func (r *subRegistry) GetManifest(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.BlobReader, error) {
+	ctx = r.mapScopes(ctx)
 	return r.r.GetManifest(ctx, r.repo(repo), digest)
 }
 
 func (r *subRegistry) GetTag(ctx context.Context, repo string, tagName string) (ociregistry.BlobReader, error) {
+	ctx = r.mapScopes(ctx)
 	return r.r.GetTag(ctx, r.repo(repo), tagName)
 }
 
 func (r *subRegistry) ResolveBlob(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
+	ctx = r.mapScopes(ctx)
 	return r.r.ResolveBlob(ctx, r.repo(repo), digest)
 }
 
 func (r *subRegistry) ResolveManifest(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
+	ctx = r.mapScopes(ctx)
 	return r.r.ResolveManifest(ctx, r.repo(repo), digest)
 }
 
 func (r *subRegistry) ResolveTag(ctx context.Context, repo string, tagName string) (ociregistry.Descriptor, error) {
+	ctx = r.mapScopes(ctx)
 	return r.r.ResolveTag(ctx, r.repo(repo), tagName)
 }
 
 func (r *subRegistry) PushBlob(ctx context.Context, repo string, desc ociregistry.Descriptor, rd io.Reader) (ociregistry.Descriptor, error) {
+	ctx = r.mapScopes(ctx)
 	return r.r.PushBlob(ctx, r.repo(repo), desc, rd)
 }
 
 func (r *subRegistry) PushBlobChunked(ctx context.Context, repo string, chunkSize int) (ociregistry.BlobWriter, error) {
+	ctx = r.mapScopes(ctx)
 	return r.r.PushBlobChunked(ctx, r.repo(repo), chunkSize)
 }
 
 func (r *subRegistry) PushBlobChunkedResume(ctx context.Context, repo, id string, offset int64, chunkSize int) (ociregistry.BlobWriter, error) {
+	ctx = r.mapScopes(ctx)
 	return r.r.PushBlobChunkedResume(ctx, r.repo(repo), id, offset, chunkSize)
 }
 
 func (r *subRegistry) MountBlob(ctx context.Context, fromRepo, toRepo string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
+	ctx = r.mapScopes(ctx)
 	return r.r.MountBlob(ctx, r.repo(fromRepo), r.repo(toRepo), digest)
 }
 
 func (r *subRegistry) PushManifest(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (ociregistry.Descriptor, error) {
+	ctx = r.mapScopes(ctx)
 	return r.r.PushManifest(ctx, r.repo(repo), tag, contents, mediaType)
 }
 
 func (r *subRegistry) DeleteBlob(ctx context.Context, repo string, digest ociregistry.Digest) error {
+	ctx = r.mapScopes(ctx)
 	return r.r.DeleteBlob(ctx, r.repo(repo), digest)
 }
 
 func (r *subRegistry) DeleteManifest(ctx context.Context, repo string, digest ociregistry.Digest) error {
+	ctx = r.mapScopes(ctx)
 	return r.r.DeleteManifest(ctx, r.repo(repo), digest)
 }
 
 func (r *subRegistry) DeleteTag(ctx context.Context, repo string, name string) error {
+	ctx = r.mapScopes(ctx)
 	return r.r.DeleteTag(ctx, r.repo(repo), name)
 }
 
 func (r *subRegistry) Repositories(ctx context.Context) ociregistry.Iter[string] {
+	ctx = r.mapScopes(ctx)
 	return &subRegistryIter{
 		pr:   r,
 		iter: r.r.Repositories(ctx),
@@ -128,11 +145,31 @@ func (r *subRegistry) Repositories(ctx context.Context) ociregistry.Iter[string]
 }
 
 func (r *subRegistry) Tags(ctx context.Context, repo string) ociregistry.Iter[string] {
+	ctx = r.mapScopes(ctx)
 	return r.r.Tags(ctx, r.repo(repo))
 }
 
 func (r *subRegistry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) ociregistry.Iter[ociregistry.Descriptor] {
-	return r.r.Referrers(ctx, r.repo(repo), digest, artifactType)
+	ctx = r.mapScopes(ctx)
+	return r.r.Referrers(r.mapScopes(ctx), r.repo(repo), digest, artifactType)
+}
+
+// mapScopes changes any auth scopes in the context so that
+// they refer to the prefixed names rather than the originals.
+func (r *subRegistry) mapScopes(ctx context.Context) context.Context {
+	scope := ociauth.ScopeFromContext(ctx)
+	if scope.IsEmpty() {
+		return ctx
+	}
+	scopes := make([]ociauth.ResourceScope, 0, scope.Len())
+	scope.Iter()(func(rs ociauth.ResourceScope) bool {
+		if rs.ResourceType == ociauth.TypeRepository {
+			rs.Resource = r.repo(rs.Resource)
+		}
+		scopes = append(scopes, rs)
+		return true
+	})
+	return ociauth.ContextWithScope(ctx, ociauth.NewScope(scopes...))
 }
 
 func (r *subRegistry) repo(name string) string {
