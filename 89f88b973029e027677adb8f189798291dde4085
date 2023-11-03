@@ -1,0 +1,220 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a1da52b_07d8d0ec",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-03T12:09:51Z",
+      "side": 1,
+      "message": "Again skimming the test code since otherwise I\u0027d spend too much time here.",
+      "revId": "89f88b973029e027677adb8f189798291dde4085",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3283fa7e_6771c5a3",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-03T12:09:51Z",
+      "side": 1,
+      "message": "perhaps the full import path? \"ociregistry\" on its own is pretty generic.",
+      "revId": "89f88b973029e027677adb8f189798291dde4085",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a31a160_a1bb1561",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-03T12:09:51Z",
+      "side": 1,
+      "message": "you\u0027re documenting nearly everything, so leaving this top-level interface out feels odd.",
+      "revId": "89f88b973029e027677adb8f189798291dde4085",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8afa0272_d44c7294",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-03T12:09:51Z",
+      "side": 1,
+      "message": "`origString` or `origScopeString` to be clearer?",
+      "revId": "89f88b973029e027677adb8f189798291dde4085",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fc400295_94769945",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-03T12:09:51Z",
+      "side": 1,
+      "message": "`[Authorizer.DoRequest]`? if you\u0027re going through the trouble of linking declarations, might as well do it right :)",
+      "revId": "89f88b973029e027677adb8f189798291dde4085",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3dfce7b0_ab07b463",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-03T12:09:51Z",
+      "side": 1,
+      "message": "I think you need to move this up so that you always close the body when the error is nil.",
+      "revId": "89f88b973029e027677adb8f189798291dde4085",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "31b0da19_ee06e946",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-03T12:09:51Z",
+      "side": 1,
+      "message": "ISTM that you should move this `if` further up, which should result in the same behavior while being able to remove the other `r.wwwAuthenticate !\u003d nil` check. overall the logic would be easier to follow IMO.",
+      "range": {
+        "startLine": 199,
+        "startChar": 1,
+        "endLine": 205,
+        "endChar": 2
+      },
+      "revId": "89f88b973029e027677adb8f189798291dde4085",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "884c9ce5_47055d2c",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-03T12:09:51Z",
+      "side": 1,
+      "message": "worth making all times UTC for the sake of consistent behavior? the logic should be the same since all you do is compare times, but if we ever started logging or showing any of these tokens or expiration times, using UTC by default would have been better.",
+      "revId": "89f88b973029e027677adb8f189798291dde4085",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "343769ca_aa72bf4c",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-03T12:09:51Z",
+      "side": 1,
+      "message": "make a brief note why: saving roundtrips.",
+      "revId": "89f88b973029e027677adb8f189798291dde4085",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4217c90a_a3405415",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-03T12:09:51Z",
+      "side": 1,
+      "message": "`return r.doTokenRequest(req)` - I would only split it up if you wanted to have the explicit `if err !\u003d nil` case.",
+      "revId": "89f88b973029e027677adb8f189798291dde4085",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "308032e3_7b850148",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 469,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-03T12:09:51Z",
+      "side": 1,
+      "message": "what is this for? did you mean to delete it?",
+      "range": {
+        "startLine": 468,
+        "startChar": 1,
+        "endLine": 469,
+        "endChar": 2
+      },
+      "revId": "89f88b973029e027677adb8f189798291dde4085",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4732a78_158439ba",
+        "filename": "ociregistry/ociauth/auth_test.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 615,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-11-03T12:09:51Z",
+      "side": 1,
+      "message": "I admit I find this very odd and I wouldn\u0027t add testing magic here.\n\nAny extra goroutines holding TB should call https://pkg.go.dev/github.com/go-quicktest/qt#Check instead of Assert. An alternative would be to return errors; that\u0027s what I would probably do in your case. Slightly more verbose in the tests, but then again, you wouldn\u0027t have these 70 lines of nonFatalT anyway.\n\nWe can\u0027t afford to get hung up on this for hours so I\u0027ll still +2. Personally I\u0027d avoid this but ultimately it\u0027s your decision as you\u0027re the one to maintain this code for the time being.",
+      "revId": "89f88b973029e027677adb8f189798291dde4085",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
