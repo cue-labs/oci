@@ -18,7 +18,6 @@ package ocimem
 
 import (
 	"fmt"
-	"regexp"
 	"sync"
 
 	"cuelabs.dev/go/oci/ociregistry"
@@ -90,7 +89,7 @@ func (r *Registry) blobForDigest(repoName string, dig ociregistry.Digest) (*blob
 }
 
 func (r *Registry) makeRepo(repoName string) (*repository, error) {
-	if !isValidRepoName(repoName) {
+	if !ociregistry.IsValidRepoName(repoName) {
 		return nil, ociregistry.ErrNameInvalid
 	}
 	if r.repos == nil {
@@ -107,19 +106,6 @@ func (r *Registry) makeRepo(repoName string) (*repository, error) {
 	}
 	r.repos[repoName] = repo
 	return repo, nil
-}
-
-var (
-	tagPattern      = regexp.MustCompile(`^[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}$`)
-	repoNamePattern = regexp.MustCompile(`^[a-z0-9]+([._-][a-z0-9]+)*(/[a-z0-9]+([._-][a-z0-9]+)*)*$`)
-)
-
-func isValidRepoName(repoName string) bool {
-	return repoNamePattern.MatchString(repoName)
-}
-
-func isValidTag(tag string) bool {
-	return tagPattern.MatchString(tag)
 }
 
 // SHA256("")
