@@ -40,11 +40,7 @@ func (c *client) GetBlobRange(ctx context.Context, repo string, digest ociregist
 		Repo:   repo,
 		Digest: string(digest),
 	}
-	method, u := rreq.Construct()
-	req, err := http.NewRequestWithContext(ctx, method, u, nil)
-	if err != nil {
-		return nil, err
-	}
+	req, err := newRequest(ctx, rreq, nil)
 	if o1 < 0 {
 		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", o0))
 	} else {

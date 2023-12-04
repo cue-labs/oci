@@ -158,7 +158,7 @@ func TestParseRequest(t *testing.T) {
 			}
 			qt.Assert(t, qt.IsNil(err))
 			qt.Assert(t, qt.DeepEquals(rreq, test.wantRequest))
-			method, ustr := rreq.Construct()
+			method, ustr := rreq.MustConstruct()
 			if test.wantConstruct == "" {
 				test.wantConstruct = test.url
 			}
