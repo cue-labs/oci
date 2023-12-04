@@ -100,7 +100,7 @@ func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string
 	if err != nil {
 		return ociregistry.Descriptor{}, err
 	}
-	if tag != "" && !isValidTag(tag) {
+	if tag != "" && !ociregistry.IsValidTag(tag) {
 		return ociregistry.Descriptor{}, fmt.Errorf("invalid tag")
 	}
 	// make a copy of the data to avoid potential corruption.
