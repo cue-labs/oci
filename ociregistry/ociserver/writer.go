@@ -225,7 +225,7 @@ func (r *registry) locationForUploadID(repo string, uploadID string) string {
 		Kind:     ocirequest.ReqBlobUploadInfo,
 		Repo:     repo,
 		UploadID: uploadID,
-	}).Construct()
+	}).MustConstruct()
 	return loc
 }
 

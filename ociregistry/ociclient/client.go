@@ -228,8 +228,7 @@ var knownManifestMediaTypes = []string{
 
 // doRequest performs the given OCI request, sending it with the given body (which may be nil).
 func (c *client) doRequest(ctx context.Context, rreq *ocirequest.Request, okStatuses ...int) (*http.Response, error) {
-	method, u := rreq.Construct()
-	req, err := http.NewRequestWithContext(ctx, method, u, nil)
+	req, err := newRequest(ctx, rreq, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -387,4 +386,12 @@ func scopeForRequest(r *ocirequest.Request) ociauth.Scope {
 	default:
 		panic(fmt.Errorf("unexpected request kind %v", r.Kind))
 	}
+}
+
+func newRequest(ctx context.Context, rreq *ocirequest.Request, body io.Reader) (*http.Request, error) {
+	method, u, err := rreq.Construct()
+	if err != nil {
+		return nil, err
+	}
+	return http.NewRequestWithContext(ctx, method, u, body)
 }
