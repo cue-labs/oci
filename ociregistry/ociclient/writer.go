@@ -49,11 +49,7 @@ func (c *client) PushManifest(ctx context.Context, repo string, tag string, cont
 		Tag:    tag,
 		Digest: string(desc.Digest),
 	}
-	method, u := rreq.Construct()
-	req, err := http.NewRequestWithContext(ctx, method, u, bytes.NewReader(contents))
-	if err != nil {
-		return ociregistry.Descriptor{}, err
-	}
+	req, err := newRequest(ctx, rreq, bytes.NewReader(contents))
 	req.Header.Set("Content-Type", mediaType)
 	req.ContentLength = desc.Size
 	resp, err := c.do(req, scopeForRequest(rreq), http.StatusCreated)
@@ -94,8 +90,7 @@ func (c *client) PushBlob(ctx context.Context, repo string, desc ociregistry.Des
 		Kind: ocirequest.ReqBlobStartUpload,
 		Repo: repo,
 	}
-	method, u := rreq.Construct()
-	req, err := http.NewRequestWithContext(ctx, method, u, nil)
+	req, err := newRequest(ctx, rreq, nil)
 	if err != nil {
 		return ociregistry.Descriptor{}, err
 	}
