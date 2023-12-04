@@ -111,7 +111,7 @@ type client struct {
 func descriptorFromResponse(resp *http.Response, knownDigest digest.Digest, requireSize bool) (ociregistry.Descriptor, error) {
 	digest := digest.Digest(resp.Header.Get("Docker-Content-Digest"))
 	if digest != "" {
-		if !isValidDigest(string(digest)) {
+		if !ociregistry.IsValidDigest(string(digest)) {
 			return ociregistry.Descriptor{}, fmt.Errorf("bad digest %q found in response", digest)
 		}
 	} else {
@@ -211,11 +211,6 @@ func (r *blobReader) Read(buf []byte) (int, error) {
 
 func (r *blobReader) Close() error {
 	return r.r.Close()
-}
-
-func isValidDigest(d string) bool {
-	_, err := digest.Parse(d)
-	return err == nil
 }
 
 // TODO make this list configurable.

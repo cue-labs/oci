@@ -19,12 +19,9 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/opencontainers/go-digest"
 
 	"cuelabs.dev/go/oci/ociregistry"
 )
@@ -226,7 +223,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 	}
 	if ok {
 		rreq.Repo = uploadPath
-		if !isValidRepoName(rreq.Repo) {
+		if !ociregistry.IsValidRepoName(rreq.Repo) {
 			return nil, ociregistry.ErrNameInvalid
 		}
 		if method != "POST" {
@@ -235,7 +232,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 		if d := urlq.Get("mount"); d != "" {
 			// end-11
 			rreq.Digest = d
-			if !isValidDigest(rreq.Digest) {
+			if !ociregistry.IsValidDigest(rreq.Digest) {
 				return nil, ociregistry.ErrDigestInvalid
 			}
 			rreq.FromRepo = urlq.Get("from")
@@ -247,7 +244,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 				rreq.Digest = ""
 				return &rreq, nil
 			}
-			if !isValidRepoName(rreq.FromRepo) {
+			if !ociregistry.IsValidRepoName(rreq.FromRepo) {
 				return nil, ociregistry.ErrNameInvalid
 			}
 			rreq.Kind = ReqBlobMount
@@ -256,7 +253,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 		if d := urlq.Get("digest"); d != "" {
 			// end-4b
 			rreq.Digest = d
-			if !isValidDigest(d) {
+			if !ociregistry.IsValidDigest(d) {
 				return nil, ErrBadlyFormedDigest
 			}
 			rreq.Kind = ReqBlobUploadBlob
@@ -277,10 +274,10 @@ func parse(method string, u *url.URL) (*Request, error) {
 	switch lastButOne {
 	case "blobs":
 		rreq.Repo = path
-		if !isValidDigest(last) {
+		if !ociregistry.IsValidDigest(last) {
 			return nil, ErrBadlyFormedDigest
 		}
-		if !isValidRepoName(rreq.Repo) {
+		if !ociregistry.IsValidRepoName(rreq.Repo) {
 			return nil, ociregistry.ErrNameInvalid
 		}
 		rreq.Digest = last
@@ -303,7 +300,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 			return nil, ErrNotFound
 		}
 		rreq.Repo = repo
-		if !isValidRepoName(rreq.Repo) {
+		if !ociregistry.IsValidRepoName(rreq.Repo) {
 			return nil, ociregistry.ErrNameInvalid
 		}
 		uploadID64 := last
@@ -327,7 +324,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 		case "PUT":
 			rreq.Kind = ReqBlobCompleteUpload
 			rreq.Digest = urlq.Get("digest")
-			if !isValidDigest(rreq.Digest) {
+			if !ociregistry.IsValidDigest(rreq.Digest) {
 				return nil, ErrBadlyFormedDigest
 			}
 		default:
@@ -336,13 +333,13 @@ func parse(method string, u *url.URL) (*Request, error) {
 		return &rreq, nil
 	case "manifests":
 		rreq.Repo = path
-		if !isValidRepoName(rreq.Repo) {
+		if !ociregistry.IsValidRepoName(rreq.Repo) {
 			return nil, ociregistry.ErrNameInvalid
 		}
 		switch {
-		case isValidDigest(last):
+		case ociregistry.IsValidDigest(last):
 			rreq.Digest = last
-		case isValidTag(last):
+		case ociregistry.IsValidTag(last):
 			rreq.Tag = last
 		default:
 			return nil, ErrNotFound
@@ -372,20 +369,20 @@ func parse(method string, u *url.URL) (*Request, error) {
 			return nil, ErrMethodNotAllowed
 		}
 		rreq.Repo = path
-		if !isValidRepoName(rreq.Repo) {
+		if !ociregistry.IsValidRepoName(rreq.Repo) {
 			return nil, ociregistry.ErrNameInvalid
 		}
 		rreq.Kind = ReqTagsList
 		return &rreq, nil
 	case "referrers":
-		if !isValidDigest(last) {
+		if !ociregistry.IsValidDigest(last) {
 			return nil, ErrBadlyFormedDigest
 		}
 		if method != "GET" {
 			return nil, ErrMethodNotAllowed
 		}
 		rreq.Repo = path
-		if !isValidRepoName(rreq.Repo) {
+		if !ociregistry.IsValidRepoName(rreq.Repo) {
 			return nil, ociregistry.ErrNameInvalid
 		}
 		// TODO is there any kind of pagination for referrers?
@@ -416,24 +413,6 @@ func cutLast(s, sep string) (before, after string, found bool) {
 		return s[:i], s[i+len(sep):], true
 	}
 	return "", s, false
-}
-
-var (
-	tagPattern      = regexp.MustCompile(`^[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}$`)
-	repoNamePattern = regexp.MustCompile(`^[a-z0-9]+([._-][a-z0-9]+)*(/[a-z0-9]+([._-][a-z0-9]+)*)*$`)
-)
-
-func isValidRepoName(repoName string) bool {
-	return repoNamePattern.MatchString(repoName)
-}
-
-func isValidTag(tag string) bool {
-	return tagPattern.MatchString(tag)
-}
-
-func isValidDigest(d string) bool {
-	_, err := digest.Parse(d)
-	return err == nil
 }
 
 // ParseRange extracts the start and end offsets from a Content-Range string.
