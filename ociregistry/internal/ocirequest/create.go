@@ -20,14 +20,22 @@ import (
 	"net/url"
 )
 
-func (req *Request) Construct() (method string, ustr string) {
+func (req *Request) Construct() (method string, ustr string, err error) {
 	method, ustr = req.construct()
 	u, err := url.Parse(ustr)
 	if err != nil {
-		panic(err)
+		return "", "", fmt.Errorf("invalid OCI request: %v", err)
 	}
 	if _, err := Parse(method, u); err != nil {
-		panic(fmt.Errorf("invalid request %q %q constructed from %#v: %v", method, ustr, req, err))
+		return "", "", fmt.Errorf("invalid OCI request: %v", err)
+	}
+	return method, ustr, nil
+}
+
+func (req *Request) MustConstruct() (method string, ustr string) {
+	method, ustr, err := req.Construct()
+	if err != nil {
+		panic(err)
 	}
 	return method, ustr
 }
