@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "096e235e_6d4efdb3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2023-12-17T16:24:40Z",
+      "side": 1,
+      "message": "Roger did something similar in the main repo, perhaps being more conservative - only copying the bits of API he needed from the slices or maps packages from tip. I\u0027m also fine with this, since either way this will be replaced soon.",
+      "revId": "801df74dd4079f4e2305f500e897ce60bed60535",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
