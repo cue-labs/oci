@@ -4,7 +4,7 @@ import (
 	"math/bits"
 	"strings"
 
-	"golang.org/x/exp/slices"
+	"cuelabs.dev/go/oci/ociregistry/internal/exp/slices"
 )
 
 // knownAction represents an action that we know about

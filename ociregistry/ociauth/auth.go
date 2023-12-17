@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/exp/slices"
+	"cuelabs.dev/go/oci/ociregistry/internal/exp/slices"
 )
 
 // TODO decide on a good value for this.
