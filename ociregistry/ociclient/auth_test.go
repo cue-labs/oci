@@ -9,12 +9,12 @@ import (
 	"testing"
 
 	"cuelabs.dev/go/oci/ociregistry"
+	"cuelabs.dev/go/oci/ociregistry/internal/exp/maps"
 	"cuelabs.dev/go/oci/ociregistry/ociauth"
 	"cuelabs.dev/go/oci/ociregistry/ocimem"
 	"cuelabs.dev/go/oci/ociregistry/ociserver"
 	"github.com/go-quicktest/qt"
 	"github.com/opencontainers/go-digest"
-	"golang.org/x/exp/maps"
 )
 
 func TestAuthScopes(t *testing.T) {
