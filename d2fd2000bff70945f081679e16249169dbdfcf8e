@@ -16,6 +16,24 @@
       "message": "briefly explain what this is for?",
       "revId": "d2fd2000bff70945f081679e16249169dbdfcf8e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8023dfac_59870be0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2023-12-19T08:43:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "abbf80ab_3287c57e",
+      "revId": "d2fd2000bff70945f081679e16249169dbdfcf8e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
