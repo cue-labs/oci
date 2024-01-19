@@ -146,19 +146,20 @@ func (r *registry) doRequest(ctx context.Context, req *http.Request, requiredSco
 	if resp.StatusCode != http.StatusUnauthorized {
 		return resp, nil
 	}
-	resp.Body.Close()
 	challenge := challengeFromResponse(resp)
 	if challenge == nil {
 		return resp, nil
 	}
 	authAdded, err := r.setAuthorizationFromChallenge(ctx, req, challenge, requiredScope, wantScope)
 	if err != nil {
+		resp.Body.Close()
 		return nil, err
 	}
 	if !authAdded {
 		// Couldn't acquire any more authorization than we had initially.
 		return resp, nil
 	}
+	resp.Body.Close()
 	// TODO rewind request body if needed.
 	return r.authorizer.httpClient.Do(req)
 }
