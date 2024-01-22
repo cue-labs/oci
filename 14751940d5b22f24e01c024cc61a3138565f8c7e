@@ -1,0 +1,8 @@
+TryBot-Result+1: CUE porcuepine <cue.porcuepine@gmail.com>
+Code-Review+2: Roger Peppe <rogpeppe@gmail.com>
+Code-Review+2: Daniel Martí <mvdan@mvdan.cc>
+Submitted-by: Rustam Abdullaev <rustam@cue.works>
+Submitted-at: Mon, 22 Jan 2024 12:07:55 +0000
+Reviewed-on: https://gerrithub.io/c/cue-labs/oci/+/1174770
+Project: cue-labs/oci
+Branch: refs/heads/main
