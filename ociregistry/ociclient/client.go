@@ -218,8 +218,8 @@ var knownManifestMediaTypes = []string{
 	ocispec.MediaTypeImageManifest,
 	ocispec.MediaTypeImageIndex,
 	"application/vnd.oci.artifact.manifest.v1+json", // deprecated.
-	"application/vnd.docker.container.image.v1+json",
 	"application/vnd.docker.distribution.manifest.v1+json",
+	"application/vnd.docker.distribution.manifest.v2+json",
 	"application/vnd.docker.distribution.manifest.list.v2+json",
 	// Technically this wildcard should be sufficient, but it isn't
 	// recognized by some registries.
