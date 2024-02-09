@@ -26,7 +26,8 @@ import (
 )
 
 // NewBytesReader returns an implementation of ociregistry.BlobReader
-// that returns the given bytes. It fills in desc.Digest and desc.Size.
+// that returns the given bytes. The returned reader will return desc from its
+// Descriptor method.
 func NewBytesReader(data []byte, desc ociregistry.Descriptor) ociregistry.BlobReader {
 	r := &bytesReader{
 		desc: desc,
