@@ -91,6 +91,8 @@ func (r *Registry) MountBlob(ctx context.Context, fromRepo, toRepo string, dig o
 	return b.descriptor(), nil
 }
 
+var errCannotOverwriteTag = fmt.Errorf("%w: cannot overwrite tag", ociregistry.ErrDenied)
+
 func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string, data []byte, mediaType string) (ociregistry.Descriptor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -98,17 +100,32 @@ func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string
 	if err != nil {
 		return ociregistry.Descriptor{}, err
 	}
-	if tag != "" && !ociregistry.IsValidTag(tag) {
-		return ociregistry.Descriptor{}, fmt.Errorf("invalid tag")
-	}
-	// make a copy of the data to avoid potential corruption.
-	data = append([]byte(nil), data...)
 	dig := digest.FromBytes(data)
 	desc := ociregistry.Descriptor{
 		Digest:    dig,
 		MediaType: mediaType,
 		Size:      int64(len(data)),
 	}
+	if tag != "" {
+		if !ociregistry.IsValidTag(tag) {
+			return ociregistry.Descriptor{}, fmt.Errorf("invalid tag")
+		}
+		if r.cfg.ImmutableTags {
+			if currDesc, ok := repo.tags[tag]; ok {
+				if dig == currDesc.Digest {
+					if currDesc.MediaType != mediaType {
+						// Same digest but mismatched media type.
+						return ociregistry.Descriptor{}, fmt.Errorf("%w: mismatched media type", ociregistry.ErrDenied)
+					}
+					// It's got the same content already. Allow it.
+					return currDesc, nil
+				}
+				return ociregistry.Descriptor{}, errCannotOverwriteTag
+			}
+		}
+	}
+	// make a copy of the data to avoid potential corruption.
+	data = append([]byte(nil), data...)
 	if err := CheckDescriptor(desc, data); err != nil {
 		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor: %v", err)
 	}
@@ -162,4 +179,35 @@ func (r *Registry) checkManifest(repoName string, mediaType string, data []byte)
 		return true
 	})
 	return subject, retErr
+}
+
+// refersTo reports whether the given digest is referred to, directly or indirectly, by any item
+// returned by the given iterator, within the given repository.
+// TODO currently this iterates through all tagged manifests. A better
+// algorithm could amortise that work and be considerably more efficient.
+func refersTo(repo *repository, iter descIter, digest ociregistry.Digest) (found bool, retErr error) {
+	iter(func(info descInfo) bool {
+		if info.desc.Digest == digest {
+			found = true
+			return false
+		}
+		switch info.kind {
+		case kindManifest, kindSubjectManifest:
+			b := repo.manifests[info.desc.Digest]
+			if b == nil {
+				break
+			}
+			miter, err := manifestReferences(info.desc.MediaType, b.data)
+			if err != nil {
+				retErr = err
+				return false
+			}
+			found, retErr = refersTo(repo, miter, digest)
+			if found || retErr != nil {
+				return false
+			}
+		}
+		return true
+	})
+	return found, retErr
 }
