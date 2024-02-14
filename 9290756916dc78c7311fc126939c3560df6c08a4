@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "88f4456b_f7dce148",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-14T16:17:54Z",
+      "side": 1,
+      "message": "You could also consider a single map, given that you end up with two maps with the same sets of keys, but I guess not super important for ocimem.",
+      "revId": "9290756916dc78c7311fc126939c3560df6c08a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
