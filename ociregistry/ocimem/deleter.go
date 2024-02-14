@@ -48,11 +48,9 @@ func (r *Registry) DeleteTag(ctx context.Context, repoName string, tagName strin
 	if err != nil {
 		return err
 	}
-	desc, ok := repo.tags[tagName]
-	if !ok {
+	if _, ok := repo.tags[tagName]; !ok {
 		return ociregistry.ErrManifestUnknown
 	}
-	delete(repo.manifests, desc.Digest)
 	delete(repo.tags, tagName)
 
 	return nil
