@@ -16,6 +16,24 @@
       "message": "... and tweak DeleteTag\n\n(just to surface in the title that this is more than just test changes)",
       "revId": "b0f3c9725912a1be488972bfd41ed0e6dd3c57ba",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8861ab46_0448e24a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-02-14T16:09:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "035f979d_d81de976",
+      "revId": "b0f3c9725912a1be488972bfd41ed0e6dd3c57ba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
