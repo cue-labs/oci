@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "035f979d_d81de976",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-14T14:02:57Z",
+      "side": 1,
+      "message": "... and tweak DeleteTag\n\n(just to surface in the title that this is more than just test changes)",
+      "revId": "b0f3c9725912a1be488972bfd41ed0e6dd3c57ba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
