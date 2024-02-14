@@ -28,6 +28,7 @@ var _ ociregistry.Interface = (*Registry)(nil)
 
 type Registry struct {
 	*ociregistry.Funcs
+	cfg   Config
 	mu    sync.Mutex
 	repos map[string]*repository
 }
@@ -53,8 +54,38 @@ func (b *blob) descriptor() ociregistry.Descriptor {
 	}
 }
 
+// TODO (breaking API change) rename NewWithConfig to New
+// so we don't have two very similar entry points.
+
+// New is like NewWithConfig(nil).
 func New() *Registry {
-	return &Registry{}
+	return NewWithConfig(nil)
+}
+
+// NewWithConfig returns a new in-memory [ociregistry.Interface]
+// implementation using the given configuration. If
+// cfg is nil, it's treated the same as a pointer to the zero [Config] value.
+func NewWithConfig(cfg0 *Config) *Registry {
+	var cfg Config
+	if cfg0 != nil {
+		cfg = *cfg0
+	}
+	return &Registry{
+		cfg: cfg,
+	}
+}
+
+// Config holds configuration for the registry.
+type Config struct {
+	// ImmutableTags specifies that tags in the registry cannot
+	// be changed. Specifically the following restrictions are enforced:
+	// - no removal of tags from a manifest
+	// - no pushing of a tag if that tag already exists with a different
+	// digest or media type.
+	// - no deletion of directly tagged manifests
+	// - no deletion of any blob or manifest that a tagged manifest
+	// refers to (TODO: not implemented yet)
+	ImmutableTags bool
 }
 
 func (r *Registry) repo(repoName string) (*repository, error) {
