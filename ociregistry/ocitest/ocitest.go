@@ -63,7 +63,7 @@ type RegistryContent map[string]RepoContent
 // filled in.
 type RepoContent struct {
 	// Manifests maps from manifest identifier to the contents of the manifest.
-	// TODO support manifest lists too.
+	// TODO support manifest indexes too.
 	Manifests map[string]ociregistry.Manifest
 
 	// Blobs maps from blob identifer to the contents of the blob.
@@ -90,17 +90,20 @@ type PushedRepoContent struct {
 //
 // It returns a map mapping repository name to the descriptors
 // describing the content that has actually been pushed.
-func (r Registry) MustPushContent(rc RegistryContent) map[string]PushedRepoContent {
+func PushContent(r ociregistry.Interface, rc RegistryContent) (map[string]PushedRepoContent, error) {
 	regContent := make(map[string]PushedRepoContent)
 	for repo, repoc := range rc {
-		prc, err := pushRepoContent(r.R, repo, repoc)
-		qt.Assert(r.T, qt.IsNil(err))
+		prc, err := PushRepoContent(r, repo, repoc)
+		if err != nil {
+			return nil, fmt.Errorf("cannot push content for repository %q: %v", repo, err)
+		}
 		regContent[repo] = prc
 	}
-	return regContent
+	return regContent, nil
 }
 
-func pushRepoContent(r ociregistry.Interface, repo string, repoc RepoContent) (PushedRepoContent, error) {
+// PushRepoContent pushes the content for a single repository.
+func PushRepoContent(r ociregistry.Interface, repo string, repoc RepoContent) (PushedRepoContent, error) {
 	ctx := context.Background()
 	prc := PushedRepoContent{
 		Manifests: make(map[string]ociregistry.Descriptor),
@@ -125,14 +128,14 @@ func pushRepoContent(r ociregistry.Interface, repo string, repoc RepoContent) (P
 	for id, content := range repoc.Blobs {
 		_, err := r.PushBlob(ctx, repo, prc.Blobs[id], strings.NewReader(content))
 		if err != nil {
-			return PushedRepoContent{}, fmt.Errorf("cannot push blob %q in repo %q", id, repo)
+			return PushedRepoContent{}, fmt.Errorf("cannot push blob %q in repo %q: %v", id, repo, err)
 		}
 	}
 	// Then push the manifests that refer to the blobs.
 	for _, mc := range manifestSeq {
 		_, err := r.PushManifest(ctx, repo, "", mc.data, mc.desc.MediaType)
 		if err != nil {
-			return PushedRepoContent{}, fmt.Errorf("cannot push manifest %q in repo %q", mc.id, repo)
+			return PushedRepoContent{}, fmt.Errorf("cannot push manifest %q in repo %q: %v", mc.id, repo, err)
 		}
 	}
 	// Then push any tags.
@@ -143,10 +146,20 @@ func pushRepoContent(r ociregistry.Interface, repo string, repoc RepoContent) (P
 		}
 		_, err := r.PushManifest(ctx, repo, tag, mc.data, mc.desc.MediaType)
 		if err != nil {
-			return PushedRepoContent{}, fmt.Errorf("cannot push tag %q in repo %q", id, repo)
+			return PushedRepoContent{}, fmt.Errorf("cannot push tag %q in repo %q: %v", id, repo, err)
 		}
 	}
 	return prc, nil
+}
+
+// PushContent pushes all the content in rc to r.
+//
+// It returns a map mapping repository name to the descriptors
+// describing the content that has actually been pushed.
+func (r Registry) MustPushContent(rc RegistryContent) map[string]PushedRepoContent {
+	prc, err := PushContent(r.R, rc)
+	qt.Assert(r.T, qt.IsNil(err))
+	return prc
 }
 
 type manifestContent struct {
@@ -164,22 +177,30 @@ func completedManifests(repoc RepoContent, blobs map[string]ociregistry.Descript
 	// subject relationships can be arbitrarily deep, so continue iterating until
 	// all the levels are completed. If at any point we can't make progress, we
 	// know there's a problem and panic.
+	required := make(map[string]bool)
 	for {
 		madeProgress := false
-		required := make(map[string]bool)
+		needMore := false
+		need := func(digest ociregistry.Digest) {
+			needMore = true
+			if !required[string(digest)] {
+				required[string(digest)] = true
+				madeProgress = true
+			}
+		}
 		for id, m := range repoc.Manifests {
 			if _, ok := manifests[id]; ok {
 				continue
 			}
 			m1 := m
-			if m.Subject != nil {
-				mc, ok := manifests[string(m.Subject.Digest)]
+			if m1.Subject != nil {
+				mc, ok := manifests[string(m1.Subject.Digest)]
 				if !ok {
-					required[string(m.Subject.Digest)] = true
+					need(m1.Subject.Digest)
 					continue
 				}
-				m.Subject = ref(*m.Subject)
-				*m.Subject = mc.desc
+				m1.Subject = ref(*m1.Subject)
+				*m1.Subject = mc.desc
 				madeProgress = true
 			}
 			m1.Config = fillBlobDescriptor(m.Config, blobs)
@@ -201,12 +222,18 @@ func completedManifests(repoc RepoContent, blobs map[string]ociregistry.Descript
 				},
 			}
 			manifests[id] = mc
+			madeProgress = true
 			manifestSeq = append(manifestSeq, mc)
 		}
-		if len(required) == 0 {
+		if !needMore {
 			return manifests, manifestSeq, nil
 		}
 		if !madeProgress {
+			for m := range required {
+				if _, ok := manifests[m]; ok {
+					delete(required, m)
+				}
+			}
 			return nil, nil, fmt.Errorf("no manifest found for ids %s", strings.Join(mapKeys(required), ", "))
 		}
 	}
