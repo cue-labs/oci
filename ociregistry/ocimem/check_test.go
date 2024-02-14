@@ -16,6 +16,7 @@ import (
 var pushManifestTests = []struct {
 	testName     string
 	preload      ocitest.RepoContent
+	config       Config
 	tag          string
 	mediaType    string
 	manifestData func(content ocitest.PushedRepoContent) []byte
@@ -103,7 +104,45 @@ var pushManifestTests = []struct {
 	},
 	// Non-existent subject references are explicitly allowed.
 }, {
-	testName: "CanOverwriteTag",
+	testName: "CannotOverwriteTagWhenImmutabilityEnabled",
+	preload: ocitest.RepoContent{
+		Blobs: map[string]string{
+			"a": "{}",
+			"b": "other",
+		},
+		Manifests: map[string]ociregistry.Manifest{
+			"m": {
+				MediaType: ocispec.MediaTypeImageManifest,
+				Config: ociregistry.Descriptor{
+					Digest: "a",
+				},
+				Layers: []ociregistry.Descriptor{{
+					Digest: "a",
+				}},
+			},
+		},
+		Tags: map[string]string{
+			"sometag": "m",
+		},
+	},
+	config: Config{
+		ImmutableTags: true,
+	},
+	mediaType: ocispec.MediaTypeImageManifest,
+	tag:       "sometag",
+	manifestData: func(content ocitest.PushedRepoContent) []byte {
+		return mustJSONMarshal(ociregistry.Manifest{
+			MediaType: ocispec.MediaTypeImageManifest,
+			Config:    content.Blobs["a"],
+			Layers:    []ociregistry.Descriptor{content.Blobs["a"]},
+			Annotations: map[string]string{
+				"different": "thing",
+			},
+		})
+	},
+	wantError: `requested access to the resource is denied: cannot overwrite tag`,
+}, {
+	testName: "CanOverwriteTagWhenImmutabilityNotEnabled",
 	preload: ocitest.RepoContent{
 		Blobs: map[string]string{
 			"a": "{}",
@@ -142,7 +181,7 @@ func TestPushManifest(t *testing.T) {
 	for _, test := range pushManifestTests {
 		t.Run(test.testName, func(t *testing.T) {
 			ctx := context.Background()
-			r := ocitest.NewRegistry(t, New())
+			r := ocitest.NewRegistry(t, NewWithConfig(&test.config))
 			content := r.MustPushContent(ocitest.RegistryContent{
 				"test": test.preload,
 			})["test"]
@@ -159,6 +198,7 @@ func TestPushManifest(t *testing.T) {
 
 var deleteBlobTests = []struct {
 	testName  string
+	config    Config
 	preload   ocitest.RepoContent
 	getDigest func(content ocitest.PushedRepoContent) ociregistry.Digest
 	wantError string
@@ -179,13 +219,76 @@ var deleteBlobTests = []struct {
 		return digest.FromString("blshdfsvg")
 	},
 	wantError: "blob unknown to registry",
+}, {
+	testName: "TaggedBlobWithImmutableTags",
+	config: Config{
+		ImmutableTags: true,
+	},
+	preload: ocitest.RepoContent{
+		Blobs: map[string]string{
+			"a": "{}",
+		},
+		Manifests: map[string]ociregistry.Manifest{
+			"m": {
+				MediaType: ocispec.MediaTypeImageManifest,
+				Config: ociregistry.Descriptor{
+					Digest: "a",
+				},
+				Layers: []ociregistry.Descriptor{{
+					Digest: "a",
+				}},
+			},
+		},
+		Tags: map[string]string{
+			"sometag": "m",
+		},
+	},
+	getDigest: func(content ocitest.PushedRepoContent) ociregistry.Digest {
+		return content.Blobs["a"].Digest
+	},
+	wantError: "requested access to the resource is denied: deletion of tagged blob not permitted",
+}, {
+	testName: "IndirectlyTaggedBlobWithImmutableTags",
+	config: Config{
+		ImmutableTags: true,
+	},
+	preload: ocitest.RepoContent{
+		Blobs: map[string]string{
+			"a": "{}",
+			"b": "other",
+		},
+		Manifests: map[string]ociregistry.Manifest{
+			"m0": {
+				MediaType: ocispec.MediaTypeImageManifest,
+				Config: ociregistry.Descriptor{
+					Digest: "a",
+				},
+			},
+			"m1": {
+				MediaType: ocispec.MediaTypeImageManifest,
+				Config: ociregistry.Descriptor{
+					Digest: "b",
+				},
+				Subject: &ociregistry.Descriptor{
+					Digest: "m0",
+				},
+			},
+		},
+		Tags: map[string]string{
+			"sometag": "m1",
+		},
+	},
+	getDigest: func(content ocitest.PushedRepoContent) ociregistry.Digest {
+		return content.Blobs["a"].Digest
+	},
+	wantError: "requested access to the resource is denied: deletion of tagged blob not permitted",
 }}
 
 func TestDeleteBlob(t *testing.T) {
 	for _, test := range deleteBlobTests {
 		t.Run(test.testName, func(t *testing.T) {
 			ctx := context.Background()
-			r := ocitest.NewRegistry(t, New())
+			r := ocitest.NewRegistry(t, NewWithConfig(&test.config))
 			content := r.MustPushContent(ocitest.RegistryContent{
 				"test": test.preload,
 			})["test"]
@@ -208,6 +311,7 @@ func TestDeleteBlob(t *testing.T) {
 
 var deleteManifestTests = []struct {
 	testName  string
+	config    Config
 	preload   ocitest.RepoContent
 	getDigest func(content ocitest.PushedRepoContent) ociregistry.Digest
 	wantError string
@@ -228,13 +332,73 @@ var deleteManifestTests = []struct {
 		return digest.FromString("blshdfsvg")
 	},
 	wantError: "manifest unknown to registry",
+}, {
+	testName: "TaggedManifestWithImmutableTags",
+	config: Config{
+		ImmutableTags: true,
+	},
+	preload: ocitest.RepoContent{
+		Blobs: map[string]string{
+			"a": "{}",
+		},
+		Manifests: map[string]ociregistry.Manifest{
+			"m": {
+				MediaType: ocispec.MediaTypeImageManifest,
+				Config: ociregistry.Descriptor{
+					Digest: "a",
+				},
+			},
+		},
+		Tags: map[string]string{
+			"sometag": "m",
+		},
+	},
+	getDigest: func(content ocitest.PushedRepoContent) ociregistry.Digest {
+		return content.Manifests["m"].Digest
+	},
+	wantError: "requested access to the resource is denied: deletion of tagged manifest not permitted",
+}, {
+	testName: "IndirectlyTaggedManifestWithImmutableTags",
+	config: Config{
+		ImmutableTags: true,
+	},
+	preload: ocitest.RepoContent{
+		Blobs: map[string]string{
+			"a": "{}",
+			"b": "other",
+		},
+		Manifests: map[string]ociregistry.Manifest{
+			"m0": {
+				MediaType: ocispec.MediaTypeImageManifest,
+				Config: ociregistry.Descriptor{
+					Digest: "a",
+				},
+			},
+			"m1": {
+				MediaType: ocispec.MediaTypeImageManifest,
+				Config: ociregistry.Descriptor{
+					Digest: "b",
+				},
+				Subject: &ociregistry.Descriptor{
+					Digest: "m0",
+				},
+			},
+		},
+		Tags: map[string]string{
+			"sometag": "m1",
+		},
+	},
+	getDigest: func(content ocitest.PushedRepoContent) ociregistry.Digest {
+		return content.Manifests["m0"].Digest
+	},
+	wantError: "requested access to the resource is denied: deletion of tagged manifest not permitted",
 }}
 
 func TestDeleteManifest(t *testing.T) {
 	for _, test := range deleteManifestTests {
 		t.Run(test.testName, func(t *testing.T) {
 			ctx := context.Background()
-			r := ocitest.NewRegistry(t, New())
+			r := ocitest.NewRegistry(t, NewWithConfig(&test.config))
 			content := r.MustPushContent(ocitest.RegistryContent{
 				"test": test.preload,
 			})["test"]
@@ -257,6 +421,7 @@ func TestDeleteManifest(t *testing.T) {
 
 var deleteTagTests = []struct {
 	testName  string
+	config    Config
 	preload   ocitest.RepoContent
 	tag       string
 	wantError string
@@ -272,7 +437,30 @@ var deleteTagTests = []struct {
 		},
 	},
 	tag:       "foo",
-	wantError: "manifest unknown to registry",
+	wantError: "manifest unknown to registry: tag does not exist",
+}, {
+	testName: "WithImmutableTags",
+	config: Config{
+		ImmutableTags: true,
+	},
+	preload: ocitest.RepoContent{
+		Blobs: map[string]string{
+			"a": "{}",
+		},
+		Manifests: map[string]ociregistry.Manifest{
+			"m": {
+				MediaType: ocispec.MediaTypeImageManifest,
+				Config: ociregistry.Descriptor{
+					Digest: "a",
+				},
+			},
+		},
+		Tags: map[string]string{
+			"sometag": "m",
+		},
+	},
+	tag:       "sometag",
+	wantError: "requested access to the resource is denied: tag deletion not permitted",
 }, {
 	testName: "Success",
 	preload: ocitest.RepoContent{
@@ -308,7 +496,7 @@ func TestDeleteTag(t *testing.T) {
 	for _, test := range deleteTagTests {
 		t.Run(test.testName, func(t *testing.T) {
 			ctx := context.Background()
-			r := ocitest.NewRegistry(t, New())
+			r := ocitest.NewRegistry(t, NewWithConfig(&test.config))
 			content := r.MustPushContent(ocitest.RegistryContent{
 				"test": test.preload,
 			})["test"]
