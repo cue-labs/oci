@@ -81,6 +81,9 @@ type PushedRepoContent struct {
 	// with the descriptor for that manifest.
 	Manifests map[string]ociregistry.Descriptor
 
+	// ManifestData holds the actually pushed data for each manifest.
+	ManifestData map[string][]byte
+
 	// Blobs holds an entry for each blob identifier
 	// with the descriptor for that manifest.
 	Blobs map[string]ociregistry.Descriptor
@@ -106,8 +109,9 @@ func PushContent(r ociregistry.Interface, rc RegistryContent) (map[string]Pushed
 func PushRepoContent(r ociregistry.Interface, repo string, repoc RepoContent) (PushedRepoContent, error) {
 	ctx := context.Background()
 	prc := PushedRepoContent{
-		Manifests: make(map[string]ociregistry.Descriptor),
-		Blobs:     make(map[string]ociregistry.Descriptor),
+		Manifests:    make(map[string]ociregistry.Descriptor),
+		ManifestData: make(map[string][]byte),
+		Blobs:        make(map[string]ociregistry.Descriptor),
 	}
 
 	for id, blob := range repoc.Blobs {
@@ -123,6 +127,7 @@ func PushRepoContent(r ociregistry.Interface, repo string, repoc RepoContent) (P
 	}
 	for id, content := range manifests {
 		prc.Manifests[id] = content.desc
+		prc.ManifestData[id] = content.data
 	}
 	// First push all the blobs:
 	for id, content := range repoc.Blobs {
