@@ -38,6 +38,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1261e43c_0d030a0d",
+        "filename": "ociregistry/ocimem/registry.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-14T16:19:30Z",
+      "side": 1,
+      "message": "ack; leave a TODO for these API cleanups then?",
+      "parentUuid": "6a48f2fd_0c003d54",
+      "revId": "6bb57e0dd9118fde275391bbd0dd1665f4b6d854",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "254f4e99_33ba1b4e",
         "filename": "ociregistry/ocimem/registry.go",
         "patchSetId": 2
@@ -73,6 +91,30 @@
       "side": 1,
       "message": "Yup, you\u0027re right. For some reason I thought I\u0027d read that rule in the Google Artifact Registry docs, but I can\u0027t find that description again and I just verified to make sure that it is OK to do that.\n\nChanged.",
       "parentUuid": "254f4e99_33ba1b4e",
+      "range": {
+        "startLine": 80,
+        "startChar": 1,
+        "endLine": 81,
+        "endChar": 20
+      },
+      "revId": "6bb57e0dd9118fde275391bbd0dd1665f4b6d854",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "48f04f4a_e6947014",
+        "filename": "ociregistry/ocimem/registry.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-14T16:19:30Z",
+      "side": 1,
+      "message": "I think this godoc line needs to be updated now :)",
+      "parentUuid": "a8eff060_8f249de0",
       "range": {
         "startLine": 80,
         "startChar": 1,
