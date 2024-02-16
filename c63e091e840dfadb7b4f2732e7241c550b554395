@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5fc291e3_df5c3e6f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-16T11:13:20Z",
+      "side": 1,
+      "message": "You could also consider linking to CUE\u0027s CONTRIBUTING.md here, for the sake of not having to maintain two.",
+      "revId": "c63e091e840dfadb7b4f2732e7241c550b554395",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
