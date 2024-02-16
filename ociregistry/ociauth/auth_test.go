@@ -470,8 +470,11 @@ func assertRequest(ctx context.Context, t testing.TB, tsURL *url.URL, path strin
 }
 
 func assertRequest1(ctx context.Context, t testing.TB, tsURL *url.URL, path string, auth Authorizer, needScope Scope) {
-	req, err := http.NewRequestWithContext(ctx, "GET", tsURL.String()+path, nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", tsURL.String()+path, strings.NewReader("test body"))
 	qt.Assert(t, qt.IsNil(err))
+	// Set ContentLength to -1 to prevent net/http from calling GetBody automatically,
+	// thus testing the GetBody-calling code inside registry.doRequest.
+	req.ContentLength = -1
 	resp, err := auth.DoRequest(req, needScope)
 	qt.Assert(t, qt.IsNil(err))
 	defer resp.Body.Close()
@@ -528,6 +531,17 @@ func newTargetServer(
 		if req.URL.Path != "/test" && !strings.HasPrefix(req.URL.Path, "/test/") {
 			t.Logf("} <- error (wrong path)")
 			http.Error(w, "only /test is allowed", http.StatusNotFound)
+			return
+		}
+		if req.Method != "POST" {
+			t.Logf("} <- error (wrong method)")
+			http.Error(w, "only method POST is allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		data, _ := io.ReadAll(req.Body)
+		if gotBody := string(data); gotBody != "test body" {
+			t.Logf("} <- error (wrong body %q)", gotBody)
+			http.Error(w, "wrong body", http.StatusForbidden)
 			return
 		}
 		t.Logf("} <- OK")
