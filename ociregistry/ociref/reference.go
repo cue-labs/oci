@@ -101,6 +101,7 @@ var referencePat = regexp.MustCompile(
 )
 
 var hostPat = regexp.MustCompile(`^(?:` + domainAndPort + `)$`)
+var repoPat = regexp.MustCompile(`^(?:` + repoName + `)$`)
 
 // Reference represents an entry in an OCI repository.
 type Reference struct {
@@ -125,6 +126,17 @@ type Reference struct {
 // IsValidHost reports whether s is a valid host (or host:port) part of a reference string.
 func IsValidHost(s string) bool {
 	return hostPat.MatchString(s)
+}
+
+// IsValidHost reports whether s is a valid repository part
+// of a reference string.
+func IsValidRepository(s string) bool {
+	return repoPat.MatchString(s)
+}
+
+// IsValidTag reports whether s is a valid reference tag.
+func IsValidTag(s string) bool {
+	return checkTag(s) == nil
 }
 
 // Parse parses a reference string that must include
@@ -168,23 +180,30 @@ func ParseRelative(refStr string) (Reference, error) {
 		}
 	}
 	if len(ref.Tag) > 0 {
-		if len(ref.Tag) > 127 {
-			return Reference{}, fmt.Errorf("tag too long")
-		}
-		if !isWord(ref.Tag[0]) {
-			return Reference{}, fmt.Errorf("tag %q does not start with word character", ref.Tag)
-		}
-		for i := 1; i < len(ref.Tag); i++ {
-			c := ref.Tag[i]
-			if !isWord(c) && c != '.' && c != '-' {
-				return Reference{}, fmt.Errorf("tag %q contains invalid invalid character %q", ref.Tag, c)
-			}
+		if err := checkTag(ref.Tag); err != nil {
+			return Reference{}, err
 		}
 	}
 	if len(ref.Repository) > 255 {
 		return Reference{}, fmt.Errorf("repository name too long")
 	}
 	return ref, nil
+}
+
+func checkTag(s string) error {
+	if len(s) > 128 {
+		return fmt.Errorf("tag too long")
+	}
+	if !isWord(s[0]) {
+		return fmt.Errorf("tag %q does not start with word character", s)
+	}
+	for i := 1; i < len(s); i++ {
+		c := s[i]
+		if !isWord(c) && c != '.' && c != '-' {
+			return fmt.Errorf("tag %q contains invalid invalid character %q", s, c)
+		}
+	}
+	return nil
 }
 
 func isWord(c byte) bool {
