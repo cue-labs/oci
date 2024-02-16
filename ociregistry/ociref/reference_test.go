@@ -413,3 +413,116 @@ func TestIsValidHost(t *testing.T) {
 		})
 	}
 }
+
+var isValidRepositoryTests = []struct {
+	repo string
+	want bool
+}{{
+	repo: "foo",
+	want: true,
+}, {
+	repo: "00123456789abcdefghijklmnopqrstuvwxyz",
+	want: true,
+}, {
+	repo: "a-b---c",
+	want: true,
+}, {
+	repo: "a.b.c9",
+	want: true,
+}, {
+	repo: "a..b",
+	want: false,
+}, {
+	repo: ".a",
+	want: false,
+}, {
+	repo: "a.",
+	want: false,
+}, {
+	repo: "-a",
+	want: false,
+}, {
+	repo: "a-",
+	want: false,
+}, {
+	repo: "A",
+	want: false,
+}, {
+	repo: "_a",
+	want: false,
+}, {
+	repo: "a_",
+	want: false,
+}, {
+	repo: "foo/bar/baz",
+	want: true,
+}, {
+	repo: "café",
+	want: false,
+}, {
+	repo: "foo@bar",
+	want: false,
+}}
+
+func TestIsValidRepository(t *testing.T) {
+	for _, test := range isValidRepositoryTests {
+		t.Run(test.repo, func(t *testing.T) {
+			qt.Assert(t, qt.Equals(IsValidRepository(test.repo), test.want))
+		})
+	}
+}
+
+var isValidTagTests = []struct {
+	tag  string
+	want bool
+}{{
+	tag:  "hello",
+	want: true,
+}, {
+	tag:  "v1.2.3-alpha.0",
+	want: true,
+}, {
+	tag:  "foo",
+	want: true,
+}, {
+	tag:  "_",
+	want: true,
+}, {
+	tag:  "_x",
+	want: true,
+}, {
+	tag:  "___",
+	want: true,
+}, {
+	tag:  "ABC_D",
+	want: true,
+}, {
+	tag:  strings.Repeat("a", 128),
+	want: true,
+}, {
+	tag:  strings.Repeat("a", 129),
+	want: false,
+}, {
+	tag:  "foo....___---",
+	want: true,
+}, {
+	tag:  "café",
+	want: false,
+}, {
+	tag:  "foo@bar",
+	want: false,
+}, {
+	tag:  "v4.3+something",
+	want: false,
+}, {
+	tag:  "xxx",
+	want: true,
+}}
+
+func TestIsValidTag(t *testing.T) {
+	for _, test := range isValidTagTests {
+		t.Run(test.tag, func(t *testing.T) {
+			qt.Assert(t, qt.Equals(IsValidTag(test.tag), test.want))
+		})
+	}
+}
