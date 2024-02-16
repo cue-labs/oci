@@ -135,7 +135,8 @@ func (a *StdAuthorizer) DoRequest(req *http.Request, requiredScope Scope) (*http
 
 // doRequest performs the given request on the registry r.
 func (r *registry) doRequest(ctx context.Context, req *http.Request, requiredScope, wantScope Scope) (*http.Response, error) {
-	// TODO set up request body so that we can rewind it when retrying if necessary.
+	// TODO set up request body so that we can rewind it when retrying if necessary
+	// ([http.NewRequest] already does this for several types)
 	if err := r.setAuthorization(ctx, req, requiredScope, wantScope); err != nil {
 		return nil, err
 	}
@@ -160,7 +161,13 @@ func (r *registry) doRequest(ctx context.Context, req *http.Request, requiredSco
 		return resp, nil
 	}
 	resp.Body.Close()
-	// TODO rewind request body if needed.
+	// rewind request body if needed and possible.
+	if req.GetBody != nil {
+		req.Body, err = req.GetBody()
+		if err != nil {
+			return nil, err
+		}
+	}
 	return r.authorizer.httpClient.Do(req)
 }
 
