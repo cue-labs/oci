@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b933ed5f_932fd56f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-19T21:09:39Z",
+      "side": 1,
+      "message": "nit: no need for backquotes here",
+      "revId": "44cf9b3e4fd6da58056f95578b1ef53409590ded",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
