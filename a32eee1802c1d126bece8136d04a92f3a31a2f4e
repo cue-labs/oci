@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7e769b71_8a6a9648",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2024-02-19T19:22:13Z",
+      "side": 1,
+      "message": "@rogpeppe@gmail.com have you reviewed https://github.com/cue-labs/oci/pull/27?",
+      "revId": "a32eee1802c1d126bece8136d04a92f3a31a2f4e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
