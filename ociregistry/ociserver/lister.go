@@ -61,9 +61,12 @@ func (r *registry) handleTagsList(ctx context.Context, resp http.ResponseWriter,
 	}
 
 	// Limit using n query parameter.
+	// TODO can't we use rreq.ListN instead of looking at the query parameter directly?
 	if ns := req.URL.Query().Get("n"); ns != "" {
 		if n, err := strconv.Atoi(ns); err != nil {
 			return ociregistry.NewError("invalid value for query parameter n", ociregistry.ErrUnsupported.Code(), nil)
+		} else if r.opts.MaxListPageSize > 0 && n > r.opts.MaxListPageSize {
+			return ociregistry.NewError(fmt.Sprintf("query parameter n is too large (n=%d, max=%d)", n, r.opts.MaxListPageSize), ociregistry.ErrUnsupported.Code(), nil)
 		} else if n < len(tags) {
 			tags = tags[:n]
 		}
@@ -82,6 +85,9 @@ func (r *registry) handleTagsList(ctx context.Context, resp http.ResponseWriter,
 }
 
 func (r *registry) handleCatalogList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+	if r.opts.MaxListPageSize > 0 && rreq.ListN > r.opts.MaxListPageSize {
+		return ociregistry.NewError(fmt.Sprintf("query parameter n is too large (n=%d, max=%d)", rreq.ListN, r.opts.MaxListPageSize), ociregistry.ErrUnsupported.Code(), nil)
+	}
 	n := 10000
 	if rreq.ListN >= 0 {
 		n = rreq.ListN
