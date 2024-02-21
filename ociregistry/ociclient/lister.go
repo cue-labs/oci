@@ -30,7 +30,7 @@ func (c *client) Repositories(ctx context.Context) ociregistry.Iter[string] {
 	// TODO paging
 	resp, err := c.doRequest(ctx, &ocirequest.Request{
 		Kind:  ocirequest.ReqCatalogList,
-		ListN: -1,
+		ListN: c.listPageSize,
 	})
 	if err != nil {
 		return ociregistry.ErrorIter[string](err)
@@ -54,7 +54,7 @@ func (c *client) Tags(ctx context.Context, repoName string) ociregistry.Iter[str
 	resp, err := c.doRequest(ctx, &ocirequest.Request{
 		Kind:  ocirequest.ReqTagsList,
 		Repo:  repoName,
-		ListN: 10000,
+		ListN: c.listPageSize,
 	})
 	if err != nil {
 		return ociregistry.ErrorIter[string](err)
@@ -82,7 +82,7 @@ func (c *client) Referrers(ctx context.Context, repoName string, digest ociregis
 		Kind:   ocirequest.ReqReferrersList,
 		Repo:   repoName,
 		Digest: string(digest),
-		ListN:  10000,
+		ListN:  c.listPageSize,
 	})
 	if err != nil {
 		return ociregistry.ErrorIter[ociregistry.Descriptor](err)
