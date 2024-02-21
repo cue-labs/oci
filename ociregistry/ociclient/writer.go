@@ -248,7 +248,6 @@ type blobWriter struct {
 	// Each successfully flushed chunk increases this.
 	flushed  int64
 	location *url.URL
-	response chan doResult
 }
 
 type doResult struct {
@@ -286,7 +285,6 @@ func (w *blobWriter) flush(buf []byte, commitDigest ociregistry.Digest) error {
 		return nil
 	}
 	// Start a new PATCH request to send the currently outstanding data.
-	// It'll send on w.response when done.
 	method := "PATCH"
 	expect := http.StatusAccepted
 	reqURL := w.location
@@ -317,7 +315,6 @@ func (w *blobWriter) flush(buf []byte, commitDigest ociregistry.Digest) error {
 	}
 	// TODO is there something we could be doing with the Range header in the response?
 	w.location = location
-	w.response = nil
 	w.flushed += req.ContentLength
 	w.chunk = w.chunk[:0]
 	return nil
