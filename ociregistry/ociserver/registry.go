@@ -56,6 +56,12 @@ type Options struct {
 	// another server.
 	DisableSinglePostUpload bool
 
+	// MaxListPageSize, if > 0, causes the list endpoints to return an
+	// error if the page size is greater than that. This emulates
+	// a quirk of AWS ECR where it refuses request for any
+	// page size > 1000.
+	MaxListPageSize int
+
 	// LocationForUploadID transforms an upload ID as returned by
 	// ocirequest.BlobWriter.ID to the absolute URL location
 	// as returned by the upload endpoints.

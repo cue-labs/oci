@@ -71,6 +71,22 @@ func TestClientAsProxy(t *testing.T) {
 	})
 }
 
+func TestClientAsProxyWithMaxPageSize(t *testing.T) {
+	runTests(t, func(t *testing.T) string {
+		direct := httptest.NewServer(ociserver.New(ocimem.New(), &ociserver.Options{
+			DebugID:         "direct",
+			MaxListPageSize: 1000,
+		}))
+		t.Cleanup(direct.Close)
+		proxy := httptest.NewServer(ociserver.New(mustNewOCIClient(direct.URL, nil), &ociserver.Options{
+			DebugID:         "proxy",
+			MaxListPageSize: 1000,
+		}))
+		t.Cleanup(proxy.Close)
+		return proxy.URL
+	})
+}
+
 func TestSelectAll(t *testing.T) {
 	// Test that the Select filter works OK as a no-op when
 	// all repositories are allowed.
