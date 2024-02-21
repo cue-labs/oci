@@ -55,7 +55,21 @@ type Options struct {
 	// Insecure specifies whether an http scheme will be
 	// used to address the host instead of https.
 	Insecure bool
+
+	// ListPageSize configures the maximum number of results
+	// requested when making list requests. If it's <= zero,
+	// it defaults to DefaultListPageSize.
+	ListPageSize int
 }
+
+// See https://github.com/google/go-containerregistry/issues/1091
+// for an early report of the issue alluded to below.
+
+// DefaultListPageSize holds the default number of results
+// to request when using the list endpoints.
+// It's not more than 1000 because AWS ECR complains
+// it it's more than that.
+const DefaultListPageSize = 1000
 
 type HTTPDoer interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -90,22 +104,27 @@ func New(host string, opts *Options) (ociregistry.Interface, error) {
 	if opts.Insecure {
 		u.Scheme = "http"
 	}
+	if opts.ListPageSize == 0 {
+		opts.ListPageSize = DefaultListPageSize
+	}
 	return &client{
-		httpHost:   host,
-		httpScheme: u.Scheme,
-		client:     opts.HTTPClient,
-		authorizer: opts.Authorizer,
-		debugID:    opts.DebugID,
+		httpHost:     host,
+		httpScheme:   u.Scheme,
+		client:       opts.HTTPClient,
+		authorizer:   opts.Authorizer,
+		debugID:      opts.DebugID,
+		listPageSize: opts.ListPageSize,
 	}, nil
 }
 
 type client struct {
 	*ociregistry.Funcs
-	httpScheme string
-	httpHost   string
-	client     HTTPDoer
-	authorizer ociauth.Authorizer
-	debugID    string
+	httpScheme   string
+	httpHost     string
+	client       HTTPDoer
+	authorizer   ociauth.Authorizer
+	debugID      string
+	listPageSize int
 }
 
 func descriptorFromResponse(resp *http.Response, knownDigest digest.Digest, requireSize bool) (ociregistry.Descriptor, error) {
