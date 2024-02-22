@@ -18,6 +18,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d07c8eea_7ceef781",
+        "filename": "ociregistry/ociclient/reader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-02-22T17:23:14Z",
+      "side": 1,
+      "message": "It\u0027s entirely arbitrary based on a size that should be considerably bigger than most manifests and small enough to fit comfortably into RAM on most machines.\n\nI added some more info to the comment to that effect.",
+      "parentUuid": "3f77d783_e38ee59c",
+      "revId": "962611b1d9eb1a49d8f58c9f9fb49e21caf7c42e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "712b072a_79eb60ef",
@@ -31,6 +49,30 @@
       "writtenOn": "2024-02-22T13:28:58Z",
       "side": 1,
       "message": "shouldn\u0027t LimitReader use inMemThreshold here as the actual limit? otherwise the server could presumably lie about the size and serve you a gigabyte, and you\u0027d read the entire thing before realizing in line 156 that there is a mismatch.\n\nif the client already ensures that desc.Size is correct, then I take that back, but perhaps document it. Either way I think it would be safer to use our hard limit with LimitReader.",
+      "range": {
+        "startLine": 152,
+        "startChar": 30,
+        "endLine": 152,
+        "endChar": 41
+      },
+      "revId": "962611b1d9eb1a49d8f58c9f9fb49e21caf7c42e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "64f7ae4b_a921f0de",
+        "filename": "ociregistry/ociclient/reader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-02-22T17:23:14Z",
+      "side": 1,
+      "message": "I don\u0027t see that this is a problem: because of the if condition above, we know that desc.Size is \u003c\u003d inMemThreshold so the limitreader is bound to be capped accordingly. Am I missing something?",
+      "parentUuid": "712b072a_79eb60ef",
       "range": {
         "startLine": 152,
         "startChar": 30,
@@ -58,6 +100,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "49622a72_1df1a2a3",
+        "filename": "ociregistry/ociclient/reader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-02-22T17:23:14Z",
+      "side": 1,
+      "message": "I started doing this, but when trying to formulate an appropriate message, I ended up not entirely sure. The two requests are almost identical and from a caller\u0027s perspective, both could be used as part of the GetTag implementation - the error messages could apply equally to both. In other words, if a HEAD request fails, I\u0027m not sure that the resulting error would be particularly weird or out-of-context with respect to what the caller is expecting, because essentially it\u0027s asking for exactly the same information as the GET request, just a bit less of it.\n\nIf we had a nice way to add a level of source stack information without affecting the error message, I\u0027d do that, but as is I think it\u0027s probably better to leave the messages as is - any HTTP logs used to see what\u0027s going on underneath should make it clear what\u0027s going on.",
+      "parentUuid": "3c4e3d36_8790e398",
+      "revId": "962611b1d9eb1a49d8f58c9f9fb49e21caf7c42e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a98d479b_2e4b36d9",
@@ -71,6 +131,30 @@
       "writtenOn": "2024-02-22T13:28:58Z",
       "side": 1,
       "message": "unused?",
+      "range": {
+        "startLine": 182,
+        "startChar": 0,
+        "endLine": 185,
+        "endChar": 1
+      },
+      "revId": "962611b1d9eb1a49d8f58c9f9fb49e21caf7c42e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f2fc2540_8182ba61",
+        "filename": "ociregistry/ociclient/reader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-02-22T17:23:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a98d479b_2e4b36d9",
       "range": {
         "startLine": 182,
         "startChar": 0,
