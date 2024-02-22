@@ -83,6 +83,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8906bb5c_819ad20b",
+        "filename": "ociregistry/ociclient/reader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-22T17:39:34Z",
+      "side": 1,
+      "message": "Oops, you\u0027re right.",
+      "parentUuid": "64f7ae4b_a921f0de",
+      "range": {
+        "startLine": 152,
+        "startChar": 30,
+        "endLine": 152,
+        "endChar": 41
+      },
+      "revId": "962611b1d9eb1a49d8f58c9f9fb49e21caf7c42e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3c4e3d36_8790e398",
@@ -114,6 +138,24 @@
       "side": 1,
       "message": "I started doing this, but when trying to formulate an appropriate message, I ended up not entirely sure. The two requests are almost identical and from a caller\u0027s perspective, both could be used as part of the GetTag implementation - the error messages could apply equally to both. In other words, if a HEAD request fails, I\u0027m not sure that the resulting error would be particularly weird or out-of-context with respect to what the caller is expecting, because essentially it\u0027s asking for exactly the same information as the GET request, just a bit less of it.\n\nIf we had a nice way to add a level of source stack information without affecting the error message, I\u0027d do that, but as is I think it\u0027s probably better to leave the messages as is - any HTTP logs used to see what\u0027s going on underneath should make it clear what\u0027s going on.",
       "parentUuid": "3c4e3d36_8790e398",
+      "revId": "962611b1d9eb1a49d8f58c9f9fb49e21caf7c42e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b52108f8_f72a27ff",
+        "filename": "ociregistry/ociclient/reader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-22T17:39:34Z",
+      "side": 1,
+      "message": "ack",
+      "parentUuid": "49622a72_1df1a2a3",
       "revId": "962611b1d9eb1a49d8f58c9f9fb49e21caf7c42e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
