@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f77d783_e38ee59c",
+        "filename": "ociregistry/ociclient/reader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-22T13:28:58Z",
+      "side": 1,
+      "message": "did you arrive at this number with any sort of reasoning, e.g. \"CUE module archive manifests are usually around X kilobytes, and Docker image archive manifests around Y kilobytes\"? if so, I would briefly document that for posterity",
+      "revId": "962611b1d9eb1a49d8f58c9f9fb49e21caf7c42e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "712b072a_79eb60ef",
+        "filename": "ociregistry/ociclient/reader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-22T13:28:58Z",
+      "side": 1,
+      "message": "shouldn\u0027t LimitReader use inMemThreshold here as the actual limit? otherwise the server could presumably lie about the size and serve you a gigabyte, and you\u0027d read the entire thing before realizing in line 156 that there is a mismatch.\n\nif the client already ensures that desc.Size is correct, then I take that back, but perhaps document it. Either way I think it would be safer to use our hard limit with LimitReader.",
+      "range": {
+        "startLine": 152,
+        "startChar": 30,
+        "endLine": 152,
+        "endChar": 41
+      },
+      "revId": "962611b1d9eb1a49d8f58c9f9fb49e21caf7c42e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3c4e3d36_8790e398",
+        "filename": "ociregistry/ociclient/reader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-22T13:28:58Z",
+      "side": 1,
+      "message": "nit: these two `return nil, err` errors should gain a bit of context, because this HEAD request is a bit of a special case that warrants extra context in case of a weird error.",
+      "revId": "962611b1d9eb1a49d8f58c9f9fb49e21caf7c42e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a98d479b_2e4b36d9",
+        "filename": "ociregistry/ociclient/reader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-22T13:28:58Z",
+      "side": 1,
+      "message": "unused?",
+      "range": {
+        "startLine": 182,
+        "startChar": 0,
+        "endLine": 185,
+        "endChar": 1
+      },
+      "revId": "962611b1d9eb1a49d8f58c9f9fb49e21caf7c42e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
