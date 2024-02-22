@@ -26,7 +26,7 @@ import (
 	"cuelabs.dev/go/oci/ociregistry/internal/ocirequest"
 )
 
-func (c *client) Repositories(ctx context.Context) ociregistry.Iter[string] {
+func (c *client) Repositories(ctx context.Context) ociregistry.Seq[string] {
 	// TODO paging
 	resp, err := c.doRequest(ctx, &ocirequest.Request{
 		Kind:  ocirequest.ReqCatalogList,
@@ -50,7 +50,7 @@ func (c *client) Repositories(ctx context.Context) ociregistry.Iter[string] {
 	return ociregistry.SliceIter(catalog.Repos)
 }
 
-func (c *client) Tags(ctx context.Context, repoName string) ociregistry.Iter[string] {
+func (c *client) Tags(ctx context.Context, repoName string) ociregistry.Seq[string] {
 	resp, err := c.doRequest(ctx, &ocirequest.Request{
 		Kind:  ocirequest.ReqTagsList,
 		Repo:  repoName,
@@ -76,7 +76,7 @@ func (c *client) Tags(ctx context.Context, repoName string) ociregistry.Iter[str
 	return ociregistry.SliceIter(tagsResponse.Tags)
 }
 
-func (c *client) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, artifactType string) ociregistry.Iter[ociregistry.Descriptor] {
+func (c *client) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, artifactType string) ociregistry.Seq[ociregistry.Descriptor] {
 	// TODO paging
 	resp, err := c.doRequest(ctx, &ocirequest.Request{
 		Kind:   ocirequest.ReqReferrersList,

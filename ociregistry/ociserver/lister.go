@@ -113,7 +113,7 @@ func (r *registry) handleCatalogList(ctx context.Context, resp http.ResponseWrit
 }
 
 // TODO: implement handling of artifactType querystring
-func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) (_err error) {
 	if r.opts.DisableReferrersAPI {
 		return withHTTPCode(http.StatusNotFound, fmt.Errorf("referrers API has been disabled"))
 	}
@@ -125,15 +125,17 @@ func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWr
 
 	// TODO support artifactType filtering
 	it := r.backend.Referrers(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest), "")
-	for {
-		desc, ok := it.Next()
-		if !ok {
-			break
+	// TODO(go1.23) for desc, err := range it {
+	it(func(desc ociregistry.Descriptor, err error) bool {
+		if err != nil {
+			_err = err
+			return false
 		}
 		im.Manifests = append(im.Manifests, desc)
-	}
-	if err := it.Error(); err != nil {
-		return err
+		return true
+	})
+	if _err != nil {
+		return _err
 	}
 	msg, err := json.Marshal(im)
 	if err != nil {
