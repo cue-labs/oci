@@ -139,20 +139,30 @@ func (r *subRegistry) DeleteTag(ctx context.Context, repo string, name string) e
 	return r.r.DeleteTag(ctx, r.repo(repo), name)
 }
 
-func (r *subRegistry) Repositories(ctx context.Context) ociregistry.Iter[string] {
+func (r *subRegistry) Repositories(ctx context.Context) ociregistry.Seq[string] {
 	ctx = r.mapScopes(ctx)
-	return &subRegistryIter{
-		pr:   r,
-		iter: r.r.Repositories(ctx),
+	p := r.prefix + "/"
+	return func(yield func(string, error) bool) {
+		// TODO(go1.23): for name, err := range r.r.Repositories(ctx)
+		r.r.Repositories(ctx)(func(repo string, err error) bool {
+			if err != nil {
+				yield("", err)
+				return false
+			}
+			if p, ok := strings.CutPrefix(repo, p); ok {
+				return yield(p, nil)
+			}
+			return true
+		})
 	}
 }
 
-func (r *subRegistry) Tags(ctx context.Context, repo string) ociregistry.Iter[string] {
+func (r *subRegistry) Tags(ctx context.Context, repo string) ociregistry.Seq[string] {
 	ctx = r.mapScopes(ctx)
 	return r.r.Tags(ctx, r.repo(repo))
 }
 
-func (r *subRegistry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) ociregistry.Iter[ociregistry.Descriptor] {
+func (r *subRegistry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) ociregistry.Seq[ociregistry.Descriptor] {
 	ctx = r.mapScopes(ctx)
 	return r.r.Referrers(ctx, r.repo(repo), digest, artifactType)
 }
@@ -186,30 +196,4 @@ func (r *subRegistry) repo(name string) string {
 		return ""
 	}
 	return path.Join(r.prefix, name)
-}
-
-type subRegistryIter struct {
-	pr   *subRegistry
-	iter ociregistry.Iter[string]
-}
-
-func (it *subRegistryIter) Close() {
-	it.iter.Close()
-}
-
-func (it *subRegistryIter) Next() (string, bool) {
-	p := it.pr.prefix + "/"
-	for {
-		x, ok := it.iter.Next()
-		if !ok {
-			return "", false
-		}
-		if p, ok := strings.CutPrefix(x, p); ok {
-			return p, true
-		}
-	}
-}
-
-func (it *subRegistryIter) Error() error {
-	return it.iter.Error()
 }

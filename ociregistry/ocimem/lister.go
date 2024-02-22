@@ -21,13 +21,13 @@ import (
 	"cuelabs.dev/go/oci/ociregistry"
 )
 
-func (r *Registry) Repositories(ctx context.Context) ociregistry.Iter[string] {
+func (r *Registry) Repositories(ctx context.Context) ociregistry.Seq[string] {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return mapKeysIter(r.repos, stringLess)
 }
 
-func (r *Registry) Tags(ctx context.Context, repoName string) ociregistry.Iter[string] {
+func (r *Registry) Tags(ctx context.Context, repoName string) ociregistry.Seq[string] {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	repo, err := r.repo(repoName)
@@ -37,7 +37,7 @@ func (r *Registry) Tags(ctx context.Context, repoName string) ociregistry.Iter[s
 	return mapKeysIter(repo.tags, stringLess)
 }
 
-func (r *Registry) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, artifactType string) ociregistry.Iter[ociregistry.Descriptor] {
+func (r *Registry) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, artifactType string) ociregistry.Seq[ociregistry.Descriptor] {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	repo, err := r.repo(repoName)
@@ -58,7 +58,7 @@ func (r *Registry) Referrers(ctx context.Context, repoName string, digest ocireg
 	return ociregistry.SliceIter(referrers)
 }
 
-func mapKeysIter[K comparable, V any](m map[K]V, less func(K, K) bool) ociregistry.Iter[K] {
+func mapKeysIter[K comparable, V any](m map[K]V, less func(K, K) bool) ociregistry.Seq[K] {
 	ks := make([]K, 0, len(m))
 	for k := range m {
 		ks = append(ks, k)
