@@ -23,7 +23,7 @@ import (
 
 var mergeIterTests = []struct {
 	testName string
-	it0, it1 ociregistry.Iter[int]
+	it0, it1 ociregistry.Seq[int]
 	want     []int
 	wantErr  error
 }{{

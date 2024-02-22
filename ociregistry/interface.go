@@ -212,18 +212,18 @@ type Deleter interface {
 type Lister interface {
 	// Repositories returns an iterator that can be used to iterate over all the repositories
 	// in the registry.
-	Repositories(ctx context.Context) Iter[string]
+	Repositories(ctx context.Context) Seq[string]
 
 	// Tags returns an iterator that can be used to iterate over all the tags
 	// in the given repository.
-	Tags(ctx context.Context, repo string) Iter[string]
+	Tags(ctx context.Context, repo string) Seq[string]
 
 	// Referrers returns an iterator that can be used to iterate over all
 	// the manifests that have the given digest as their Subject.
 	// If artifactType is non-zero, the results will be restricted to
 	// only manifests with that type.
 	// TODO is it possible to ask for multiple artifact types?
-	Referrers(ctx context.Context, repo string, digest Digest, artifactType string) Iter[Descriptor]
+	Referrers(ctx context.Context, repo string, digest Digest, artifactType string) Seq[Descriptor]
 }
 
 // BlobWriter provides a handle for uploading a blob to a registry.

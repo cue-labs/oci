@@ -150,48 +150,32 @@ func (r *selectRegistry) DeleteTag(ctx context.Context, repo string, name string
 	return r.r.DeleteTag(ctx, repo, name)
 }
 
-func (r *selectRegistry) Repositories(ctx context.Context) ociregistry.Iter[string] {
-	return &filterIter[string]{
-		allow: r.allow,
-		iter:  r.r.Repositories(ctx),
+func (r *selectRegistry) Repositories(ctx context.Context) ociregistry.Seq[string] {
+	return func(yield func(string, error) bool) {
+		// TODO(go1.23): for name, err := range r.r.Repositories(ctx)
+		r.r.Repositories(ctx)(func(repo string, err error) bool {
+			if err != nil {
+				yield("", err)
+				return false
+			}
+			if !r.allow(repo) {
+				return true
+			}
+			return yield(repo, nil)
+		})
 	}
 }
 
-func (r *selectRegistry) Tags(ctx context.Context, repo string) ociregistry.Iter[string] {
+func (r *selectRegistry) Tags(ctx context.Context, repo string) ociregistry.Seq[string] {
 	if !r.allow(repo) {
 		return ociregistry.ErrorIter[string](ociregistry.ErrNameUnknown)
 	}
 	return r.r.Tags(ctx, repo)
 }
 
-func (r *selectRegistry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) ociregistry.Iter[ociregistry.Descriptor] {
+func (r *selectRegistry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) ociregistry.Seq[ociregistry.Descriptor] {
 	if !r.allow(repo) {
 		return ociregistry.ErrorIter[ociregistry.Descriptor](ociregistry.ErrNameUnknown)
 	}
 	return r.r.Referrers(ctx, repo, digest, artifactType)
-}
-
-type filterIter[T any] struct {
-	allow func(T) bool
-	iter  ociregistry.Iter[T]
-}
-
-func (it *filterIter[T]) Close() {
-	it.iter.Close()
-}
-
-func (it *filterIter[T]) Next() (T, bool) {
-	for {
-		x, ok := it.iter.Next()
-		if !ok {
-			return *new(T), false
-		}
-		if it.allow(x) {
-			return x, true
-		}
-	}
-}
-
-func (it *filterIter[T]) Error() error {
-	return it.iter.Error()
 }
