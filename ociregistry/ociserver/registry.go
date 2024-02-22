@@ -62,6 +62,12 @@ type Options struct {
 	// page size > 1000.
 	MaxListPageSize int
 
+	// OmitDigestFromTagGetResponse causes the registry
+	// to omit the Docker-Content-Digest header from a tag
+	// GET response, mimicking the behavior of registries that
+	// do the same (for example AWS ECR).
+	OmitDigestFromTagGetResponse bool
+
 	// LocationForUploadID transforms an upload ID as returned by
 	// ocirequest.BlobWriter.ID to the absolute URL location
 	// as returned by the upload endpoints.

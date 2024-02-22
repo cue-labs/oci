@@ -126,7 +126,9 @@ func (r *registry) handleManifestGet(ctx context.Context, resp http.ResponseWrit
 		return err
 	}
 	desc := mr.Descriptor()
-	resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
+	if !r.opts.OmitDigestFromTagGetResponse {
+		resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
+	}
 	resp.Header().Set("Content-Type", desc.MediaType)
 	resp.Header().Set("Content-Length", fmt.Sprint(desc.Size))
 	resp.WriteHeader(http.StatusOK)

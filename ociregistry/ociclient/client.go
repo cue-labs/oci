@@ -127,18 +127,12 @@ type client struct {
 	listPageSize int
 }
 
+// descriptorFromResponse tries to form a descriptor from an HTTP response,
+// filling in the Digest field using knownDigest if it's not present.
+//
+// Note: this implies that the Digest field will be empty if there is no
+// digest in the response and knownDigest is empty.
 func descriptorFromResponse(resp *http.Response, knownDigest digest.Digest, requireSize bool) (ociregistry.Descriptor, error) {
-	digest := digest.Digest(resp.Header.Get("Docker-Content-Digest"))
-	if digest != "" {
-		if !ociregistry.IsValidDigest(string(digest)) {
-			return ociregistry.Descriptor{}, fmt.Errorf("bad digest %q found in response", digest)
-		}
-	} else {
-		if knownDigest == "" {
-			return ociregistry.Descriptor{}, fmt.Errorf("no digest found in response")
-		}
-		digest = knownDigest
-	}
 	contentType := resp.Header.Get("Content-Type")
 	if contentType == "" {
 		contentType = "application/octet-stream"
@@ -165,6 +159,14 @@ func descriptorFromResponse(resp *http.Response, knownDigest digest.Digest, requ
 			}
 			size = resp.ContentLength
 		}
+	}
+	digest := digest.Digest(resp.Header.Get("Docker-Content-Digest"))
+	if digest != "" {
+		if !ociregistry.IsValidDigest(string(digest)) {
+			return ociregistry.Descriptor{}, fmt.Errorf("bad digest %q found in response", digest)
+		}
+	} else {
+		digest = knownDigest
 	}
 	return ociregistry.Descriptor{
 		Digest:    digest,
