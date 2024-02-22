@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "42e622db_596be3b8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-22T13:23:19Z",
+      "side": 1,
+      "message": "should ociserver also use a default maximum for serving requests? I slightly worry if in many months we have a CUE module with a million versions, and an end user can make valid requests which use a large amount of database resources and memory due to the huge list, akin to an allowed DoS.",
+      "revId": "956066ec199beef68610b401243d0e86cb6dd85e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
