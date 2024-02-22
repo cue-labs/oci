@@ -15,12 +15,15 @@
 package ociclient
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 
 	"cuelabs.dev/go/oci/ociregistry"
 	"cuelabs.dev/go/oci/ociregistry/internal/ocirequest"
+	"github.com/opencontainers/go-digest"
 )
 
 func (c *client) GetBlob(ctx context.Context, repo string, digest ociregistry.Digest) (ociregistry.BlobReader, error) {
@@ -114,6 +117,12 @@ func (c *client) GetTag(ctx context.Context, repo string, tagName string) (ocire
 	})
 }
 
+// inMemThreshold holds the maximum number of bytes
+// of manifest content that we'll hold in memory
+// to obtain a digest before falling back do doing a HEAD
+// request.
+const inMemThreshold = 128 * 1024
+
 func (c *client) read(ctx context.Context, rreq *ocirequest.Request) (_ ociregistry.BlobReader, _err error) {
 	resp, err := c.doRequest(ctx, rreq)
 	if err != nil {
@@ -124,5 +133,53 @@ func (c *client) read(ctx context.Context, rreq *ocirequest.Request) (_ ociregis
 	if err != nil {
 		return nil, fmt.Errorf("invalid descriptor in response: %v", err)
 	}
+	if desc.Digest == "" {
+		// Returning a digest isn't mandatory according to the spec, and
+		// at least one registry (AWS's ECR) fails to return a digest
+		// when doing a GET of a tag.
+		// We know the request must be a tag-getting
+		// request because all other requests take a digest not a tag
+		// but sanity check anyway.
+		if rreq.Kind != ocirequest.ReqManifestGet {
+			return nil, fmt.Errorf("internal error: no digest available for non-tag request")
+		}
+
+		// If the manifest is of a reasonable size, just read it into memory
+		// and calculate the digest that way, otherwise issue a HEAD
+		// request which should hopefully (and does in the ECR case)
+		// give us the digest we need.
+		if desc.Size <= inMemThreshold {
+			data, err := io.ReadAll(io.LimitReader(resp.Body, desc.Size+1))
+			if err != nil {
+				return nil, fmt.Errorf("failed to read body to determine digest: %v", err)
+			}
+			if int64(len(data)) != desc.Size {
+				return nil, fmt.Errorf("body size mismatch")
+			}
+			desc.Digest = digest.FromBytes(data)
+			resp.Body.Close()
+			resp.Body = io.NopCloser(bytes.NewReader(data))
+		} else {
+			rreq1 := rreq
+			rreq1.Kind = ocirequest.ReqManifestHead
+			resp1, err := c.doRequest(ctx, rreq1)
+			if err != nil {
+				return nil, err
+			}
+			resp1.Body.Close()
+			desc, err = descriptorFromResponse(resp1, "", true)
+			if err != nil {
+				return nil, err
+			}
+			if desc.Digest == "" {
+				return nil, fmt.Errorf("no digest header found in response")
+			}
+		}
+	}
 	return newBlobReader(resp.Body, desc), nil
+}
+
+type errorReader struct {
+	buf []byte
+	err error
 }

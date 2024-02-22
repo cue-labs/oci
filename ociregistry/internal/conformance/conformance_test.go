@@ -22,11 +22,13 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"os/exec"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/go-quicktest/qt"
@@ -81,6 +83,21 @@ func TestClientAsProxyWithMaxPageSize(t *testing.T) {
 		proxy := httptest.NewServer(ociserver.New(mustNewOCIClient(direct.URL, nil), &ociserver.Options{
 			DebugID:         "proxy",
 			MaxListPageSize: 1000,
+		}))
+		t.Cleanup(proxy.Close)
+		return proxy.URL
+	})
+}
+
+func TestClientAsProxyWithOmittedTagGetDigest(t *testing.T) {
+	runTests(t, func(t *testing.T) string {
+		direct := httptest.NewServer(ociserver.New(ocimem.New(), &ociserver.Options{
+			DebugID:                      "direct",
+			OmitDigestFromTagGetResponse: true,
+		}))
+		t.Cleanup(direct.Close)
+		proxy := httptest.NewServer(ociserver.New(mustNewOCIClient(direct.URL, nil), &ociserver.Options{
+			DebugID: "proxy",
 		}))
 		t.Cleanup(proxy.Close)
 		return proxy.URL
@@ -164,6 +181,9 @@ var extraTests = []struct {
 }, {
 	testName: "referrers",
 	run:      testReferrers,
+}, {
+	testName: "largeManifest",
+	run:      testLargeManifest,
 }}
 
 // testExtra runs a bunch of extra tests of functionality that isn't
@@ -255,6 +275,38 @@ func testReferrers(t *testing.T, client *remote.Registry) {
 	sortDescriptors(wantReferrers)
 	qt.Assert(t, qt.DeepEquals(gotReferrers, wantReferrers))
 
+}
+
+func testLargeManifest(t *testing.T, client *remote.Registry) {
+	ctx := context.Background()
+	repo, err := client.Repository(ctx, "some/repo")
+	qt.Assert(t, qt.IsNil(err))
+	configDesc := push(t, repo.Blobs(), "application/json", []byte("{}"))
+	layer0Desc := push(t, repo.Blobs(), "", []byte("some content"))
+	manifestDesc := pushJSON(t, repo.Manifests(), ocispec.MediaTypeImageManifest, ociregistry.Manifest{
+		MediaType: ocispec.MediaTypeImageManifest,
+		Config:    withMediaType(configDesc, "artifact1"),
+		Layers:    []ociregistry.Descriptor{layer0Desc},
+		Annotations: map[string]string{
+			// Note: this is larger than ociclient.inMemThreshold
+			// to force that code to hit the non-buffered code path.
+			"somethingLarge": strings.Repeat("a", 256*1024),
+		},
+	})
+	err = repo.Manifests().Tag(ctx, manifestDesc, "someTag")
+	qt.Assert(t, qt.IsNil(err))
+
+	// The ORAS API doesn't seem to provide any API to fetch
+	// a manifest directly by tag, so use the HTTP client directly.
+	req, err := http.NewRequest("GET", "http://"+client.Reference.Registry+"/v2/some/repo/manifests/someTag", nil)
+	qt.Assert(t, qt.IsNil(err))
+	resp, err := http.DefaultClient.Do(req)
+	qt.Assert(t, qt.IsNil(err))
+	data, err := io.ReadAll(resp.Body)
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusOK), qt.Commentf("response body: %q", data))
+	qt.Assert(t, qt.Equals(digest.FromBytes(data), manifestDesc.Digest))
+	qt.Assert(t, qt.Equals(int64(len(data)), manifestDesc.Size))
 }
 
 var extraWithLocalClientTests = []struct {
