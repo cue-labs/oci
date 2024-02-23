@@ -18,6 +18,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bcbd8f24_980119a0",
+        "filename": "ociregistry/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-02-23T15:37:48Z",
+      "side": 1,
+      "message": "That thought had also been running through my head, but I\u0027d reckoned that it probably wasn\u0027t worth adding so much to the API without first knowing what the underlying protocol might look like. For example, would we want a different ListOptions struct for each iterator-returning method? \n\nIn the end, I think we could add methods with options without breaking compatibility (because everyone must embed ociregistry.Funcs which can implement the options-based methods in terms of the original) so I don\u0027t think we need to do this now.",
+      "parentUuid": "b74288a8_7f5089b8",
+      "revId": "289f8ca5624b5e91426366a58a14a674871869dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e2502a9c_2c9fef07",
@@ -31,6 +49,30 @@
       "writtenOn": "2024-02-23T14:48:26Z",
       "side": 1,
       "message": "mixing tabs and spaces?",
+      "range": {
+        "startLine": 130,
+        "startChar": 6,
+        "endLine": 130,
+        "endChar": 8
+      },
+      "revId": "289f8ca5624b5e91426366a58a14a674871869dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "74d05b23_35298703",
+        "filename": "ociregistry/ociclient/lister.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-02-23T15:37:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e2502a9c_2c9fef07",
       "range": {
         "startLine": 130,
         "startChar": 6,
