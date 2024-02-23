@@ -39,7 +39,7 @@ import (
 
 // debug enables logging.
 // TODO this should be configurable in the API.
-const debug = false
+const debug = true
 
 type Options struct {
 	// DebugID is used to prefix any log messages printed by the client.

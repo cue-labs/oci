@@ -88,13 +88,13 @@ func TestAuthScopes(t *testing.T) {
 		r.DeleteTag(ctx, "foo/bar", "sometag")
 	})
 	assertScope("registry:catalog:*", func(ctx context.Context, r ociregistry.Interface) {
-		r.Repositories(ctx)
+		ociregistry.All(r.Repositories(ctx, ""))
 	})
 	assertScope("repository:foo/bar:pull", func(ctx context.Context, r ociregistry.Interface) {
-		r.Tags(ctx, "foo/bar")
+		ociregistry.All(r.Tags(ctx, "foo/bar", ""))
 	})
 	assertScope("repository:foo/bar:pull", func(ctx context.Context, r ociregistry.Interface) {
-		r.Referrers(ctx, "foo/bar", "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "")
+		ociregistry.All(r.Referrers(ctx, "foo/bar", "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", ""))
 	})
 }
 
@@ -110,6 +110,7 @@ func assertAuthScope(t *testing.T, host string, scope string, f func(ctx context
 	client, err := New(host, &Options{
 		Insecure: true,
 		Authorizer: authorizerFunc(func(req *http.Request, scope ociauth.Scope) (*http.Response, error) {
+			t.Logf("got request %s %s, scope %v", req.Method, req.URL, scope)
 			qt.Check(t, qt.Equals(req.Context().Value(foo{}), true))
 			requestedScopes[scope.Canonical().String()] = true
 			return http.DefaultClient.Do(req)

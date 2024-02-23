@@ -98,7 +98,7 @@ func TestSub(t *testing.T) {
 	b1Content := getBlob(t, r1.R, "bar", m.Layers[0].Digest)
 	qt.Assert(t, qt.Equals(string(b1Content), "hello"))
 
-	repos, err := ociregistry.All(r1.R.Repositories(ctx))
+	repos, err := ociregistry.All(r1.R.Repositories(ctx, ""))
 	qt.Assert(t, qt.IsNil(err))
 	sort.Strings(repos)
 	qt.Assert(t, qt.DeepEquals(repos, []string{"bar"}))
