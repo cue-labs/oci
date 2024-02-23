@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b74288a8_7f5089b8",
+        "filename": "ociregistry/interface.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-23T14:48:26Z",
+      "side": 1,
+      "message": "I wonder if we should bite the bullet and start using a ListOptions struct, because there\u0027s a decent chance that we will need more options relating to listing or paginating, such as \"give me only N items\", \"stop at\", or \"filter by prefix\", if the spec moves in that direction in the future.\n\nNot a big deal either way, but listing/pagination tends to always gain more knobs over time, so we could avoid further breakage down the line.",
+      "revId": "289f8ca5624b5e91426366a58a14a674871869dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e2502a9c_2c9fef07",
+        "filename": "ociregistry/ociclient/lister.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-23T14:48:26Z",
+      "side": 1,
+      "message": "mixing tabs and spaces?",
+      "range": {
+        "startLine": 130,
+        "startChar": 6,
+        "endLine": 130,
+        "endChar": 8
+      },
+      "revId": "289f8ca5624b5e91426366a58a14a674871869dc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
