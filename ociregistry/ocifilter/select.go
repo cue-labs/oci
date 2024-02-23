@@ -150,10 +150,10 @@ func (r *selectRegistry) DeleteTag(ctx context.Context, repo string, name string
 	return r.r.DeleteTag(ctx, repo, name)
 }
 
-func (r *selectRegistry) Repositories(ctx context.Context) ociregistry.Seq[string] {
+func (r *selectRegistry) Repositories(ctx context.Context, startAfter string) ociregistry.Seq[string] {
 	return func(yield func(string, error) bool) {
 		// TODO(go1.23): for name, err := range r.r.Repositories(ctx)
-		r.r.Repositories(ctx)(func(repo string, err error) bool {
+		r.r.Repositories(ctx, startAfter)(func(repo string, err error) bool {
 			if err != nil {
 				yield("", err)
 				return false
@@ -166,11 +166,11 @@ func (r *selectRegistry) Repositories(ctx context.Context) ociregistry.Seq[strin
 	}
 }
 
-func (r *selectRegistry) Tags(ctx context.Context, repo string) ociregistry.Seq[string] {
+func (r *selectRegistry) Tags(ctx context.Context, repo, startAfter string) ociregistry.Seq[string] {
 	if !r.allow(repo) {
 		return ociregistry.ErrorIter[string](ociregistry.ErrNameUnknown)
 	}
-	return r.r.Tags(ctx, repo)
+	return r.r.Tags(ctx, repo, startAfter)
 }
 
 func (r *selectRegistry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) ociregistry.Seq[ociregistry.Descriptor] {

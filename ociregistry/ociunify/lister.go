@@ -23,16 +23,16 @@ import (
 	"cuelabs.dev/go/oci/ociregistry"
 )
 
-func (u unifier) Repositories(ctx context.Context) ociregistry.Seq[string] {
+func (u unifier) Repositories(ctx context.Context, startAfter string) ociregistry.Seq[string] {
 	r0, r1 := both(u, func(r ociregistry.Interface, _ int) ociregistry.Seq[string] {
-		return r.Repositories(ctx)
+		return r.Repositories(ctx, startAfter)
 	})
 	return mergeIter(r0, r1, strings.Compare)
 }
 
-func (u unifier) Tags(ctx context.Context, repo string) ociregistry.Seq[string] {
+func (u unifier) Tags(ctx context.Context, repo, startAfter string) ociregistry.Seq[string] {
 	r0, r1 := both(u, func(r ociregistry.Interface, _ int) ociregistry.Seq[string] {
-		return r.Tags(ctx, repo)
+		return r.Tags(ctx, repo, startAfter)
 	})
 	return mergeIter(r0, r1, strings.Compare)
 }

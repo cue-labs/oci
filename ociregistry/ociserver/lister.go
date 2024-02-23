@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sort"
+	"net/url"
 	"strconv"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -29,6 +29,8 @@ import (
 	"cuelabs.dev/go/oci/ociregistry"
 	"cuelabs.dev/go/oci/ociregistry/internal/ocirequest"
 )
+
+const maxPageSize = 10000
 
 type catalog struct {
 	Repos []string `json:"repositories"`
@@ -40,65 +42,27 @@ type listTags struct {
 }
 
 func (r *registry) handleTagsList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	// TODO we should be able to tell the backend to
-	// start from a particular position to avoid fetching
-	// all tags every time.
-	tags, err := ociregistry.All(r.backend.Tags(ctx, rreq.Repo))
+	tags, link, err := r.nextListResults(req, rreq, r.backend.Tags(ctx, rreq.Repo, rreq.ListLast))
 	if err != nil {
 		return err
 	}
-	sort.Strings(tags)
-
-	// https://github.com/opencontainers/distribution-spec/blob/b505e9cc53ec499edbd9c1be32298388921bb705/detail.md#tags-paginated
-	// Offset using last query parameter.
-	if last := req.URL.Query().Get("last"); last != "" {
-		for i, t := range tags {
-			if t > last {
-				tags = tags[i:]
-				break
-			}
-		}
-	}
-
-	// Limit using n query parameter.
-	// TODO can't we use rreq.ListN instead of looking at the query parameter directly?
-	if ns := req.URL.Query().Get("n"); ns != "" {
-		if n, err := strconv.Atoi(ns); err != nil {
-			return ociregistry.NewError("invalid value for query parameter n", ociregistry.ErrUnsupported.Code(), nil)
-		} else if r.opts.MaxListPageSize > 0 && n > r.opts.MaxListPageSize {
-			return ociregistry.NewError(fmt.Sprintf("query parameter n is too large (n=%d, max=%d)", n, r.opts.MaxListPageSize), ociregistry.ErrUnsupported.Code(), nil)
-		} else if n < len(tags) {
-			tags = tags[:n]
-		}
-	}
-
-	tagsToList := listTags{
+	msg, _ := json.Marshal(listTags{
 		Name: rreq.Repo,
 		Tags: tags,
+	})
+	if link != "" {
+		resp.Header().Set("Link", link)
 	}
-
-	msg, _ := json.Marshal(tagsToList)
-	resp.Header().Set("Content-Length", fmt.Sprint(len(msg)))
+	resp.Header().Set("Content-Length", strconv.Itoa(len(msg)))
 	resp.WriteHeader(http.StatusOK)
-	io.Copy(resp, bytes.NewReader([]byte(msg)))
+	resp.Write(msg)
 	return nil
 }
 
-func (r *registry) handleCatalogList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	if r.opts.MaxListPageSize > 0 && rreq.ListN > r.opts.MaxListPageSize {
-		return ociregistry.NewError(fmt.Sprintf("query parameter n is too large (n=%d, max=%d)", rreq.ListN, r.opts.MaxListPageSize), ociregistry.ErrUnsupported.Code(), nil)
-	}
-	n := 10000
-	if rreq.ListN >= 0 {
-		n = rreq.ListN
-	}
-	repos, err := ociregistry.All(r.backend.Repositories(ctx))
+func (r *registry) handleCatalogList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) (_err error) {
+	repos, link, err := r.nextListResults(req, rreq, r.backend.Repositories(ctx, rreq.ListLast))
 	if err != nil {
 		return err
-	}
-	// TODO: implement pagination
-	if len(repos) > n {
-		repos = repos[:n]
 	}
 	msg, err := json.Marshal(catalog{
 		Repos: repos,
@@ -106,7 +70,10 @@ func (r *registry) handleCatalogList(ctx context.Context, resp http.ResponseWrit
 	if err != nil {
 		return err
 	}
-	resp.Header().Set("Content-Length", fmt.Sprint(len(msg)))
+	if link != "" {
+		resp.Header().Set("Link", link)
+	}
+	resp.Header().Set("Content-Length", strconv.Itoa(len(msg)))
 	resp.WriteHeader(http.StatusOK)
 	io.Copy(resp, bytes.NewReader([]byte(msg)))
 	return nil
@@ -141,9 +108,63 @@ func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWr
 	if err != nil {
 		return err
 	}
-	resp.Header().Set("Content-Length", fmt.Sprint(len(msg)))
+	resp.Header().Set("Content-Length", strconv.Itoa(len(msg)))
 	resp.Header().Set("Content-Type", "application/vnd.oci.image.index.v1+json")
 	resp.WriteHeader(http.StatusOK)
 	resp.Write(msg)
 	return nil
+}
+
+func (r *registry) nextListResults(req *http.Request, rreq *ocirequest.Request, itemsIter ociregistry.Seq[string]) (items []string, link string, _err error) {
+	if r.opts.MaxListPageSize > 0 && rreq.ListN > r.opts.MaxListPageSize {
+		return nil, "", ociregistry.NewError(fmt.Sprintf("query parameter n is too large (n=%d, max=%d)", rreq.ListN, r.opts.MaxListPageSize), ociregistry.ErrUnsupported.Code(), nil)
+	}
+	n := rreq.ListN
+	if n <= 0 {
+		n = maxPageSize
+	}
+	truncated := false
+	// TODO(go1.23) for repo, err := range itemsIter {
+	itemsIter(func(item string, err error) bool {
+		if err != nil {
+			_err = err
+			return false
+		}
+		if rreq.ListN > 0 && len(items) >= rreq.ListN {
+			truncated = true
+			return false
+		}
+		// TODO we might want some way to limit on the total number
+		// of items returned in the absence of a ListN limit.
+		items = append(items, item)
+		// TODO sanity check that the items are in lexical order?
+		return true
+	})
+	if _err != nil {
+		return nil, "", _err
+	}
+	if truncated && !r.opts.OmitLinkHeaderFromResponses {
+		link = r.makeNextLink(req, items[len(items)-1])
+	}
+	return items, link, nil
+}
+
+// makeNextLink returns an RFC 5988 Link value suitable for
+// providing the next URL in a chain of list page results,
+// starting after the given "startAfter" item.
+// TODO this assumes that req.URL.Path is the actual
+// path that the client used to access the server. This might
+// not necessarily be true, so maybe it would be better to
+// use a path-relative URL instead, although that's trickier
+// to arrange.
+func (r *registry) makeNextLink(req *http.Request, startAfter string) string {
+	// Use the "next" relation type:
+	// See https://html.spec.whatwg.org/multipage/links.html#link-type-next
+	query := req.URL.Query()
+	query.Set("last", startAfter)
+	u := &url.URL{
+		Path:     req.URL.Path,
+		RawQuery: query.Encode(),
+	}
+	return fmt.Sprintf(`<%v>;rel="next"`, u)
 }
