@@ -68,6 +68,10 @@ type Options struct {
 	// do the same (for example AWS ECR).
 	OmitDigestFromTagGetResponse bool
 
+	// OmitLinkHeaderFromResponses causes the server
+	// to leave out the Link header from list responses.
+	OmitLinkHeaderFromResponses bool
+
 	// LocationForUploadID transforms an upload ID as returned by
 	// ocirequest.BlobWriter.ID to the absolute URL location
 	// as returned by the upload endpoints.
