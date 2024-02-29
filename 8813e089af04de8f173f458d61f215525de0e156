@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "39a6afa7_51b3f64a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-02-29T18:38:34Z",
+      "side": 1,
+      "message": "I assume you discarded a config struct parameter? perhaps mention why in the commit message",
+      "revId": "8813e089af04de8f173f458d61f215525de0e156",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
