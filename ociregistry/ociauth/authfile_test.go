@@ -22,8 +22,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestLoadWithNoConfig(t *testing.T) {
-	qt.Patch(t, &osUserHomeDir, func() (string, error) {
-		return os.Getenv("HOME"), nil
+	qt.Patch(t, &userHomeDir, func(getenv func(string) string) string {
+		return getenv("HOME")
 	})
 	t.Setenv("HOME", "")
 	t.Setenv("DOCKER_CONFIG", "")
@@ -39,8 +39,8 @@ func TestLoad(t *testing.T) {
 	// Write config files in all the places, so we can check
 	// that the precedence works OK.
 	d := t.TempDir()
-	qt.Patch(t, &osUserHomeDir, func() (string, error) {
-		return os.Getenv("HOME"), nil
+	qt.Patch(t, &userHomeDir, func(getenv func(string) string) string {
+		return getenv("HOME")
 	})
 	locations := []struct {
 		env  string
@@ -289,6 +289,31 @@ func TestWithHelperRegistryOtherError(t *testing.T) {
 	qt.Assert(t, qt.ErrorMatches(err, `error getting credentials: some error`))
 }
 
+func TestWithHelperAndExplicitEnv(t *testing.T) {
+
+	d := t.TempDir()
+	// Note: "test" matches the executable installed using testscript in RunMain.
+	err := os.WriteFile(filepath.Join(d, "config.json"), []byte(`
+{
+	"credHelpers": {
+		"registry-with-env-lookup.com": "test"
+	}
+}
+`), 0o666)
+	qt.Assert(t, qt.IsNil(err))
+	c, err := LoadWithEnv(nil, []string{
+		"DOCKER_CONFIG=" + d,
+		"TEST_SECRET=foo",
+	})
+	qt.Assert(t, qt.IsNil(err))
+	info, err := c.EntryForRegistry("registry-with-env-lookup.com")
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.Equals(info, ConfigEntry{
+		Username: "someuser",
+		Password: "foo",
+	}))
+}
+
 func load(t *testing.T, runner HelperRunner, cfgData string) (Config, error) {
 	d := t.TempDir()
 	t.Setenv("DOCKER_CONFIG", d)
@@ -325,6 +350,12 @@ func helperMain() int {
 	"Secret": "sometoken"
 }
 `)
+	case "registry-with-env-lookup.com":
+		fmt.Printf(`
+{
+	"Username": "someuser",
+	"Secret": ` + fmt.Sprintf("%q", os.Getenv("TEST_SECRET")) + `
+}`)
 	case "registry-with-error.com":
 		fmt.Fprintf(os.Stderr, "some error\n")
 		return 1
