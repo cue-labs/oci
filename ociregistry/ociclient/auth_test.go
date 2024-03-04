@@ -109,20 +109,23 @@ func assertAuthScope(t *testing.T, host string, scope string, f func(ctx context
 
 	client, err := New(host, &Options{
 		Insecure: true,
-		Authorizer: authorizerFunc(func(req *http.Request, scope ociauth.Scope) (*http.Response, error) {
-			qt.Check(t, qt.Equals(req.Context().Value(foo{}), true))
+		Transport: transportFunc(func(req *http.Request) (*http.Response, error) {
+			ctx := req.Context()
+			qt.Check(t, qt.Equals(ctx.Value(foo{}), true))
+			scope := ociauth.RequestInfoFromContext(ctx).RequiredScope
 			requestedScopes[scope.Canonical().String()] = true
-			return http.DefaultClient.Do(req)
+			return http.DefaultTransport.RoundTrip(req)
 		}),
 	})
 	qt.Assert(t, qt.IsNil(err))
 	f(ctx, client)
 	qt.Assert(t, qt.HasLen(requestedScopes, 1))
+	t.Logf("requested scopes: %v", requestedScopes)
 	qt.Assert(t, qt.Equals(maps.Keys(requestedScopes)[0], scope))
 }
 
-type authorizerFunc func(req *http.Request, scope ociauth.Scope) (*http.Response, error)
+type transportFunc func(req *http.Request) (*http.Response, error)
 
-func (f authorizerFunc) DoRequest(req *http.Request, scope ociauth.Scope) (*http.Response, error) {
-	return f(req, scope)
+func (f transportFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
 }

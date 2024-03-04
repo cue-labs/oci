@@ -21,8 +21,11 @@ const oauthClientID = "cuelabs-ociauth"
 // Authorizer defines a way to make authorized requests using the OCI
 // authorization scope mechanism. See [StdAuthorizer] for an implementation
 // that understands the usual OCI authorization mechanisms.
-type Authorizer interface {
-	// DoRequest acquires authorization and invokes the given
+//
+// See [NewScopedHTTPClient] for one way to make a [ScopedHTTPClient]
+// from a regular [http.Client] instance.
+type ScopedHTTPClient interface {
+	// DoWithScope acquires authorization and invokes the given
 	// request. It may invoke the request more than once, and can
 	// use [http.Request.GetBody] to reset the request body if it
 	// gets consumed.
@@ -32,56 +35,71 @@ type Authorizer interface {
 	// inside the context (see [ContextWithScope]) may also be taken
 	// into account when acquiring new tokens.
 	//
-	// It's OK to call AuthorizeRequest concurrently.
-	DoRequest(req *http.Request, requiredScope Scope) (*http.Response, error)
+	// It's OK to call DoWithScope concurrently.
+	DoWithScope(req *http.Request, requiredScope Scope) (*http.Response, error)
+}
+
+// HTTPClient is implemented by [http.Client] and any other type
+// that implements a similar Do method.
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 var ErrNoAuth = fmt.Errorf("no authorization token available to add to request")
 
-// StdAuthorizer implements [Authorizer] using the flows implemented
+// stdTransport implements [http.RoundTripper] by acquiring authorization tokens
+// using the flows implemented
 // by the usual docker clients. Note that this is _not_ documented as
 // part of any official OCI spec.
 //
 // See https://distribution.github.io/distribution/spec/auth/token/ for an overview.
-type StdAuthorizer struct {
+type stdTransport struct {
 	config     Config
-	httpClient HTTPDoer
+	transport  http.RoundTripper
 	mu         sync.Mutex
 	registries map[string]*registry
 }
 
-type StdAuthorizerParams struct {
-	Config     Config
-	HTTPClient HTTPDoer
+type StdTransportParams struct {
+	// Config represents the underlying configuration file information.
+	// It is consulted for authorization information on the hosts
+	// to which the HTTP requests are made.
+	Config Config
+
+	// HTTPClient is used to make the underlying HTTP requests.
+	// If it's nil, [http.DefaultTransport] will be used.
+	Transport http.RoundTripper
 }
 
-func NewStdAuthorizer(p StdAuthorizerParams) *StdAuthorizer {
+// NewStdTransport returns an [http.RoundTripper] implementation that
+// acquires authorization tokens using the flows implemented by the
+// usual docker clients. Note that this is _not_ documented as part of
+// any official OCI spec.
+//
+// See https://distribution.github.io/distribution/spec/auth/token/ for an overview.
+//
+// It expects the context in the requests to contain a
+func NewStdTransport(p StdTransportParams) http.RoundTripper {
 	if p.Config == nil {
 		p.Config = emptyConfig{}
 	}
-	if p.HTTPClient == nil {
-		p.HTTPClient = http.DefaultClient
+	if p.Transport == nil {
+		p.Transport = http.DefaultTransport
 	}
-	return &StdAuthorizer{
+	return &stdTransport{
 		config:     p.Config,
-		httpClient: p.HTTPClient,
+		transport:  p.Transport,
 		registries: make(map[string]*registry),
 	}
 }
 
-var _ Authorizer = (*StdAuthorizer)(nil)
-
-// TODO de-dupe this from ociclient.
-type HTTPDoer interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
 // registry holds currently known auth information for a registry.
 type registry struct {
-	host       string
-	authorizer *StdAuthorizer
-	initOnce   sync.Once
-	initErr    error
+	host      string
+	transport http.RoundTripper
+	config    Config
+	initOnce  sync.Once
+	initErr   error
 
 	// mu guards the fields that follow it.
 	mu sync.Mutex
@@ -113,14 +131,29 @@ type userPass struct {
 
 var forever = time.Date(99999, time.January, 1, 0, 0, 0, 0, time.UTC)
 
-// AuthorizeRequest implements [Authorizer.DoRequest].
-func (a *StdAuthorizer) DoRequest(req *http.Request, requiredScope Scope) (*http.Response, error) {
+// RoundTrip implements [http.RoundTripper.RoundTrip].
+func (a *stdTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// From the [http.RoundTripper] docs:
+	//	RoundTrip should not modify the request, except for
+	//	consuming and closing the Request's Body.
+	req = req.Clone(req.Context())
+
+	// From the [http.RoundTripper] docs:
+	//	RoundTrip must always close the body, including on errors,
+	needBodyClose := true
+	defer func() {
+		if needBodyClose {
+			req.Body.Close()
+		}
+	}()
+
 	a.mu.Lock()
 	r := a.registries[req.URL.Host]
 	if r == nil {
 		r = &registry{
-			host:       req.URL.Host,
-			authorizer: a,
+			host:      req.URL.Host,
+			config:    a.config,
+			transport: a.transport,
 		}
 		a.registries[r.host] = r
 	}
@@ -129,18 +162,18 @@ func (a *StdAuthorizer) DoRequest(req *http.Request, requiredScope Scope) (*http
 		return nil, err
 	}
 
-	wantScope := ScopeFromContext(req.Context())
-	return r.doRequest(req.Context(), req, requiredScope, wantScope)
-}
+	ctx := req.Context()
+	requiredScope := RequestInfoFromContext(ctx).RequiredScope
+	wantScope := ScopeFromContext(ctx)
 
-// doRequest performs the given request on the registry r.
-func (r *registry) doRequest(ctx context.Context, req *http.Request, requiredScope, wantScope Scope) (*http.Response, error) {
-	// TODO set up request body so that we can rewind it when retrying if necessary
-	// ([http.NewRequest] already does this for several types)
 	if err := r.setAuthorization(ctx, req, requiredScope, wantScope); err != nil {
 		return nil, err
 	}
-	resp, err := r.authorizer.httpClient.Do(req)
+	resp, err := r.transport.RoundTrip(req)
+
+	// The underlying transport should now have closed the request body
+	// so we don't have to.
+	needBodyClose = false
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +201,10 @@ func (r *registry) doRequest(ctx context.Context, req *http.Request, requiredSco
 			return nil, err
 		}
 	}
-	return r.authorizer.httpClient.Do(req)
+	// The underlying transport is now responsible for
+	// closing the body.
+	needBodyClose = false
+	return r.transport.RoundTrip(req)
 }
 
 // setAuthorization sets up authorization on the given request using any
@@ -245,7 +281,7 @@ func (r *registry) setAuthorizationFromChallenge(ctx context.Context, req *http.
 // the outer context is cancelled, but we'll ignore that. We probably shouldn't.
 func (r *registry) init() error {
 	inner := func() error {
-		info, err := r.authorizer.config.EntryForRegistry(r.host)
+		info, err := r.config.EntryForRegistry(r.host)
 		if err != nil {
 			return fmt.Errorf("cannot acquire auth info for registry %q: %v", r.host, err)
 		}
@@ -426,7 +462,10 @@ type wireToken struct {
 }
 
 func (r *registry) doTokenRequest(req *http.Request) (*wireToken, error) {
-	resp, err := r.authorizer.httpClient.Do(req)
+	client := &http.Client{
+		Transport: r.transport,
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}

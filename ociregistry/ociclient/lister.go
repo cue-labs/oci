@@ -100,15 +100,14 @@ func (c *client) Referrers(ctx context.Context, repoName string, digest ociregis
 // the iteration, falling back to using the "last" query parameter.
 func (c *client) pager(ctx context.Context, initialReq *ocirequest.Request, parseResponse func(*http.Response) ([]string, error)) ociregistry.Seq[string] {
 	return func(yield func(string, error) bool) {
+		// We assume that the same scope is applicable to all page requests.
 		req, err := newRequest(ctx, initialReq, nil)
 		if err != nil {
 			yield("", err)
 			return
 		}
-		// Assume that the same scope is applicable to all page requests.
-		scope := scopeForRequest(initialReq)
 		for {
-			resp, err := c.do(req, scope)
+			resp, err := c.do(req)
 			if err != nil {
 				yield("", err)
 				return

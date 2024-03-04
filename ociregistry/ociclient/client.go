@@ -45,20 +45,20 @@ type Options struct {
 	// DebugID is used to prefix any log messages printed by the client.
 	DebugID string
 
-	// HTTPClient is used to send HTTP requests. If it's nil,
-	// http.DefaultClient will be used.
-	HTTPClient HTTPDoer
+	// Transport is used to make HTTP requests. The context passed
+	// to its RoundTrip method will have an appropriate
+	// [ociauth.RequestInfo] value added, suitable for consumption
+	// by the transport created by [ociauth.NewStdTransport]. If
+	// Transport is nil, [http.DefaultTransport] will be used.
+	Transport http.RoundTripper
 
-	// Authorizer is used to acquire authorization for making requests.
-	Authorizer ociauth.Authorizer
-
-	// Insecure specifies whether an http scheme will be
-	// used to address the host instead of https.
+	// Insecure specifies whether an http scheme will be used to
+	// address the host instead of https.
 	Insecure bool
 
 	// ListPageSize configures the maximum number of results
-	// requested when making list requests. If it's <= zero,
-	// it defaults to DefaultListPageSize.
+	// requested when making list requests. If it's <= zero, it
+	// defaults to DefaultListPageSize.
 	ListPageSize int
 }
 
@@ -71,10 +71,6 @@ type Options struct {
 // it it's more than that.
 const DefaultListPageSize = 1000
 
-type HTTPDoer interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
 var debugID int32
 
 // New returns a registry implementation that uses the OCI
@@ -83,15 +79,16 @@ var debugID int32
 //
 // The host specifies the host name to talk to; it may
 // optionally be a host:port pair.
-func New(host string, opts *Options) (ociregistry.Interface, error) {
-	if opts == nil {
-		opts = &Options{}
+func New(host string, opts0 *Options) (ociregistry.Interface, error) {
+	var opts Options
+	if opts0 != nil {
+		opts = *opts0
 	}
 	if opts.DebugID == "" {
 		opts.DebugID = fmt.Sprintf("id%d", atomic.AddInt32(&debugID, 1))
 	}
-	if opts.HTTPClient == nil {
-		opts.HTTPClient = http.DefaultClient
+	if opts.Transport == nil {
+		opts.Transport = http.DefaultTransport
 	}
 	// Check that it's a valid host by forming a URL from it and checking that it matches.
 	u, err := url.Parse("https://" + host + "/path")
@@ -108,10 +105,11 @@ func New(host string, opts *Options) (ociregistry.Interface, error) {
 		opts.ListPageSize = DefaultListPageSize
 	}
 	return &client{
-		httpHost:     host,
-		httpScheme:   u.Scheme,
-		client:       opts.HTTPClient,
-		authorizer:   opts.Authorizer,
+		httpHost:   host,
+		httpScheme: u.Scheme,
+		httpClient: &http.Client{
+			Transport: opts.Transport,
+		},
 		debugID:      opts.DebugID,
 		listPageSize: opts.ListPageSize,
 	}, nil
@@ -121,8 +119,7 @@ type client struct {
 	*ociregistry.Funcs
 	httpScheme   string
 	httpHost     string
-	client       HTTPDoer
-	authorizer   ociauth.Authorizer
+	httpClient   *http.Client
 	debugID      string
 	listPageSize int
 }
@@ -259,7 +256,7 @@ func (c *client) doRequest(ctx context.Context, rreq *ocirequest.Request, okStat
 		// add all the manifest kinds that we know about.
 		req.Header["Accept"] = knownManifestMediaTypes
 	}
-	resp, err := c.do(req, scopeForRequest(rreq), okStatuses...)
+	resp, err := c.do(req, okStatuses...)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +267,7 @@ func (c *client) doRequest(ctx context.Context, rreq *ocirequest.Request, okStat
 	return nil, makeError(resp)
 }
 
-func (c *client) do(req *http.Request, needScope ociauth.Scope, okStatuses ...int) (*http.Response, error) {
+func (c *client) do(req *http.Request, okStatuses ...int) (*http.Response, error) {
 	if req.URL.Scheme == "" {
 		req.URL.Scheme = c.httpScheme
 	}
@@ -294,13 +291,7 @@ func (c *client) do(req *http.Request, needScope ociauth.Scope, okStatuses ...in
 		}
 		c.logf("%s", buf.Bytes())
 	}
-	var resp *http.Response
-	var err error
-	if c.authorizer != nil {
-		resp, err = c.authorizer.DoRequest(req, needScope)
-	} else {
-		resp, err = c.client.Do(req)
-	}
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("cannot do HTTP request: %w", err)
 	}
@@ -414,5 +405,12 @@ func newRequest(ctx context.Context, rreq *ocirequest.Request, body io.Reader) (
 	if err != nil {
 		return nil, err
 	}
+	ctx = ociauth.ContextWithRequestInfo(ctx, ociauth.RequestInfo{
+		RequiredScope: scopeForRequest(rreq),
+	})
 	return http.NewRequestWithContext(ctx, method, u, body)
+}
+
+func ref[T any](x T) *T {
+	return &x
 }

@@ -30,18 +30,20 @@ func TestBasicAuth(t *testing.T) {
 		}
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
-		Config: configFunc(func(host string) (ConfigEntry, error) {
-			if host != ts.Host {
-				return ConfigEntry{}, nil
-			}
-			return ConfigEntry{
-				Username: "testuser",
-				Password: "testpassword",
-			}, nil
+	client := &http.Client{
+		Transport: NewStdTransport(StdTransportParams{
+			Config: configFunc(func(host string) (ConfigEntry, error) {
+				if host != ts.Host {
+					return ConfigEntry{}, nil
+				}
+				return ConfigEntry{
+					Username: "testuser",
+					Password: "testpassword",
+				}, nil
+			}),
 		}),
-	})
-	assertRequest(context.Background(), t, ts, "/test", auth, Scope{})
+	}
+	assertRequest(context.Background(), t, ts, "/test", client, Scope{})
 }
 
 func TestBearerAuth(t *testing.T) {
@@ -80,18 +82,20 @@ func TestBearerAuth(t *testing.T) {
 		})
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
-		Config: configFunc(func(host string) (ConfigEntry, error) {
-			if host != ts.Host {
-				return ConfigEntry{}, nil
-			}
-			return ConfigEntry{
-				Username: "testuser",
-				Password: "testpassword",
-			}, nil
+	client := &http.Client{
+		Transport: NewStdTransport(StdTransportParams{
+			Config: configFunc(func(host string) (ConfigEntry, error) {
+				if host != ts.Host {
+					return ConfigEntry{}, nil
+				}
+				return ConfigEntry{
+					Username: "testuser",
+					Password: "testpassword",
+				}, nil
+			}),
 		}),
-	})
-	assertRequest(context.Background(), t, ts, "/test", auth, Scope{})
+	}
+	assertRequest(context.Background(), t, ts, "/test", client, Scope{})
 }
 
 func TestBearerAuthAdditionalScope(t *testing.T) {
@@ -130,19 +134,21 @@ func TestBearerAuthAdditionalScope(t *testing.T) {
 		})
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
-		Config: configFunc(func(host string) (ConfigEntry, error) {
-			if host != ts.Host {
-				return ConfigEntry{}, nil
-			}
-			return ConfigEntry{
-				Username: "testuser",
-				Password: "testpassword",
-			}, nil
+	client := &http.Client{
+		Transport: NewStdTransport(StdTransportParams{
+			Config: configFunc(func(host string) (ConfigEntry, error) {
+				if host != ts.Host {
+					return ConfigEntry{}, nil
+				}
+				return ConfigEntry{
+					Username: "testuser",
+					Password: "testpassword",
+				}, nil
+			}),
 		}),
-	})
+	}
 	ctx := ContextWithScope(context.Background(), additionalScope)
-	assertRequest(ctx, t, ts, "/test", auth, Scope{})
+	assertRequest(ctx, t, ts, "/test", client, Scope{})
 }
 
 func TestBearerAuthRequiresExactScope(t *testing.T) {
@@ -180,18 +186,20 @@ func TestBearerAuthRequiresExactScope(t *testing.T) {
 		qt.Check(t, qt.Equals(req.Header.Get("Authorization"), "Bearer "+exactScopeAsToken))
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
-		Config: configFunc(func(host string) (ConfigEntry, error) {
-			if host != ts.Host {
-				return ConfigEntry{}, nil
-			}
-			return ConfigEntry{
-				Username: "testuser",
-				Password: "testpassword",
-			}, nil
+	client := &http.Client{
+		Transport: NewStdTransport(StdTransportParams{
+			Config: configFunc(func(host string) (ConfigEntry, error) {
+				if host != ts.Host {
+					return ConfigEntry{}, nil
+				}
+				return ConfigEntry{
+					Username: "testuser",
+					Password: "testpassword",
+				}, nil
+			}),
 		}),
-	})
-	assertRequest(context.Background(), t, ts, "/test", auth, requiredScope)
+	}
+	assertRequest(context.Background(), t, ts, "/test", client, requiredScope)
 }
 
 func TestAuthNotAvailableAfterChallenge(t *testing.T) {
@@ -211,14 +219,16 @@ func TestAuthNotAvailableAfterChallenge(t *testing.T) {
 		t.Errorf("authorization unexpectedly presented")
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
-		Config: configFunc(func(host string) (ConfigEntry, error) {
-			return ConfigEntry{}, nil
+	client := &http.Client{
+		Transport: NewStdTransport(StdTransportParams{
+			Config: configFunc(func(host string) (ConfigEntry, error) {
+				return ConfigEntry{}, nil
+			}),
 		}),
-	})
+	}
 	req, err := http.NewRequestWithContext(context.Background(), "GET", ts.String()+"/test", nil)
 	qt.Assert(t, qt.IsNil(err))
-	resp, err := auth.DoRequest(req, Scope{})
+	resp, err := client.Do(req)
 	qt.Assert(t, qt.IsNil(err))
 	defer resp.Body.Close()
 	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusUnauthorized))
@@ -237,17 +247,19 @@ func TestConfigHasAccessToken(t *testing.T) {
 		qt.Check(t, qt.Equals(req.Header.Get("Authorization"), "Bearer "+accessToken))
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
-		Config: configFunc(func(host string) (ConfigEntry, error) {
-			if host == ts.Host {
-				return ConfigEntry{
-					AccessToken: accessToken,
-				}, nil
-			}
-			return ConfigEntry{}, nil
+	client := &http.Client{
+		Transport: NewStdTransport(StdTransportParams{
+			Config: configFunc(func(host string) (ConfigEntry, error) {
+				if host == ts.Host {
+					return ConfigEntry{
+						AccessToken: accessToken,
+					}, nil
+				}
+				return ConfigEntry{}, nil
+			}),
 		}),
-	})
-	assertRequest(context.Background(), t, ts, "/test", auth, Scope{})
+	}
+	assertRequest(context.Background(), t, ts, "/test", client, Scope{})
 }
 
 func TestLaterRequestCanUseEarlierTokenWithLargerScope(t *testing.T) {
@@ -279,14 +291,16 @@ func TestLaterRequestCanUseEarlierTokenWithLargerScope(t *testing.T) {
 		})
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
-		Config: configFunc(func(host string) (ConfigEntry, error) {
-			return ConfigEntry{}, nil
+	client := &http.Client{
+		Transport: NewStdTransport(StdTransportParams{
+			Config: configFunc(func(host string) (ConfigEntry, error) {
+				return ConfigEntry{}, nil
+			}),
 		}),
-	})
+	}
 	ctx := ContextWithScope(context.Background(), ParseScope("repository:foo1:pull repository:foo2:pull"))
-	assertRequest(ctx, t, ts, "/test/foo1", auth, Scope{})
-	assertRequest(ctx, t, ts, "/test/foo2", auth, Scope{})
+	assertRequest(ctx, t, ts, "/test/foo1", client, Scope{})
+	assertRequest(ctx, t, ts, "/test/foo2", client, Scope{})
 	// One token fetch should have been sufficient for both requests.
 	qt.Assert(t, qt.Equals(authCount, 1))
 }
@@ -324,13 +338,15 @@ func TestAuthServerRejectsRequestsWithTooMuchScope(t *testing.T) {
 		})
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
-		Config: configFunc(func(host string) (ConfigEntry, error) {
-			return ConfigEntry{}, nil
+	client := &http.Client{
+		Transport: NewStdTransport(StdTransportParams{
+			Config: configFunc(func(host string) (ConfigEntry, error) {
+				return ConfigEntry{}, nil
+			}),
 		}),
-	})
+	}
 	ctx := ContextWithScope(context.Background(), ParseScope("repository:foo:pull repository:bar:pull"))
-	assertRequest(ctx, t, ts, "/test", auth, Scope{})
+	assertRequest(ctx, t, ts, "/test", client, Scope{})
 }
 
 func TestAuthRequestUsesRefreshTokenFromConfig(t *testing.T) {
@@ -371,17 +387,19 @@ func TestAuthRequestUsesRefreshTokenFromConfig(t *testing.T) {
 		})
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
-		Config: configFunc(func(host string) (ConfigEntry, error) {
-			if host == ts.Host {
-				return ConfigEntry{
-					RefreshToken: "someRefreshToken",
-				}, nil
-			}
-			return ConfigEntry{}, nil
+	client := &http.Client{
+		Transport: NewStdTransport(StdTransportParams{
+			Config: configFunc(func(host string) (ConfigEntry, error) {
+				if host == ts.Host {
+					return ConfigEntry{
+						RefreshToken: "someRefreshToken",
+					}, nil
+				}
+				return ConfigEntry{}, nil
+			}),
 		}),
-	})
-	assertRequest(context.Background(), t, ts, "/test", auth, requiredScope)
+	}
+	assertRequest(context.Background(), t, ts, "/test", client, requiredScope)
 
 	// Let the original access token expire and then make another request,
 	// which should force the client to acquire another token using
@@ -389,7 +407,7 @@ func TestAuthRequestUsesRefreshTokenFromConfig(t *testing.T) {
 
 	// Note: the expiry algorithm always leaves at least a second leeway.
 	time.Sleep(1100 * time.Millisecond)
-	assertRequest(context.Background(), t, ts, "/test", auth, requiredScope)
+	assertRequest(context.Background(), t, ts, "/test", client, requiredScope)
 	// Check that it actually has had to acquire two tokens.
 	qt.Assert(t, qt.Equals(authCount, 2))
 }
@@ -436,16 +454,18 @@ func TestAuthRequestUsesRefreshTokenFromAuthServer(t *testing.T) {
 		})
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
-		Config: configFunc(func(host string) (ConfigEntry, error) {
-			if host == ts.Host {
-				return ConfigEntry{
-					RefreshToken: "someRefreshToken1",
-				}, nil
-			}
-			return ConfigEntry{}, nil
+	client := &http.Client{
+		Transport: NewStdTransport(StdTransportParams{
+			Config: configFunc(func(host string) (ConfigEntry, error) {
+				if host == ts.Host {
+					return ConfigEntry{
+						RefreshToken: "someRefreshToken1",
+					}, nil
+				}
+				return ConfigEntry{}, nil
+			}),
 		}),
-	})
+	}
 	// Each time we make a new request, we'll be asking for a new scope
 	// because we're getting a new resource each time, so that will
 	// make another request to the auth server, which will return
@@ -453,7 +473,7 @@ func TestAuthRequestUsesRefreshTokenFromAuthServer(t *testing.T) {
 	numRequests := 4
 	for i := 0; i < numRequests; i++ {
 		repo := fmt.Sprintf("foo%d", i)
-		assertRequest(context.Background(), t, ts, fmt.Sprintf("/test/foo%d", i), auth, NewScope(ResourceScope{
+		assertRequest(context.Background(), t, ts, fmt.Sprintf("/test/foo%d", i), client, NewScope(ResourceScope{
 			ResourceType: TypeRepository,
 			Resource:     repo,
 			Action:       ActionPull,
@@ -462,20 +482,23 @@ func TestAuthRequestUsesRefreshTokenFromAuthServer(t *testing.T) {
 	qt.Assert(t, qt.Equals(authCount, numRequests))
 }
 
-func assertRequest(ctx context.Context, t testing.TB, tsURL *url.URL, path string, auth Authorizer, needScope Scope) {
+func assertRequest(ctx context.Context, t testing.TB, tsURL *url.URL, path string, client *http.Client, needScope Scope) {
+	ctx = ContextWithRequestInfo(ctx, RequestInfo{
+		RequiredScope: needScope,
+	})
 	// Try the request twice as the second time often exercises other
 	// code paths as caches are warmed up.
-	assertRequest1(ctx, t, tsURL, path, auth, needScope)
-	assertRequest1(ctx, t, tsURL, path, auth, needScope)
+	assertRequest1(ctx, t, tsURL, path, client)
+	assertRequest1(ctx, t, tsURL, path, client)
 }
 
-func assertRequest1(ctx context.Context, t testing.TB, tsURL *url.URL, path string, auth Authorizer, needScope Scope) {
+func assertRequest1(ctx context.Context, t testing.TB, tsURL *url.URL, path string, client *http.Client) {
 	req, err := http.NewRequestWithContext(ctx, "POST", tsURL.String()+path, strings.NewReader("test body"))
 	qt.Assert(t, qt.IsNil(err))
 	// Set ContentLength to -1 to prevent net/http from calling GetBody automatically,
 	// thus testing the GetBody-calling code inside registry.doRequest.
 	req.ContentLength = -1
-	resp, err := auth.DoRequest(req, needScope)
+	resp, err := client.Do(req)
 	qt.Assert(t, qt.IsNil(err))
 	defer resp.Body.Close()
 	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusOK))
