@@ -49,7 +49,7 @@ func (c *client) GetBlobRange(ctx context.Context, repo string, digest ociregist
 	} else {
 		req.Header.Set("Range", fmt.Sprintf("bytes=%d-%d", o0, o1-1))
 	}
-	resp, err := c.do(req, scopeForRequest(rreq), http.StatusOK, http.StatusPartialContent)
+	resp, err := c.do(req, http.StatusOK, http.StatusPartialContent)
 	if err != nil {
 		return nil, err
 	}
