@@ -45,12 +45,10 @@ type Options struct {
 	// DebugID is used to prefix any log messages printed by the client.
 	DebugID string
 
-	// HTTPClient is used to send HTTP requests. If it's nil,
-	// http.DefaultClient will be used.
-	HTTPClient HTTPDoer
-
-	// Authorizer is used to acquire authorization for making requests.
-	Authorizer ociauth.Authorizer
+	// HTTPClient is used to make HTTP requests. Those requests
+	// are passed in the necessary authorization scope.
+	// If this is nil, ociauth.NewStdClient(nil) will be used.
+	HTTPClient ociauth.ScopedHTTPClient
 
 	// Insecure specifies whether an http scheme will be
 	// used to address the host instead of https.
@@ -71,10 +69,6 @@ type Options struct {
 // it it's more than that.
 const DefaultListPageSize = 1000
 
-type HTTPDoer interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
 var debugID int32
 
 // New returns a registry implementation that uses the OCI
@@ -84,14 +78,12 @@ var debugID int32
 // The host specifies the host name to talk to; it may
 // optionally be a host:port pair.
 func New(host string, opts *Options) (ociregistry.Interface, error) {
-	if opts == nil {
-		opts = &Options{}
-	}
+	opts = ref(*opts)
 	if opts.DebugID == "" {
 		opts.DebugID = fmt.Sprintf("id%d", atomic.AddInt32(&debugID, 1))
 	}
 	if opts.HTTPClient == nil {
-		opts.HTTPClient = http.DefaultClient
+		opts.HTTPClient = ociauth.NewScopedHTTPClient(nil)
 	}
 	// Check that it's a valid host by forming a URL from it and checking that it matches.
 	u, err := url.Parse("https://" + host + "/path")
@@ -110,8 +102,7 @@ func New(host string, opts *Options) (ociregistry.Interface, error) {
 	return &client{
 		httpHost:     host,
 		httpScheme:   u.Scheme,
-		client:       opts.HTTPClient,
-		authorizer:   opts.Authorizer,
+		httpClient:   opts.HTTPClient,
 		debugID:      opts.DebugID,
 		listPageSize: opts.ListPageSize,
 	}, nil
@@ -121,8 +112,7 @@ type client struct {
 	*ociregistry.Funcs
 	httpScheme   string
 	httpHost     string
-	client       HTTPDoer
-	authorizer   ociauth.Authorizer
+	httpClient   ociauth.ScopedHTTPClient
 	debugID      string
 	listPageSize int
 }
@@ -294,13 +284,7 @@ func (c *client) do(req *http.Request, needScope ociauth.Scope, okStatuses ...in
 		}
 		c.logf("%s", buf.Bytes())
 	}
-	var resp *http.Response
-	var err error
-	if c.authorizer != nil {
-		resp, err = c.authorizer.DoRequest(req, needScope)
-	} else {
-		resp, err = c.client.Do(req)
-	}
+	resp, err := c.httpClient.DoWithScope(req, needScope)
 	if err != nil {
 		return nil, fmt.Errorf("cannot do HTTP request: %w", err)
 	}
@@ -415,4 +399,8 @@ func newRequest(ctx context.Context, rreq *ocirequest.Request, body io.Reader) (
 		return nil, err
 	}
 	return http.NewRequestWithContext(ctx, method, u, body)
+}
+
+func ref[T any](x T) *T {
+	return &x
 }

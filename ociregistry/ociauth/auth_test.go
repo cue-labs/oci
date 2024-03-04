@@ -30,7 +30,7 @@ func TestBasicAuth(t *testing.T) {
 		}
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
+	auth := NewStdClient(StdClientParams{
 		Config: configFunc(func(host string) (ConfigEntry, error) {
 			if host != ts.Host {
 				return ConfigEntry{}, nil
@@ -80,7 +80,7 @@ func TestBearerAuth(t *testing.T) {
 		})
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
+	auth := NewStdClient(StdClientParams{
 		Config: configFunc(func(host string) (ConfigEntry, error) {
 			if host != ts.Host {
 				return ConfigEntry{}, nil
@@ -130,7 +130,7 @@ func TestBearerAuthAdditionalScope(t *testing.T) {
 		})
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
+	auth := NewStdClient(StdClientParams{
 		Config: configFunc(func(host string) (ConfigEntry, error) {
 			if host != ts.Host {
 				return ConfigEntry{}, nil
@@ -180,7 +180,7 @@ func TestBearerAuthRequiresExactScope(t *testing.T) {
 		qt.Check(t, qt.Equals(req.Header.Get("Authorization"), "Bearer "+exactScopeAsToken))
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
+	auth := NewStdClient(StdClientParams{
 		Config: configFunc(func(host string) (ConfigEntry, error) {
 			if host != ts.Host {
 				return ConfigEntry{}, nil
@@ -211,14 +211,14 @@ func TestAuthNotAvailableAfterChallenge(t *testing.T) {
 		t.Errorf("authorization unexpectedly presented")
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
+	auth := NewStdClient(StdClientParams{
 		Config: configFunc(func(host string) (ConfigEntry, error) {
 			return ConfigEntry{}, nil
 		}),
 	})
 	req, err := http.NewRequestWithContext(context.Background(), "GET", ts.String()+"/test", nil)
 	qt.Assert(t, qt.IsNil(err))
-	resp, err := auth.DoRequest(req, Scope{})
+	resp, err := auth.DoWithScope(req, Scope{})
 	qt.Assert(t, qt.IsNil(err))
 	defer resp.Body.Close()
 	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusUnauthorized))
@@ -237,7 +237,7 @@ func TestConfigHasAccessToken(t *testing.T) {
 		qt.Check(t, qt.Equals(req.Header.Get("Authorization"), "Bearer "+accessToken))
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
+	auth := NewStdClient(StdClientParams{
 		Config: configFunc(func(host string) (ConfigEntry, error) {
 			if host == ts.Host {
 				return ConfigEntry{
@@ -279,7 +279,7 @@ func TestLaterRequestCanUseEarlierTokenWithLargerScope(t *testing.T) {
 		})
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
+	auth := NewStdClient(StdClientParams{
 		Config: configFunc(func(host string) (ConfigEntry, error) {
 			return ConfigEntry{}, nil
 		}),
@@ -324,7 +324,7 @@ func TestAuthServerRejectsRequestsWithTooMuchScope(t *testing.T) {
 		})
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
+	auth := NewStdClient(StdClientParams{
 		Config: configFunc(func(host string) (ConfigEntry, error) {
 			return ConfigEntry{}, nil
 		}),
@@ -371,7 +371,7 @@ func TestAuthRequestUsesRefreshTokenFromConfig(t *testing.T) {
 		})
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
+	auth := NewStdClient(StdClientParams{
 		Config: configFunc(func(host string) (ConfigEntry, error) {
 			if host == ts.Host {
 				return ConfigEntry{
@@ -436,7 +436,7 @@ func TestAuthRequestUsesRefreshTokenFromAuthServer(t *testing.T) {
 		})
 		return nil
 	})
-	auth := NewStdAuthorizer(StdAuthorizerParams{
+	auth := NewStdClient(StdClientParams{
 		Config: configFunc(func(host string) (ConfigEntry, error) {
 			if host == ts.Host {
 				return ConfigEntry{
@@ -462,20 +462,20 @@ func TestAuthRequestUsesRefreshTokenFromAuthServer(t *testing.T) {
 	qt.Assert(t, qt.Equals(authCount, numRequests))
 }
 
-func assertRequest(ctx context.Context, t testing.TB, tsURL *url.URL, path string, auth Authorizer, needScope Scope) {
+func assertRequest(ctx context.Context, t testing.TB, tsURL *url.URL, path string, auth ScopedHTTPClient, needScope Scope) {
 	// Try the request twice as the second time often exercises other
 	// code paths as caches are warmed up.
 	assertRequest1(ctx, t, tsURL, path, auth, needScope)
 	assertRequest1(ctx, t, tsURL, path, auth, needScope)
 }
 
-func assertRequest1(ctx context.Context, t testing.TB, tsURL *url.URL, path string, auth Authorizer, needScope Scope) {
+func assertRequest1(ctx context.Context, t testing.TB, tsURL *url.URL, path string, auth ScopedHTTPClient, needScope Scope) {
 	req, err := http.NewRequestWithContext(ctx, "POST", tsURL.String()+path, strings.NewReader("test body"))
 	qt.Assert(t, qt.IsNil(err))
 	// Set ContentLength to -1 to prevent net/http from calling GetBody automatically,
 	// thus testing the GetBody-calling code inside registry.doRequest.
 	req.ContentLength = -1
-	resp, err := auth.DoRequest(req, needScope)
+	resp, err := auth.DoWithScope(req, needScope)
 	qt.Assert(t, qt.IsNil(err))
 	defer resp.Body.Close()
 	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusOK))

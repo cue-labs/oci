@@ -21,8 +21,11 @@ const oauthClientID = "cuelabs-ociauth"
 // Authorizer defines a way to make authorized requests using the OCI
 // authorization scope mechanism. See [StdAuthorizer] for an implementation
 // that understands the usual OCI authorization mechanisms.
-type Authorizer interface {
-	// DoRequest acquires authorization and invokes the given
+//
+// See [NewScopedHTTPClient] for one way to make a [ScopedHTTPClient]
+// from a regular [http.Client] instance.
+type ScopedHTTPClient interface {
+	// DoWithScope acquires authorization and invokes the given
 	// request. It may invoke the request more than once, and can
 	// use [http.Request.GetBody] to reset the request body if it
 	// gets consumed.
@@ -32,54 +35,79 @@ type Authorizer interface {
 	// inside the context (see [ContextWithScope]) may also be taken
 	// into account when acquiring new tokens.
 	//
-	// It's OK to call AuthorizeRequest concurrently.
-	DoRequest(req *http.Request, requiredScope Scope) (*http.Response, error)
+	// It's OK to call DoWithScope concurrently.
+	DoWithScope(req *http.Request, requiredScope Scope) (*http.Response, error)
+}
+
+// HTTPClient is implemented by [http.Client] and any other type
+// that implements a similar Do method.
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 var ErrNoAuth = fmt.Errorf("no authorization token available to add to request")
+
+// NewScopedHTTPClient returns a [ScopedHTTPClient] implementation that just passes the
+// request through to the given HTTP client. If httpClient is nil,
+// [http.DefaultClient] will be used.
+func NewScopedHTTPClient(httpClient HTTPClient) ScopedHTTPClient {
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	return &scopedClient{httpClient}
+}
+
+type scopedClient struct {
+	httpClient HTTPClient
+}
+
+func (a *scopedClient) DoWithScope(req *http.Request, requiredScope Scope) (*http.Response, error) {
+	return a.httpClient.Do(req)
+}
 
 // StdAuthorizer implements [Authorizer] using the flows implemented
 // by the usual docker clients. Note that this is _not_ documented as
 // part of any official OCI spec.
 //
 // See https://distribution.github.io/distribution/spec/auth/token/ for an overview.
-type StdAuthorizer struct {
+type StdClient struct {
 	config     Config
-	httpClient HTTPDoer
+	httpClient HTTPClient
 	mu         sync.Mutex
 	registries map[string]*registry
 }
 
-type StdAuthorizerParams struct {
-	Config     Config
-	HTTPClient HTTPDoer
+type StdClientParams struct {
+	// Config represents the underlying configuration file information.
+	// It is consulted for authorization information on the hosts
+	// to which the HTTP requests are made.
+	Config Config
+
+	// HTTPClient is used to make the underlying HTTP requests.
+	// If it's nil, [http.DefaultClient] will be used.
+	HTTPClient HTTPClient
 }
 
-func NewStdAuthorizer(p StdAuthorizerParams) *StdAuthorizer {
+func NewStdClient(p StdClientParams) *StdClient {
 	if p.Config == nil {
 		p.Config = emptyConfig{}
 	}
 	if p.HTTPClient == nil {
 		p.HTTPClient = http.DefaultClient
 	}
-	return &StdAuthorizer{
+	return &StdClient{
 		config:     p.Config,
 		httpClient: p.HTTPClient,
 		registries: make(map[string]*registry),
 	}
 }
 
-var _ Authorizer = (*StdAuthorizer)(nil)
-
-// TODO de-dupe this from ociclient.
-type HTTPDoer interface {
-	Do(req *http.Request) (*http.Response, error)
-}
+var _ ScopedHTTPClient = (*StdClient)(nil)
 
 // registry holds currently known auth information for a registry.
 type registry struct {
 	host       string
-	authorizer *StdAuthorizer
+	authorizer *StdClient
 	initOnce   sync.Once
 	initErr    error
 
@@ -113,8 +141,8 @@ type userPass struct {
 
 var forever = time.Date(99999, time.January, 1, 0, 0, 0, 0, time.UTC)
 
-// AuthorizeRequest implements [Authorizer.DoRequest].
-func (a *StdAuthorizer) DoRequest(req *http.Request, requiredScope Scope) (*http.Response, error) {
+// DoWithScope implements [ScopedHTTPClient.DoWithScope].
+func (a *StdClient) DoWithScope(req *http.Request, requiredScope Scope) (*http.Response, error) {
 	a.mu.Lock()
 	r := a.registries[req.URL.Host]
 	if r == nil {

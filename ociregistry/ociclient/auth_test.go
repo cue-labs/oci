@@ -109,7 +109,7 @@ func assertAuthScope(t *testing.T, host string, scope string, f func(ctx context
 
 	client, err := New(host, &Options{
 		Insecure: true,
-		Authorizer: authorizerFunc(func(req *http.Request, scope ociauth.Scope) (*http.Response, error) {
+		HTTPClient: scopedHTTPClientFunc(func(req *http.Request, scope ociauth.Scope) (*http.Response, error) {
 			qt.Check(t, qt.Equals(req.Context().Value(foo{}), true))
 			requestedScopes[scope.Canonical().String()] = true
 			return http.DefaultClient.Do(req)
@@ -121,8 +121,8 @@ func assertAuthScope(t *testing.T, host string, scope string, f func(ctx context
 	qt.Assert(t, qt.Equals(maps.Keys(requestedScopes)[0], scope))
 }
 
-type authorizerFunc func(req *http.Request, scope ociauth.Scope) (*http.Response, error)
+type scopedHTTPClientFunc func(req *http.Request, scope ociauth.Scope) (*http.Response, error)
 
-func (f authorizerFunc) DoRequest(req *http.Request, scope ociauth.Scope) (*http.Response, error) {
+func (f scopedHTTPClientFunc) DoWithScope(req *http.Request, scope ociauth.Scope) (*http.Response, error) {
 	return f(req, scope)
 }
