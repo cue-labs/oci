@@ -141,12 +141,18 @@ const (
 	ReqBlobMount
 
 	// end-13	GET	/v2/<name>/blobs/uploads/<reference>	204	404
+	// NOTE: despite being described in the distribution spec, this
+	// isn't really part of the OCI spec.
 	ReqBlobUploadInfo
 
 	// end-5	PATCH	/v2/<name>/blobs/uploads/<reference>	202	404/416
+	// NOTE: despite being described in the distribution spec, this
+	// isn't really part of the OCI spec.
 	ReqBlobUploadChunk
 
 	// end-6	PUT	/v2/<name>/blobs/uploads/<reference>?digest=<digest>	201	404/400
+	// NOTE: despite being described in the distribution spec, this
+	// isn't really part of the OCI spec.
 	ReqBlobCompleteUpload
 
 	// Manifest-related endpoints
