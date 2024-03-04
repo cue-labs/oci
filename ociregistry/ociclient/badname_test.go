@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/go-quicktest/qt"
+
+	"cuelabs.dev/go/oci/ociregistry/ociauth"
 )
 
 func TestBadRepoName(t *testing.T) {
@@ -26,6 +28,6 @@ func TestBadRepoName(t *testing.T) {
 
 type noDoer struct{}
 
-func (noDoer) Do(req *http.Request) (*http.Response, error) {
+func (noDoer) DoWithScope(req *http.Request, _ ociauth.Scope) (*http.Response, error) {
 	return nil, fmt.Errorf("no can do")
 }
