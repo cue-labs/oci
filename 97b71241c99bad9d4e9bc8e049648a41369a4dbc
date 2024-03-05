@@ -24,6 +24,30 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "44744942_a3c4804d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-05T11:52:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ee9cc180_1c014d11",
+      "range": {
+        "startLine": 19,
+        "startChar": 18,
+        "endLine": 19,
+        "endChar": 24
+      },
+      "revId": "97b71241c99bad9d4e9bc8e049648a41369a4dbc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c682eb74_a208aaa2",
@@ -89,6 +113,24 @@
       "writtenOn": "2024-03-05T11:29:10Z",
       "side": 1,
       "message": "name this NoScopeHTTPClient, or NoopHTTPClient, to clarify that the scopes are dropped/ignored entirely?",
+      "revId": "97b71241c99bad9d4e9bc8e049648a41369a4dbc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5918dfd7_b5fab397",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-05T11:52:50Z",
+      "side": 1,
+      "message": "I already considered variants of both of those, but ended up with this anyway. \"NoScopeHTTPClient\" sounds like it doesn\u0027t accept a scope as an argument (but it does), and \"NoopHTTPClient\" sounds like it doesn\u0027t actually _do_ anything (but it does make HTTP requests). In the end, given the signature of the function, I don\u0027t think it\u0027s possible for it to do anything accept drop the scope argument and call the inner client, so I think this name works OK, if not perfectly.",
+      "parentUuid": "5feb6da3_8c195bdd",
       "revId": "97b71241c99bad9d4e9bc8e049648a41369a4dbc",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
