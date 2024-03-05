@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ee9cc180_1c014d11",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-03-05T11:29:10Z",
+      "side": 1,
+      "message": "FYI best to just name the person or omit the @, because otherwise github will ping me with a notification every time this commit gets pushed to any branch. I\u0027ve already gotten six notifications in between the oci and oci-trybot repos, due to the nature of `cueckoo runtrybot` :) This is just a problem in general with github. There are commits in golang/go that @mention me, and occasionally I still get notified when someone opens a PR with those commits.",
+      "range": {
+        "startLine": 19,
+        "startChar": 18,
+        "endLine": 19,
+        "endChar": 24
+      },
+      "revId": "97b71241c99bad9d4e9bc8e049648a41369a4dbc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c682eb74_a208aaa2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-03-05T11:29:10Z",
+      "side": 1,
+      "message": "this commit message goes over in a number of lines",
+      "revId": "97b71241c99bad9d4e9bc8e049648a41369a4dbc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fca3ccfd_4e18d38a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-03-05T11:29:10Z",
+      "side": 1,
+      "message": "Much nicer, thanks.",
+      "revId": "97b71241c99bad9d4e9bc8e049648a41369a4dbc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5feb6da3_8c195bdd",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-03-05T11:29:10Z",
+      "side": 1,
+      "message": "name this NoScopeHTTPClient, or NoopHTTPClient, to clarify that the scopes are dropped/ignored entirely?",
+      "revId": "97b71241c99bad9d4e9bc8e049648a41369a4dbc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
