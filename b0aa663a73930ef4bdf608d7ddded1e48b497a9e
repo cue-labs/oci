@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cf373fe1_e579e534",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-03-06T13:00:25Z",
+      "side": 1,
+      "message": "just one over the limit; clear if you enable the vertical guide or look at the rendering at the top.",
+      "revId": "b0aa663a73930ef4bdf608d7ddded1e48b497a9e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "62503606_f7d3d0dd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-03-06T13:00:25Z",
+      "side": 1,
+      "message": "LGTM. I might have gone with an http.Client API rather than Transport, similar to x/oauth2, but this looks good as a transport composes better.",
+      "revId": "b0aa663a73930ef4bdf608d7ddded1e48b497a9e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
