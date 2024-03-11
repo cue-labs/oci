@@ -121,10 +121,10 @@ func (a *stdTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req = req.Clone(req.Context())
 
 	// From the [http.RoundTripper] docs:
-	//	RoundTrip must always close the body, including on errors,
+	//	RoundTrip must always close the body, including on errors, [...]
 	needBodyClose := true
 	defer func() {
-		if needBodyClose {
+		if needBodyClose && req.Body != nil {
 			req.Body.Close()
 		}
 	}()
@@ -183,9 +183,6 @@ func (a *stdTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 			return nil, err
 		}
 	}
-	// The underlying transport is now responsible for
-	// closing the body.
-	needBodyClose = false
 	return r.transport.RoundTrip(req)
 }
 
