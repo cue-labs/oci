@@ -262,6 +262,23 @@ func TestConfigHasAccessToken(t *testing.T) {
 	assertRequest(context.Background(), t, ts, "/test", client, Scope{})
 }
 
+func TestConfigErrorNilRequestBody(t *testing.T) {
+	// stdTransport used to panic when given a nil request body
+	// if something failed before it called the underlying transport,
+	// as it would always try to close the body even when nil.
+	ts := newTargetServer(t, func(req *http.Request) *httpError {
+		return &httpError{statusCode: http.StatusUnauthorized}
+	})
+	client := &http.Client{
+		Transport: NewStdTransport(StdTransportParams{
+			Config: configFunc(func(host string) (ConfigEntry, error) {
+				return ConfigEntry{}, fmt.Errorf("always fails")
+			}),
+		}),
+	}
+	_, err := client.Get(ts.String() + "/test")
+}
+
 func TestLaterRequestCanUseEarlierTokenWithLargerScope(t *testing.T) {
 	authCount := 0
 	authSrv := newAuthServer(t, func(req *http.Request) (any, *httpError) {
