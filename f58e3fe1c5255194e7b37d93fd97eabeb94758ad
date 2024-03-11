@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1078fc5c_ac171b31",
+        "filename": "ociregistry/ociauth/auth_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-11T16:51:46Z",
+      "side": 1,
+      "message": "Or just:\n\n```suggestion\n\t_, err :\u003d client.Get(ts.String() + \"/test\")\n``````",
+      "range": {
+        "startLine": 279,
+        "startChar": 0,
+        "endLine": 282,
+        "endChar": 0
+      },
+      "revId": "f58e3fe1c5255194e7b37d93fd97eabeb94758ad",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
