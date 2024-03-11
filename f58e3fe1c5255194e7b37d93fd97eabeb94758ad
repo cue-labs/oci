@@ -46,6 +46,30 @@
       },
       "revId": "f58e3fe1c5255194e7b37d93fd97eabeb94758ad",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8539cb4_dc3df68f",
+        "filename": "ociregistry/ociauth/auth_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-03-11T16:56:08Z",
+      "side": 1,
+      "message": "Oh, d\u0027oh, your suggested edit got rid of my assertion, so I need PS3 to undo that breakage.",
+      "parentUuid": "073942a5_e3a2f9ab",
+      "range": {
+        "startLine": 279,
+        "startChar": 0,
+        "endLine": 282,
+        "endChar": 0
+      },
+      "revId": "f58e3fe1c5255194e7b37d93fd97eabeb94758ad",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
