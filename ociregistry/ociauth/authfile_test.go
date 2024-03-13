@@ -289,8 +289,63 @@ func TestWithHelperRegistryOtherError(t *testing.T) {
 	qt.Assert(t, qt.ErrorMatches(err, `error getting credentials: some error`))
 }
 
-func TestWithHelperAndExplicitEnv(t *testing.T) {
+func TestWithDefaultHelper(t *testing.T) {
+	// Note: "test" matches the executable installed using testscript in RunMain.
+	c, err := load(t, nil, `
+{
+	"credsStore": "test"
+}
+`)
+	qt.Assert(t, qt.IsNil(err))
+	info, err := c.EntryForRegistry("registry-with-basic-auth.com")
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.Equals(info, ConfigEntry{
+		Username: "someuser",
+		Password: "somesecret",
+	}))
+}
 
+func TestWithDefaultHelperNotFound(t *testing.T) {
+	// When there's a helper not associated with any specific
+	// host, it ignores the fact that the executable isn't
+	// found and uses the regular "auths" info.
+	// See https://github.com/cue-lang/cue/issues/2934.
+	c, err := load(t, nil, `
+{
+	"credsStore": "definitely-not-found-executable",
+	"auths": {
+		"registry-with-basic-auth.com": {
+			"username": "u1",
+			"password": "p"
+		}
+	}
+}
+`)
+	qt.Assert(t, qt.IsNil(err))
+	info, err := c.EntryForRegistry("registry-with-basic-auth.com")
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.Equals(info, ConfigEntry{
+		Username: "u1",
+		Password: "p",
+	}))
+}
+
+func TestWithSpecificHelperNotFound(t *testing.T) {
+	// When there's a helper specifically configured for a host,
+	// it _is_ an error that the helper isn't found.
+	c, err := load(t, nil, `
+{
+	"credHelpers": {
+		"registry-with-basic-auth.com": "definitely-not-found-executable"
+	}
+}
+`)
+	qt.Assert(t, qt.IsNil(err))
+	_, err = c.EntryForRegistry("registry-with-basic-auth.com")
+	qt.Assert(t, qt.ErrorMatches(err, `helper not found: exec: "docker-credential-definitely-not-found-executable": executable file not found .*`))
+}
+
+func TestWithHelperAndExplicitEnv(t *testing.T) {
 	d := t.TempDir()
 	// Note: "test" matches the executable installed using testscript in RunMain.
 	err := os.WriteFile(filepath.Join(d, "config.json"), []byte(`

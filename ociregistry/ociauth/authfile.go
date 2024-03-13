@@ -46,12 +46,16 @@ type ConfigFile struct {
 	runner HelperRunner
 }
 
+var ErrHelperNotFound = errors.New("helper not found")
+
 // HelperRunner is the function used to execute auth "helper"
 // commands. It's passed the helper name as specified in the configuration file,
 // without the "docker-credential-helper-" prefix.
 //
 // If the credentials are not found, it should return the zero AuthInfo
 // and no error.
+//
+// If the helper doesn't exist, it should return an [ErrHelperNotFound] error.
 type HelperRunner = func(helperName string, serverURL string) (ConfigEntry, error)
 
 // configData holds the part of ~/.docker/config.json that pertains to auth.
@@ -195,11 +199,20 @@ var userHomeDir = func(getenv func(string) string) string {
 // If no registry is found, it returns the zero [ConfigEntry] and a nil error.
 func (c *ConfigFile) EntryForRegistry(registryHostname string) (ConfigEntry, error) {
 	helper, ok := c.data.CredHelpers[registryHostname]
+	explicit := true
 	if !ok {
 		helper = c.data.CredsStore
+		explicit = false
 	}
 	if helper != "" {
-		return c.runner(helper, registryHostname)
+		entry, err := c.runner(helper, registryHostname)
+		if err == nil || explicit {
+			return entry, err
+		}
+		// The helper command isn't found and it's a fallback default.
+		// Don't treat that as an error, because it's common for
+		// a helper default to be set up without the helper actually
+		// existing. See https://github.com/cue-lang/cue/issues/2934.
 	}
 	auth := c.data.Auths[registryHostname]
 	if auth.IdentityToken != "" && auth.Username != "" {
@@ -289,16 +302,16 @@ func decodeAuth(authStr string) (string, string, error) {
 }
 
 // ExecHelper executes an external program to get the credentials from a native store.
-// It implements HelperRunner.
+// It implements [HelperRunner].
 func ExecHelper(helperName string, serverURL string) (ConfigEntry, error) {
 	return ExecHelperWithEnv(nil)(helperName, serverURL)
 }
 
-// ExecHelperWithEnv returns a function that behaves like [ExecHelper]
+// ExecHelperWithEnv returns a [HelperRunner] that behaves like [ExecHelper]
 // except that, if env is non-nil, it will be used as the set of environment
 // variables to pass to the executed helper command. If env is nil,
 // the current process's environment will be used.
-func ExecHelperWithEnv(env []string) func(helperName string, serverURL string) (ConfigEntry, error) {
+func ExecHelperWithEnv(env []string) HelperRunner {
 	return func(helperName string, serverURL string) (ConfigEntry, error) {
 		var out bytes.Buffer
 		cmd := exec.Command("docker-credential-"+helperName, "get")
@@ -310,6 +323,9 @@ func ExecHelperWithEnv(env []string) func(helperName string, serverURL string) (
 		cmd.Env = env
 		if err := cmd.Run(); err != nil {
 			if !errors.As(err, new(*exec.ExitError)) {
+				if errors.Is(err, exec.ErrNotFound) {
+					return ConfigEntry{}, fmt.Errorf("%w: %v", ErrHelperNotFound, err)
+				}
 				return ConfigEntry{}, fmt.Errorf("cannot run auth helper: %v", err)
 			}
 			t := strings.TrimSpace(out.String())
