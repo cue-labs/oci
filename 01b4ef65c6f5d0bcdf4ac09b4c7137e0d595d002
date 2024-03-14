@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1035cbd7_42750e4f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-03-14T09:34:05Z",
+      "side": 1,
+      "message": "\u003e For cue-lang/cue#2934.",
+      "revId": "01b4ef65c6f5d0bcdf4ac09b4c7137e0d595d002",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "af9a6199_a51a8947",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-03-14T09:34:05Z",
+      "side": 1,
+      "message": "SGTM but the \"not found\" error seems misused",
+      "revId": "01b4ef65c6f5d0bcdf4ac09b4c7137e0d595d002",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d2ac6ac6_b0a7ee71",
+        "filename": "ociregistry/ociauth/authfile.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-03-14T09:34:05Z",
+      "side": 1,
+      "message": "this seems slightly incorrect to me; you should only ignore errors for the default helper if the error is ErrHelperNotFound. presumably, if the helper is installed but fails, that should still be a fatal error. otherwise I don\u0027t really see the point of adding ErrHelperNotFound in this commit, as we don\u0027t actually use it.",
+      "revId": "01b4ef65c6f5d0bcdf4ac09b4c7137e0d595d002",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
