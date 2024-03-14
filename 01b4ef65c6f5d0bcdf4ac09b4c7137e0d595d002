@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "b09bea63_6bcaa286",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-14T11:08:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1035cbd7_42750e4f",
+      "revId": "01b4ef65c6f5d0bcdf4ac09b4c7137e0d595d002",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "af9a6199_a51a8947",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
@@ -48,6 +66,24 @@
       "writtenOn": "2024-03-14T09:34:05Z",
       "side": 1,
       "message": "this seems slightly incorrect to me; you should only ignore errors for the default helper if the error is ErrHelperNotFound. presumably, if the helper is installed but fails, that should still be a fatal error. otherwise I don\u0027t really see the point of adding ErrHelperNotFound in this commit, as we don\u0027t actually use it.",
+      "revId": "01b4ef65c6f5d0bcdf4ac09b4c7137e0d595d002",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "251a2aca_45cf54ef",
+        "filename": "ociregistry/ociauth/authfile.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-14T11:08:02Z",
+      "side": 1,
+      "message": "Good catch! Done (and added another test to make sure).",
+      "parentUuid": "d2ac6ac6_b0a7ee71",
       "revId": "01b4ef65c6f5d0bcdf4ac09b4c7137e0d595d002",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
