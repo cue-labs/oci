@@ -50,6 +50,9 @@ func (c *client) PushManifest(ctx context.Context, repo string, tag string, cont
 		Digest: string(desc.Digest),
 	}
 	req, err := newRequest(ctx, rreq, bytes.NewReader(contents))
+	if err != nil {
+		return ociregistry.Descriptor{}, err
+	}
 	req.Header.Set("Content-Type", mediaType)
 	req.ContentLength = desc.Size
 	resp, err := c.do(req, http.StatusCreated)
@@ -257,11 +260,6 @@ type blobWriter struct {
 	// Each successfully flushed chunk increases this.
 	flushed  int64
 	location *url.URL
-}
-
-type doResult struct {
-	resp *http.Response
-	err  error
 }
 
 func (w *blobWriter) Write(buf []byte) (int, error) {

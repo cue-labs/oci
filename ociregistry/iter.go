@@ -36,11 +36,6 @@ func All[T any](it Seq[T]) (_ []T, _err error) {
 	return xs, _err
 }
 
-type sliceIter[T any] struct {
-	i  int
-	xs []T
-}
-
 func SliceIter[T any](xs []T) Seq[T] {
 	return func(yield func(T, error) bool) {
 		for _, x := range xs {
