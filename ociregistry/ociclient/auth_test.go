@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/internal/exp/maps"
 	"cuelabs.dev/go/oci/ociregistry/ociauth"
 	"cuelabs.dev/go/oci/ociregistry/ocimem"
 	"cuelabs.dev/go/oci/ociregistry/ociserver"
@@ -121,11 +120,20 @@ func assertAuthScope(t *testing.T, host string, scope string, f func(ctx context
 	f(ctx, client)
 	qt.Assert(t, qt.HasLen(requestedScopes, 1))
 	t.Logf("requested scopes: %v", requestedScopes)
-	qt.Assert(t, qt.Equals(maps.Keys(requestedScopes)[0], scope))
+	qt.Assert(t, qt.Equals(mapsKeys(requestedScopes)[0], scope))
 }
 
 type transportFunc func(req *http.Request) (*http.Response, error)
 
 func (f transportFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
+}
+
+// TODO: replace with maps.Keys once Go adds it
+func mapsKeys[M ~map[K]V, K comparable, V any](m M) []K {
+	r := make([]K, 0, len(m))
+	for k := range m {
+		r = append(r, k)
+	}
+	return r
 }
