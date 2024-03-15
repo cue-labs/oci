@@ -8,11 +8,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"time"
-
-	"cuelabs.dev/go/oci/ociregistry/internal/exp/slices"
 )
 
 // TODO decide on a good value for this.
