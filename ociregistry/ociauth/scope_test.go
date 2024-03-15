@@ -429,17 +429,3 @@ func all[T any](iter func(func(T) bool)) []T {
 	})
 	return xs
 }
-
-func first[T any](iter func(func(T) bool)) T {
-	found := false
-	var x T
-	iter(func(x1 T) bool {
-		x = x1
-		found = true
-		return false
-	})
-	if !found {
-		panic("no items in iterator")
-	}
-	return x
-}

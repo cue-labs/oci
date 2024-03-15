@@ -76,6 +76,7 @@ func TestLoad(t *testing.T) {
 		}
 	}
 }`), 0o666)
+		qt.Assert(t, qt.IsNil(err))
 	}
 	for _, loc := range locations {
 		t.Run(loc.env, func(t *testing.T) {
@@ -148,6 +149,7 @@ func TestWithAuthAndUsername(t *testing.T) {
 }`)
 	qt.Assert(t, qt.IsNil(err))
 	info, err := c.EntryForRegistry("someregistry.example.com")
+	qt.Assert(t, qt.IsNil(err))
 	qt.Assert(t, qt.Equals(info, ConfigEntry{
 		Username: "testuser",
 		Password: "password",
