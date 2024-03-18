@@ -397,7 +397,7 @@ func (r *registry) acquireToken(ctx context.Context, scope Scope) (*wireToken, e
 		v.Set("service", service)
 	}
 	u.RawQuery = v.Encode()
-	req, err := http.NewRequest("GET", u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
