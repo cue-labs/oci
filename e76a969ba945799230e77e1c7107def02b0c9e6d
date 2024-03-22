@@ -16,6 +16,24 @@
       "message": "I\u0027ve been labeling API-breaking changes explicitly in the commit messages, so worth doing that too here, I think.\n\n```\nociregistry: breaking change: rename SliceIter and ErrorIter after Seq\n```\n\nAside: the \"suggestion\" triple-quote type is really broken for commit messages in Gerrit!",
       "revId": "e76a969ba945799230e77e1c7107def02b0c9e6d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff4bb91e_4ebf9b20",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-03-22T11:01:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6513c09e_82b6300b",
+      "revId": "e76a969ba945799230e77e1c7107def02b0c9e6d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
