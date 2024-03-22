@@ -168,14 +168,14 @@ func (r *selectRegistry) Repositories(ctx context.Context, startAfter string) oc
 
 func (r *selectRegistry) Tags(ctx context.Context, repo, startAfter string) ociregistry.Seq[string] {
 	if !r.allow(repo) {
-		return ociregistry.ErrorIter[string](ociregistry.ErrNameUnknown)
+		return ociregistry.ErrorSeq[string](ociregistry.ErrNameUnknown)
 	}
 	return r.r.Tags(ctx, repo, startAfter)
 }
 
 func (r *selectRegistry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) ociregistry.Seq[ociregistry.Descriptor] {
 	if !r.allow(repo) {
-		return ociregistry.ErrorIter[ociregistry.Descriptor](ociregistry.ErrNameUnknown)
+		return ociregistry.ErrorSeq[ociregistry.Descriptor](ociregistry.ErrNameUnknown)
 	}
 	return r.r.Referrers(ctx, repo, digest, artifactType)
 }

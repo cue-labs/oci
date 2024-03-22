@@ -32,7 +32,7 @@ func (r *Registry) Tags(ctx context.Context, repoName string, startAfter string)
 	defer r.mu.Unlock()
 	repo, err := r.repo(repoName)
 	if err != nil {
-		return ociregistry.ErrorIter[string](err)
+		return ociregistry.ErrorSeq[string](err)
 	}
 	return mapKeysIter(repo.tags, stringLess, startAfter)
 }
@@ -42,7 +42,7 @@ func (r *Registry) Referrers(ctx context.Context, repoName string, digest ocireg
 	defer r.mu.Unlock()
 	repo, err := r.repo(repoName)
 	if err != nil {
-		return ociregistry.ErrorIter[ociregistry.Descriptor](err)
+		return ociregistry.ErrorSeq[ociregistry.Descriptor](err)
 	}
 	var referrers []ociregistry.Descriptor
 	for _, b := range repo.manifests {
@@ -55,7 +55,7 @@ func (r *Registry) Referrers(ctx context.Context, repoName string, digest ocireg
 	sort.Slice(referrers, func(i, j int) bool {
 		return descriptorLess(referrers[i], referrers[j])
 	})
-	return ociregistry.SliceIter(referrers)
+	return ociregistry.SliceSeq(referrers)
 }
 
 func mapKeysIter[K comparable, V any](m map[K]V, less func(K, K) bool, startAfter K) ociregistry.Seq[K] {
@@ -68,7 +68,7 @@ func mapKeysIter[K comparable, V any](m map[K]V, less func(K, K) bool, startAfte
 	sort.Slice(ks, func(i, j int) bool {
 		return less(ks[i], ks[j])
 	})
-	return ociregistry.SliceIter(ks)
+	return ociregistry.SliceSeq(ks)
 }
 
 func stringLess(s1, s2 string) bool {

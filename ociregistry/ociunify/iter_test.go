@@ -28,18 +28,18 @@ var mergeIterTests = []struct {
 	wantErr  error
 }{{
 	testName: "IdenticalContents",
-	it0:      ociregistry.SliceIter([]int{1, 2, 3}),
-	it1:      ociregistry.SliceIter([]int{1, 2, 3}),
+	it0:      ociregistry.SliceSeq([]int{1, 2, 3}),
+	it1:      ociregistry.SliceSeq([]int{1, 2, 3}),
 	want:     []int{1, 2, 3},
 }, {
 	testName: "DifferentContents",
-	it0:      ociregistry.SliceIter([]int{0, 1, 2, 3}),
-	it1:      ociregistry.SliceIter([]int{1, 2, 3, 5}),
+	it0:      ociregistry.SliceSeq([]int{0, 1, 2, 3}),
+	it1:      ociregistry.SliceSeq([]int{1, 2, 3, 5}),
 	want:     []int{0, 1, 2, 3, 5},
 }, {
 	testName: "NoItems",
-	it0:      ociregistry.SliceIter[int](nil),
-	it1:      ociregistry.SliceIter[int](nil),
+	it0:      ociregistry.SliceSeq[int](nil),
+	it1:      ociregistry.SliceSeq[int](nil),
 	want:     []int{},
 }}
 
