@@ -147,7 +147,13 @@ func (r *registry) handleManifestHead(ctx context.Context, resp http.ResponseWri
 	if err != nil {
 		return err
 	}
-	resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
+	if !r.opts.OmitDigestFromTagGetResponse || rreq.Tag != "" {
+		// Note: when doing a HEAD of a tag, clients are entitled
+		// to expect that the digest header is set on the response
+		// even though the spec says it's only optional in this case.
+		// TODO raise an issue on the spec about this.
+		resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
+	}
 	resp.Header().Set("Content-Type", desc.MediaType)
 	resp.Header().Set("Content-Length", fmt.Sprint(desc.Size))
 	resp.WriteHeader(http.StatusOK)

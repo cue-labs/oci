@@ -97,7 +97,7 @@ func (c *client) resolve(ctx context.Context, rreq *ocirequest.Request) (ociregi
 		return ociregistry.Descriptor{}, err
 	}
 	resp.Body.Close()
-	desc, err := descriptorFromResponse(resp, "", true)
+	desc, err := descriptorFromResponse(resp, ociregistry.Digest(rreq.Digest), true)
 	if err != nil {
 		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor in response: %v", err)
 	}
@@ -176,7 +176,7 @@ func (c *client) read(ctx context.Context, rreq *ocirequest.Request) (_ ociregis
 				return nil, err
 			}
 			resp1.Body.Close()
-			desc, err = descriptorFromResponse(resp1, "", true)
+			desc, err = descriptorFromResponse(resp1, ociregistry.Digest(rreq1.Digest), true)
 			if err != nil {
 				return nil, err
 			}
