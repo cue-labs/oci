@@ -56,7 +56,7 @@ func mergeIter[T any](it0, it1 ociregistry.Seq[T], cmp func(T, T) int) ociregist
 		notFound0 := errors.Is(err0, ociregistry.ErrNameUnknown)
 		notFound1 := errors.Is(err1, ociregistry.ErrNameUnknown)
 		if notFound0 && notFound1 {
-			return ociregistry.ErrorIter[T](err0)
+			return ociregistry.ErrorSeq[T](err0)
 		}
 		if notFound0 {
 			err0 = nil
@@ -87,7 +87,7 @@ func mergeIter[T any](it0, it1 ociregistry.Seq[T], cmp func(T, T) int) ociregist
 		err = err1
 	}
 	if err == nil {
-		return ociregistry.SliceIter(xs)
+		return ociregistry.SliceSeq(xs)
 	}
 	return func(yield func(T, error) bool) {
 		for _, x := range xs {
