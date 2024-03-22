@@ -235,6 +235,79 @@ func TestAuthNotAvailableAfterChallenge(t *testing.T) {
 	qt.Check(t, qt.Equals(requestCount, 1))
 }
 
+func Test401ResponseWithJustAcquiredToken(t *testing.T) {
+	// This tests the scenario where a server returns a 401 response
+	// when the client has just successfully acquired a token from
+	// the auth server.
+	//
+	// In this case, a "correct" server should return
+	// either 403 (access to the resource is forbidden because the
+	// client's credentials are not sufficient) or 404 (either the
+	// repository really doesn't exist or the credentials are insufficient
+	// and the server doesn't allow clients to see whether repositories
+	// they don't have access to might exist).
+	//
+	// However, some real-world servers instead return a 401 response
+	// erroneously indicating that the client needs to acquire
+	// authorization credentials, even though they have in fact just
+	// done so.
+	//
+	// As a workaround for this case, we treat the response as a 404.
+
+	testScope := ParseScope("repository:foo:pull")
+	authSrv := newAuthServer(t, func(req *http.Request) (any, *httpError) {
+		requestedScope := ParseScope(req.Form.Get("scope"))
+		if !runNonFatal(t, func(t testing.TB) {
+			qt.Assert(t, qt.DeepEquals(requestedScope, testScope))
+			qt.Assert(t, qt.DeepEquals(req.Form["service"], []string{"someService"}))
+		}) {
+			return nil, &httpError{
+				statusCode: http.StatusInternalServerError,
+			}
+		}
+		return &wireToken{
+			Token: token{requestedScope}.String(),
+		}, nil
+	})
+	ts := newTargetServer(t, func(req *http.Request) *httpError {
+		if req.Header.Get("Authorization") == "" {
+			return &httpError{
+				statusCode: http.StatusUnauthorized,
+				header: http.Header{
+					"Www-Authenticate": []string{fmt.Sprintf("Bearer realm=%q,service=someService,scope=%q", authSrv, testScope)},
+				},
+			}
+		}
+		if !runNonFatal(t, func(t testing.TB) {
+			qt.Assert(t, qt.DeepEquals(authScopeFromRequest(t, req), testScope))
+		}) {
+			return &httpError{
+				statusCode: http.StatusInternalServerError,
+			}
+		}
+		return &httpError{
+			statusCode: http.StatusUnauthorized,
+			header: http.Header{
+				"Www-Authenticate": []string{fmt.Sprintf("Bearer realm=%q,service=someService,scope=%q", authSrv, testScope)},
+			},
+		}
+		return nil
+	})
+	client := &http.Client{
+		Transport: NewStdTransport(StdTransportParams{
+			Config: configFunc(func(host string) (ConfigEntry, error) {
+				return ConfigEntry{}, nil
+			}),
+		}),
+	}
+	req, err := http.NewRequestWithContext(context.Background(), "GET", ts.String()+"/test", nil)
+	qt.Assert(t, qt.IsNil(err))
+	resp, err := client.Do(req)
+	qt.Assert(t, qt.IsNil(err))
+	defer resp.Body.Close()
+	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusNotFound))
+}
+
 func TestConfigHasAccessToken(t *testing.T) {
 	accessToken := "somevalue"
 	ts := newTargetServer(t, func(req *http.Request) *httpError {
