@@ -182,7 +182,20 @@ func (a *stdTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 			return nil, err
 		}
 	}
-	return r.transport.RoundTrip(req)
+	resp, err = r.transport.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusUnauthorized {
+		return resp, nil
+	}
+	// The server has responded with a 401 even though we've just
+	// provided a token that it gave us. Treat it as a 404 instead.
+	resp.Body.Close()
+	resp.Body = io.NopCloser(strings.NewReader("TODO"))
+	resp.StatusCode = http.StatusNotFound
+	resp.Status = http.StatusText(resp.StatusCode)
+	return resp, nil
 }
 
 // setAuthorization sets up authorization on the given request using any

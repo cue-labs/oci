@@ -23,41 +23,48 @@ import (
 	"cuelabs.dev/go/oci/ociregistry"
 )
 
-type wireError struct {
-	Code    string `json:"code"`
-	Message string `json:"message,omitempty"`
-	Detail  any    `json:"detail,omitempty"`
-}
-
-type wireErrors struct {
-	Errors []wireError `json:"errors"`
-}
-
 func writeError(resp http.ResponseWriter, err error) {
-	e := wireError{
+	e := ociregistry.WireError{
 		Message: err.Error(),
 	}
+	// TODO perhaps we should iterate through all the
+	// errors instead of just choosing one.
+	// See https://github.com/golang/go/issues/66455
 	var ociErr ociregistry.Error
 	if errors.As(err, &ociErr) {
-		e.Code = ociErr.Code()
-		e.Detail = ociErr.Detail()
+		e.Code_ = ociErr.Code()
+		if detail := ociErr.Detail(); detail != nil {
+			data, err := json.Marshal(detail)
+			if err != nil {
+				panic(fmt.Errorf("cannot marshal error detail: %v", err))
+			}
+			e.Detail_ = json.RawMessage(data)
+		}
 	} else {
 		// This is contrary to spec, but it's what the Docker registry
 		// does, so it can't be too bad.
-		e.Code = "UNKNOWN"
+		e.Code_ = "UNKNOWN"
 	}
+
+	// Use the HTTP status code from the error only when there isn't
+	// one implied from the error code. This means that the HTTP status
+	// is always consistent with the error code, but still allows a registry
+	// to return custom HTTP status codes for other codes.
+
 	httpStatus := http.StatusInternalServerError
-	var statusErr *httpStatusError
-	if errors.As(err, &statusErr) {
-		httpStatus = statusErr.status
-	} else if status, ok := errorStatuses[e.Code]; ok {
+	if status, ok := errorStatuses[e.Code_]; ok {
 		httpStatus = status
+	} else {
+		var httpErr ociregistry.HTTPError
+		if errors.As(err, &httpErr) {
+			httpStatus = httpErr.StatusCode()
+		}
 	}
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(httpStatus)
 
-	data, err := json.Marshal(wireErrors{
-		Errors: []wireError{e},
+	data, err := json.Marshal(ociregistry.WireErrors{
+		Errors: []ociregistry.WireError{e},
 	})
 	if err != nil {
 		// TODO log
@@ -83,29 +90,10 @@ var errorStatuses = map[string]int{
 	ociregistry.ErrRangeInvalid.Code():        http.StatusRequestedRangeNotSatisfiable,
 }
 
+func withHTTPCode(statusCode int, err error) error {
+	return ociregistry.NewHTTPError(err, statusCode, nil, nil)
+}
+
 func badAPIUseError(f string, a ...any) error {
 	return ociregistry.NewError(fmt.Sprintf(f, a...), ociregistry.ErrUnsupported.Code(), nil)
-}
-
-func withHTTPCode(status int, err error) error {
-	if err == nil {
-		panic("expected error to wrap")
-	}
-	return &httpStatusError{
-		err:    err,
-		status: status,
-	}
-}
-
-type httpStatusError struct {
-	err    error
-	status int
-}
-
-func (e *httpStatusError) Unwrap() error {
-	return e.err
-}
-
-func (e *httpStatusError) Error() string {
-	return e.err.Error()
 }
