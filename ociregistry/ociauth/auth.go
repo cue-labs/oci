@@ -1,6 +1,7 @@
 package ociauth
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -184,7 +185,28 @@ func (a *stdTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 			return nil, err
 		}
 	}
-	return r.transport.RoundTrip(req)
+	resp, err = r.transport.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusUnauthorized {
+		return resp, nil
+	}
+	deniedErr := ociregistry.ErrDenied
+	// The server has responded with Unauthorized (401) even though we've just
+	// provided a token that it gave us. Treat it as Forbidden (403) instead.
+	// TODO include the original error as part of the message or message detail?
+	resp.Body.Close()
+	data, err := json.Marshal(&ociregistry.WireErrors{
+		Errors: []ociregistry.WireError{{
+			Code_:   deniedErr.Code(),
+			Message: "unauthorized response with freshly acquired auth token",
+		}},
+	})
+	resp.Body = io.NopCloser(bytes.NewReader(data))
+	resp.StatusCode = http.StatusForbidden
+	resp.Status = http.StatusText(resp.StatusCode)
+	return resp, nil
 }
 
 // setAuthorization sets up authorization on the given request using any
@@ -220,7 +242,7 @@ func (r *registry) setAuthorization(ctx context.Context, req *http.Request, requ
 
 		accessToken, err := r.acquireAccessToken(ctx, requiredScope, wantScope)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot acquire access token: %v", err)
 		}
 		req.Header.Set("Authorization", "Bearer "+accessToken)
 		return nil
