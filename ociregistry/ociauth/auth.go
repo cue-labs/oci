@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"cuelabs.dev/go/oci/ociregistry"
 )
 
 // TODO decide on a good value for this.
@@ -298,8 +300,8 @@ func (r *registry) acquireAccessToken(ctx context.Context, requiredScope, wantSc
 	scope := requiredScope.Union(wantScope)
 	tok, err := r.acquireToken(ctx, scope)
 	if err != nil {
-		var rerr *responseError
-		if !errors.As(err, &rerr) || rerr.statusCode != http.StatusUnauthorized {
+		var herr ociregistry.HTTPError
+		if !errors.As(err, &herr) || herr.StatusCode() != http.StatusUnauthorized {
 			return "", err
 		}
 		// The documentation says this:
@@ -372,8 +374,8 @@ func (r *registry) acquireToken(ctx context.Context, scope Scope) (*wireToken, e
 		if err == nil {
 			return tok, nil
 		}
-		var rerr *responseError
-		if !errors.As(err, &rerr) || rerr.statusCode != http.StatusNotFound {
+		var herr ociregistry.HTTPError
+		if !errors.As(err, &herr) || herr.StatusCode() != http.StatusNotFound {
 			return tok, err
 		}
 		// The request to the endpoint returned 404 from the POST request,
@@ -449,7 +451,8 @@ func (r *registry) doTokenRequest(req *http.Request) (*wireToken, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, errorFromResponse(resp)
+		// TODO include body of response in error message.
+		return nil, ociregistry.NewHTTPError(nil, resp.StatusCode, resp, nil)
 	}
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -460,22 +463,6 @@ func (r *registry) doTokenRequest(req *http.Request) (*wireToken, error) {
 		return nil, fmt.Errorf("malformed JSON token in response: %v", err)
 	}
 	return &tok, nil
-}
-
-type responseError struct {
-	statusCode int
-	msg        string
-}
-
-func errorFromResponse(resp *http.Response) error {
-	// TODO include body of response in error message.
-	return &responseError{
-		statusCode: resp.StatusCode,
-	}
-}
-
-func (e *responseError) Error() string {
-	return fmt.Sprintf("unexpected HTTP response %d", e.statusCode)
 }
 
 // deleteExpiredTokens removes all tokens from r that expire after the given

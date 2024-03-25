@@ -111,6 +111,17 @@ var debugID int32
 // If opts is nil, it's equivalent to passing new(Options).
 //
 // The returned handler should be registered at the site root.
+//
+// # Errors
+//
+// All HTTP responses will be JSON, formatted according to the
+// OCI spec. If an error returned from backend conforms to
+// [ociregistry.Error], the associated code and detail will be used.
+//
+// The HTTP response code will be determined from the error
+// code when possible. If it can't be determined and the
+// error implements [ociregistry.HTTPError], the code returned
+// by StatusCode will be used as the HTTP response code.
 func New(backend ociregistry.Interface, opts *Options) http.Handler {
 	if opts == nil {
 		opts = new(Options)
