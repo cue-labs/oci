@@ -1,0 +1,106 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "501b0d31_c8015704",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1037904
+      },
+      "writtenOn": "2024-03-26T17:16:09Z",
+      "side": 1,
+      "message": "Minor grammatical nit: \"a error code\" vs \"an error code\"",
+      "revId": "de1d93f5f536e91c12d25236242547d0c21f3138",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "947eb6d8_f9a2c760",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1037904
+      },
+      "writtenOn": "2024-03-26T17:16:09Z",
+      "side": 1,
+      "message": "Looks great to me! 👍\n\nI\u0027ve left a few comments/questions, but nothing too serious. 😊",
+      "revId": "de1d93f5f536e91c12d25236242547d0c21f3138",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6ce120b_101b6024",
+        "filename": "ociregistry/error.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1037904
+      },
+      "writtenOn": "2024-03-26T17:16:09Z",
+      "side": 1,
+      "message": "What makes `WireError` different from `registryError`?  Are they different enough to keep both?",
+      "revId": "de1d93f5f536e91c12d25236242547d0c21f3138",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d9ee0419_47746afa",
+        "filename": "ociregistry/error.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1037904
+      },
+      "writtenOn": "2024-03-26T17:16:09Z",
+      "side": 1,
+      "message": "This is really clever! 😄",
+      "revId": "de1d93f5f536e91c12d25236242547d0c21f3138",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "69290c43_1fc960ce",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1037904
+      },
+      "writtenOn": "2024-03-26T17:16:09Z",
+      "side": 1,
+      "message": "If you move this up, you could resolve the `TODO` without much code change (although I don\u0027t think it\u0027s terribly important either way 👍).",
+      "revId": "de1d93f5f536e91c12d25236242547d0c21f3138",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "465e3eee_2ee9df1e",
+        "filename": "ociregistry/ociclient/error.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1037904
+      },
+      "writtenOn": "2024-03-26T17:16:09Z",
+      "side": 1,
+      "message": "The way this gets wrapped up below, it _does_ include whatever part of the body it was able to read (`errorBodySizeLimit+1`), right?  or is the intent of this `TODO` that the error message should include part of the body too? (I guess probably that since the stringification of `HTTPError` doesn\u0027t include any of the body? maybe it could include a small snippet?)",
+      "revId": "de1d93f5f536e91c12d25236242547d0c21f3138",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
