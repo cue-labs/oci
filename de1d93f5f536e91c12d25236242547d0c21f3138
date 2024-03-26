@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "619d0cdb_1a8a6802",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-26T18:50:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "501b0d31_c8015704",
+      "revId": "de1d93f5f536e91c12d25236242547d0c21f3138",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "947eb6d8_f9a2c760",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 11
@@ -48,6 +66,24 @@
       "writtenOn": "2024-03-26T17:16:09Z",
       "side": 1,
       "message": "What makes `WireError` different from `registryError`?  Are they different enough to keep both?",
+      "revId": "de1d93f5f536e91c12d25236242547d0c21f3138",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c557e6a0_7d766fa4",
+        "filename": "ociregistry/error.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-26T18:50:04Z",
+      "side": 1,
+      "message": "The devil is in the Detail. 😊 For a WireError, I use json.RawMessage because that effectively delays the interpretation of the detail until someone decides to unmarshal it into a struct. NewError is more aimed at a interface returning some Go value to be (eventually) marshaled.\n\nBut now that I\u0027m writing it down like this, I realise that neither is great. If you _actually_ want to look at the detail inside a given error, you won\u0027t be able to rely on any particular Go data type, so you\u0027ll probably end up round-tripping via JSON anyway...\n\nI\u0027m thinking that maybe we should make (another!) API-breaking change, changing Detail to return json.RawMessage rather than `any`.",
+      "parentUuid": "e6ce120b_101b6024",
       "revId": "de1d93f5f536e91c12d25236242547d0c21f3138",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -86,6 +122,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ae25e235_be7f15dc",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-26T18:50:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "69290c43_1fc960ce",
+      "revId": "de1d93f5f536e91c12d25236242547d0c21f3138",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "465e3eee_2ee9df1e",
@@ -99,6 +153,24 @@
       "writtenOn": "2024-03-26T17:16:09Z",
       "side": 1,
       "message": "The way this gets wrapped up below, it _does_ include whatever part of the body it was able to read (`errorBodySizeLimit+1`), right?  or is the intent of this `TODO` that the error message should include part of the body too? (I guess probably that since the stringification of `HTTPError` doesn\u0027t include any of the body? maybe it could include a small snippet?)",
+      "revId": "de1d93f5f536e91c12d25236242547d0c21f3138",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dbaad07e_248daef9",
+        "filename": "ociregistry/ociclient/error.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-26T18:50:04Z",
+      "side": 1,
+      "message": "Good point. I\u0027ve removed the TODO from here and added one to ociregistry.httpError.Error 😊",
+      "parentUuid": "465e3eee_2ee9df1e",
       "revId": "de1d93f5f536e91c12d25236242547d0c21f3138",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
