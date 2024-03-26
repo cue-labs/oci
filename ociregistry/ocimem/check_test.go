@@ -140,7 +140,7 @@ var pushManifestTests = []struct {
 			},
 		})
 	},
-	wantError: `requested access to the resource is denied: cannot overwrite tag`,
+	wantError: `denied: requested access to the resource is denied: cannot overwrite tag`,
 }, {
 	testName: "CanRewriteTagWithIdenticalContentsWhenImmutabilityEnabled",
 	preload: ocitest.RepoContent{
@@ -201,7 +201,7 @@ var pushManifestTests = []struct {
 	manifestData: func(content ocitest.PushedRepoContent) []byte {
 		return content.ManifestData["m"]
 	},
-	wantError: `requested access to the resource is denied: mismatched media type`,
+	wantError: `denied: requested access to the resource is denied: mismatched media type`,
 }, {
 	testName: "CanOverwriteTagWhenImmutabilityNotEnabled",
 	preload: ocitest.RepoContent{
@@ -268,7 +268,7 @@ var deleteBlobTests = []struct {
 	getDigest: func(content ocitest.PushedRepoContent) ociregistry.Digest {
 		return digest.FromString("blshdfsvg")
 	},
-	wantError: "repository name not known to registry",
+	wantError: "name unknown: repository name not known to registry",
 }, {
 	testName: "NonExistentBlob",
 	preload: ocitest.RepoContent{
@@ -279,7 +279,7 @@ var deleteBlobTests = []struct {
 	getDigest: func(content ocitest.PushedRepoContent) ociregistry.Digest {
 		return digest.FromString("blshdfsvg")
 	},
-	wantError: "blob unknown to registry",
+	wantError: "blob unknown: blob unknown to registry",
 }, {
 	testName: "TaggedBlobWithImmutableTags",
 	config: Config{
@@ -307,7 +307,7 @@ var deleteBlobTests = []struct {
 	getDigest: func(content ocitest.PushedRepoContent) ociregistry.Digest {
 		return content.Blobs["a"].Digest
 	},
-	wantError: "requested access to the resource is denied: deletion of tagged blob not permitted",
+	wantError: "denied: requested access to the resource is denied: deletion of tagged blob not permitted",
 }, {
 	testName: "IndirectlyTaggedBlobWithImmutableTags",
 	config: Config{
@@ -342,7 +342,7 @@ var deleteBlobTests = []struct {
 	getDigest: func(content ocitest.PushedRepoContent) ociregistry.Digest {
 		return content.Blobs["a"].Digest
 	},
-	wantError: "requested access to the resource is denied: deletion of tagged blob not permitted",
+	wantError: "denied: requested access to the resource is denied: deletion of tagged blob not permitted",
 }}
 
 func TestDeleteBlob(t *testing.T) {
@@ -381,7 +381,7 @@ var deleteManifestTests = []struct {
 	getDigest: func(content ocitest.PushedRepoContent) ociregistry.Digest {
 		return digest.FromString("blshdfsvg")
 	},
-	wantError: "repository name not known to registry",
+	wantError: "name unknown: repository name not known to registry",
 }, {
 	testName: "NonExistentManifest",
 	preload: ocitest.RepoContent{
@@ -392,7 +392,7 @@ var deleteManifestTests = []struct {
 	getDigest: func(content ocitest.PushedRepoContent) ociregistry.Digest {
 		return digest.FromString("blshdfsvg")
 	},
-	wantError: "manifest unknown to registry",
+	wantError: "manifest unknown: manifest unknown to registry",
 }, {
 	testName: "TaggedManifestWithImmutableTags",
 	config: Config{
@@ -417,7 +417,7 @@ var deleteManifestTests = []struct {
 	getDigest: func(content ocitest.PushedRepoContent) ociregistry.Digest {
 		return content.Manifests["m"].Digest
 	},
-	wantError: "requested access to the resource is denied: deletion of tagged manifest not permitted",
+	wantError: "denied: requested access to the resource is denied: deletion of tagged manifest not permitted",
 }, {
 	testName: "IndirectlyTaggedManifestWithImmutableTags",
 	config: Config{
@@ -452,7 +452,7 @@ var deleteManifestTests = []struct {
 	getDigest: func(content ocitest.PushedRepoContent) ociregistry.Digest {
 		return content.Manifests["m0"].Digest
 	},
-	wantError: "requested access to the resource is denied: deletion of tagged manifest not permitted",
+	wantError: "denied: requested access to the resource is denied: deletion of tagged manifest not permitted",
 }}
 
 func TestDeleteManifest(t *testing.T) {
@@ -489,7 +489,7 @@ var deleteTagTests = []struct {
 }{{
 	testName:  "NonExistentRepo",
 	tag:       "foo",
-	wantError: "repository name not known to registry",
+	wantError: "name unknown: repository name not known to registry",
 }, {
 	testName: "NonExistentTag",
 	preload: ocitest.RepoContent{
@@ -498,7 +498,7 @@ var deleteTagTests = []struct {
 		},
 	},
 	tag:       "foo",
-	wantError: "manifest unknown to registry: tag does not exist",
+	wantError: "manifest unknown: manifest unknown to registry: tag does not exist",
 }, {
 	testName: "WithImmutableTags",
 	config: Config{
@@ -521,7 +521,7 @@ var deleteTagTests = []struct {
 		},
 	},
 	tag:       "sometag",
-	wantError: "requested access to the resource is denied: tag deletion not permitted",
+	wantError: "denied: requested access to the resource is denied: tag deletion not permitted",
 }, {
 	testName: "Success",
 	preload: ocitest.RepoContent{
