@@ -35,6 +35,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a17d44f_11b8ac2b",
+        "filename": "ociregistry/error.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-26T12:30:48Z",
+      "side": 1,
+      "message": "In general, it should have been parsed from JSON or produced by json.Marshal, but you\u0027re right, we could do better. I\u0027ve changed it to panic instead - if someone places invalid JSON inside a `json.RawMessage` I think it\u0027s their own lookout, and better than changing `Detail` to return an error too, I think.",
+      "parentUuid": "ef842779_4c71422e",
+      "revId": "ab83384cd1eb4528d9d43c06dcdfe3e8119bc694",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "34bf5c19_d047ee90",
@@ -48,6 +66,24 @@
       "writtenOn": "2024-03-26T12:18:27Z",
       "side": 1,
       "message": "Are we not missing a call to `resp.Body.Close()` here?",
+      "revId": "ab83384cd1eb4528d9d43c06dcdfe3e8119bc694",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6bf86fba_dd9963c3",
+        "filename": "ociregistry/ociclient/error.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-26T12:30:48Z",
+      "side": 1,
+      "message": "The caller is responsible for that. I adjusted to the doc comment accordingly.",
+      "parentUuid": "34bf5c19_d047ee90",
       "revId": "ab83384cd1eb4528d9d43c06dcdfe3e8119bc694",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
@@ -69,6 +105,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2d96b946_0af7d94c",
+        "filename": "ociregistry/ociserver/error.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-26T12:30:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29735d02_62852377",
+      "revId": "ab83384cd1eb4528d9d43c06dcdfe3e8119bc694",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "43cebc90_a901972f",
@@ -86,6 +140,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "201af258_165eb73a",
+        "filename": "ociregistry/ociserver/error_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-26T12:30:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "43cebc90_a901972f",
+      "revId": "ab83384cd1eb4528d9d43c06dcdfe3e8119bc694",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b5438764_48bfa6e2",
@@ -99,6 +171,24 @@
       "writtenOn": "2024-03-26T12:18:27Z",
       "side": 1,
       "message": "Ditto.",
+      "revId": "ab83384cd1eb4528d9d43c06dcdfe3e8119bc694",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5df6d103_0527555e",
+        "filename": "ociregistry/ociserver/error_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-26T12:30:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b5438764_48bfa6e2",
       "revId": "ab83384cd1eb4528d9d43c06dcdfe3e8119bc694",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
