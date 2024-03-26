@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0678a255_3f84d168",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2024-03-26T12:59:30Z",
+      "side": 1,
+      "message": "Further to my previous comment about getting another set of eyes on this.",
+      "revId": "affbdfa243a6b14c927637319df92012260a464f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7fa8ed96_bb40d628",
+        "filename": "ociregistry/ociserver/error_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2024-03-26T12:59:30Z",
+      "side": 1,
+      "message": "Specifically, I wonder whether this set of tests should in fact be in `ociclient` so we can discuss and see in https://github.com/cue-labs/oci/issues/26 that from a \"consumer\u0027s\" perspective things look/feel right.",
+      "revId": "affbdfa243a6b14c927637319df92012260a464f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
