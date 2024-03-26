@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/opencontainers/go-digest"
@@ -223,6 +224,14 @@ func (c *client) PushBlobChunkedResume(ctx context.Context, repo string, id stri
 		if err != nil {
 			return nil, fmt.Errorf("provided ID is not a valid location URL")
 		}
+		if !strings.HasPrefix(location.Path, "/") {
+			// Our BlobWriter.ID method always returns a fully
+			// qualified absolute URL, so this must be a mistake
+			// on the part of the caller.
+			// We allow a relative URL even though we don't
+			// ever return one to make things a bit easier for tests.
+			return nil, fmt.Errorf("provided upload ID %q has unexpected relative URL path", id)
+		}
 	}
 	ctx = ociauth.ContextWithRequestInfo(ctx, ociauth.RequestInfo{
 		RequiredScope: ociauth.NewScope(ociauth.ResourceScope{
@@ -378,7 +387,7 @@ func (w *blobWriter) Commit(digest ociregistry.Digest) (ociregistry.Descriptor, 
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if err := w.flush(nil, digest); err != nil {
-		return ociregistry.Descriptor{}, fmt.Errorf("cannot flush data before commit: %v", err)
+		return ociregistry.Descriptor{}, fmt.Errorf("cannot flush data before commit: %w", err)
 	}
 	return ociregistry.Descriptor{
 		MediaType: "application/octet-stream",

@@ -17,7 +17,7 @@ func TestBadRepoName(t *testing.T) {
 	})
 	qt.Assert(t, qt.IsNil(err))
 	_, err = r.GetBlob(ctx, "Invalid--Repo", "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
-	qt.Check(t, qt.ErrorMatches(err, "invalid OCI request: invalid repository name"))
+	qt.Check(t, qt.ErrorMatches(err, "invalid OCI request: name invalid: invalid repository name"))
 	_, err = r.GetBlob(ctx, "okrepo", "bad-digest")
 	qt.Check(t, qt.ErrorMatches(err, "invalid OCI request: badly formed digest"))
 	_, err = r.ResolveTag(ctx, "okrepo", "bad-Tag!")
