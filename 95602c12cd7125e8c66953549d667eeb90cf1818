@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "757f6633_de7fdc10",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1037904
+      },
+      "writtenOn": "2024-03-27T18:47:26Z",
+      "side": 1,
+      "message": "by \"original error\" here, you mean/include the original body, right? (related to the other discussions we\u0027ve had around whether/how/how much body to include in errors 😄😭)\n\nI guess it\u0027s weird to use something like `HTTPError` here, especially since it isn\u0027t designed to round-trip as JSON.",
+      "revId": "95602c12cd7125e8c66953549d667eeb90cf1818",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "65851904_5da3599c",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1037904
+      },
+      "writtenOn": "2024-03-27T18:47:26Z",
+      "side": 1,
+      "message": "Am I just missing it, or is this `err` return never checked? (why isn\u0027t the compiler yelling at you about it?)",
+      "revId": "95602c12cd7125e8c66953549d667eeb90cf1818",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0ba4559d_6a814259",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1037904
+      },
+      "writtenOn": "2024-03-27T18:47:26Z",
+      "side": 1,
+      "message": "```suggestion\n\t\t\treturn fmt.Errorf(\"cannot acquire access token: %w\", err)\n```\n👀",
+      "revId": "95602c12cd7125e8c66953549d667eeb90cf1818",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
