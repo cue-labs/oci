@@ -90,6 +90,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "333fc882_b35520ad",
+        "filename": "ociregistry/error.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-27T15:31:09Z",
+      "side": 1,
+      "message": "I\u0027ve ended up doing that. Sorry about the breaking change but (as usual) I think it\u0027s for the best right now...",
+      "parentUuid": "c557e6a0_7d766fa4",
+      "revId": "de1d93f5f536e91c12d25236242547d0c21f3138",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "d9ee0419_47746afa",
         "filename": "ociregistry/error.go",
         "patchSetId": 11
