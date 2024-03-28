@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c1efd96e_73c569ad",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1037904
+      },
+      "writtenOn": "2024-03-28T15:17:02Z",
+      "side": 1,
+      "message": "Is this one also `%v` on purpose? 😇",
+      "revId": "430530e9daf630d46ea7a81cb0d04ce43997e22a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
