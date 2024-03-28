@@ -18,6 +18,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d58b209d_67405f40",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-28T12:42:36Z",
+      "side": 1,
+      "message": "\u003e by \"original error\" here, you mean/include the original body, right?\n\nYeah, this is an HTTP error response and we\u0027re essentially throwing that away and replacing it with our own body and response code, which might be obscuring the original cause of the error. It\u0027s also arguably pretty sleazy. :) But I can\u0027t think of a better workaround for now...\n\nAnd the reason I\u0027m leaving it as a TODO is indeed related to our discussions about including the body in errors: it might or might be JSON or very large, etc.\n\nHopefully no-one will ever care.",
+      "parentUuid": "757f6633_de7fdc10",
+      "revId": "95602c12cd7125e8c66953549d667eeb90cf1818",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "65851904_5da3599c",
@@ -35,6 +53,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "44025625_fd0fe538",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-28T12:42:36Z",
+      "side": 1,
+      "message": "good catch, done!",
+      "parentUuid": "65851904_5da3599c",
+      "revId": "95602c12cd7125e8c66953549d667eeb90cf1818",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0ba4559d_6a814259",
@@ -48,6 +84,24 @@
       "writtenOn": "2024-03-27T18:47:26Z",
       "side": 1,
       "message": "```suggestion\n\t\t\treturn fmt.Errorf(\"cannot acquire access token: %w\", err)\n```\n👀",
+      "revId": "95602c12cd7125e8c66953549d667eeb90cf1818",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c85ecaf_babffe3c",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-03-28T12:42:36Z",
+      "side": 1,
+      "message": "I\u0027m not entirely sure. If we do that, we\u0027ll be returning the HTTPError from the RoundTrip, and from there it can end up in the hands of the caller of the ociregistry.Interface method, where the caller is entitled to assume that the response code was returned from the registry itself, but... that\u0027s not actually the case - it\u0027s returned from the token server.\n\nSo I\u0027m inclined to hide the error cause for now at least to avoid that potential misinterpretation. I\u0027ve added a comment to that effect.",
+      "parentUuid": "0ba4559d_6a814259",
       "revId": "95602c12cd7125e8c66953549d667eeb90cf1818",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
