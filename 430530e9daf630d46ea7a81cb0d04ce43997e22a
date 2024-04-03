@@ -33,6 +33,24 @@
       "message": "Is this one also `%v` on purpose? 😇",
       "revId": "430530e9daf630d46ea7a81cb0d04ce43997e22a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b4bebcb_16ea4dc3",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-04-03T12:16:22Z",
+      "side": 1,
+      "message": "In general I like to err on the side of %v rather than %w: any time we use %w, we are opening up the possibility of an \"action-at-a-distance\" link between the code we are calling and some caller potentially way up the stack. That link means that there is the possibility that some ostensibly internal-only change (for example perhaps we decide to use a different JSON package to marshal the value here) could change what\u0027s seen by of a caller and hence cause unexpected breakage.\nI once wrote a blog post around this topic (gosh! was that really 10 years ago now?!) https://rogpeppe.wordpress.com/2014/04/23/some-suggested-rules-for-generating-good-errors-in-go/\n\nIn other words, given Hyrum\u0027s Law, I think it\u0027s best to hide error causes by default unless we explicitly decide to expose them. It\u0027s always possible to change to use %w later, but it\u0027s not always possible to do the reverse.",
+      "parentUuid": "c1efd96e_73c569ad",
+      "revId": "430530e9daf630d46ea7a81cb0d04ce43997e22a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ],
   "submitRequirementResults": [
