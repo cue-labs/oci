@@ -51,6 +51,24 @@
       "parentUuid": "c1efd96e_73c569ad",
       "revId": "430530e9daf630d46ea7a81cb0d04ce43997e22a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e0216a81_a12bb99d",
+        "filename": "ociregistry/ociauth/auth.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-04-03T12:16:54Z",
+      "side": 1,
+      "message": "(sorry, I intended to send this much earlier - I just found it lying around as a draft comment!)",
+      "parentUuid": "0b4bebcb_16ea4dc3",
+      "revId": "430530e9daf630d46ea7a81cb0d04ce43997e22a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ],
   "submitRequirementResults": [
