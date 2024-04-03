@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "200b7e72_3f0931ad",
+        "filename": "ociregistry/ociclient/client.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-04-03T11:30:31Z",
+      "side": 1,
+      "message": "nit: I think the usual way to write this would be `requireSize descriptorRequired \u003d 1 \u003c\u003c iota`, which is a bit more readable",
+      "revId": "d230b14589c04517e5d5da049a603551cc985f59",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
