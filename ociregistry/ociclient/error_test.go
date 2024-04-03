@@ -10,9 +10,38 @@ import (
 	"testing"
 
 	"cuelabs.dev/go/oci/ociregistry"
+	"cuelabs.dev/go/oci/ociregistry/ociserver"
 	"github.com/go-quicktest/qt"
 	"github.com/opencontainers/go-digest"
 )
+
+func TestErrorStuttering(t *testing.T) {
+	// This checks that the stuttering observed in issue #31
+	// isn't an issue when ociserver wraps ociclient.
+	srv := httptest.NewServer(ociserver.New(&ociregistry.Funcs{
+		NewError: func(ctx context.Context, methodName, repo string) error {
+			return ociregistry.ErrManifestUnknown
+		},
+	}, nil))
+	defer srv.Close()
+
+	srvURL, _ := url.Parse(srv.URL)
+	r, err := New(srvURL.Host, &Options{
+		Insecure: true,
+	})
+	qt.Assert(t, qt.IsNil(err))
+	_, err = r.GetTag(context.Background(), "foo", "sometag")
+	qt.Check(t, qt.ErrorIs(err, ociregistry.ErrManifestUnknown))
+	qt.Check(t, qt.ErrorMatches(err, `404 Not Found: manifest unknown: manifest unknown to registry`))
+
+	// ResolveTag uses HEAD rather than GET, so here we're testing
+	// the path where a response with no body gets turned back into
+	// something vaguely resembling the original error, which is why
+	// the code and message have changed.
+	_, err = r.ResolveTag(context.Background(), "foo", "sometag")
+	qt.Check(t, qt.ErrorIs(err, ociregistry.ErrNameUnknown))
+	qt.Check(t, qt.ErrorMatches(err, `404 Not Found: name unknown: repository name not known to registry`))
+}
 
 func TestNonJSONErrorResponse(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

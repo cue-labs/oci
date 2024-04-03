@@ -88,14 +88,14 @@ func TestCalls(t *testing.T) {
 			URL:         "/v2/bad",
 			WantCode:    http.StatusNotFound,
 			WantHeader:  map[string]string{"Docker-Distribution-API-Version": "registry/2.0"},
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"404 Not Found: page not found"}]}`,
+			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"page not found"}]}`,
 		},
 		{
 			Description: "GET_non_existent_blob",
 			Method:      "GET",
 			URL:         "/v2/foo/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
 			WantCode:    http.StatusNotFound,
-			WantBody:    `{"errors":[{"code":"NAME_UNKNOWN","message":"name unknown: repository name not known to registry"}]}`,
+			WantBody:    `{"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}`,
 		},
 		{
 			Description: "HEAD_non_existent_blob",
@@ -108,7 +108,7 @@ func TestCalls(t *testing.T) {
 			Method:      "GET",
 			URL:         "/v2/foo/blobs/sha256:asd",
 			WantCode:    http.StatusBadRequest,
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"400 Bad Request: badly formed digest"}]}`,
+			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"badly formed digest"}]}`,
 		},
 		{
 			Description: "HEAD_bad_digest",
@@ -121,7 +121,7 @@ func TestCalls(t *testing.T) {
 			Method:      "FOO",
 			URL:         "/v2/foo/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
 			WantCode:    http.StatusMethodNotAllowed,
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"405 Method Not Allowed: method not allowed"}]}`,
+			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"method not allowed"}]}`,
 		},
 		{
 			Description: "GET_containerless_blob",
@@ -214,7 +214,7 @@ func TestCalls(t *testing.T) {
 			Method:      "GET",
 			URL:         "/v2/blobs/sha256:2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
 			WantCode:    http.StatusNotFound,
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"404 Not Found: page not found"}]}`,
+			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"page not found"}]}`,
 		},
 		{
 			Description: "uploadurl",
@@ -235,7 +235,7 @@ func TestCalls(t *testing.T) {
 			Method:      "PUT",
 			URL:         "/v2/foo/blobs/uploads/MQ",
 			WantCode:    http.StatusBadRequest,
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"400 Bad Request: badly formed digest"}]}`,
+			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"badly formed digest"}]}`,
 		},
 		{
 			Description: "monolithic_upload_good_digest",
@@ -251,7 +251,7 @@ func TestCalls(t *testing.T) {
 			URL:         "/v2/foo/blobs/uploads?digest=sha256:fake",
 			Body:        "foo",
 			WantCode:    http.StatusBadRequest,
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"400 Bad Request: badly formed digest"}]}`,
+			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"badly formed digest"}]}`,
 		},
 		{
 			Description: "upload_good_digest",
@@ -267,7 +267,7 @@ func TestCalls(t *testing.T) {
 			URL:         "/v2/foo/blobs/uploads/MQ?digest=sha256:baddigest",
 			WantCode:    http.StatusBadRequest,
 			Body:        "foo",
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"400 Bad Request: badly formed digest"}]}`,
+			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"badly formed digest"}]}`,
 		},
 		{
 			Description: "stream_upload",
@@ -305,7 +305,7 @@ func TestCalls(t *testing.T) {
 			Method:      "GET",
 			URL:         "/v2/foo/manifests/latest",
 			WantCode:    http.StatusNotFound,
-			WantBody:    `{"errors":[{"code":"NAME_UNKNOWN","message":"name unknown: repository name not known to registry"}]}`,
+			WantBody:    `{"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}`,
 		},
 		{
 			Description: "head_missing_manifest",
@@ -319,7 +319,7 @@ func TestCalls(t *testing.T) {
 			Method:      "GET",
 			URL:         "/v2/foo/manifests/bar",
 			WantCode:    http.StatusNotFound,
-			WantBody:    `{"errors":[{"code":"MANIFEST_UNKNOWN","message":"manifest unknown: manifest unknown to registry"}]}`,
+			WantBody:    `{"errors":[{"code":"MANIFEST_UNKNOWN","message":"manifest unknown to registry"}]}`,
 		},
 		{
 			Description: "head_missing_manifest_good_container",
@@ -396,7 +396,7 @@ func TestCalls(t *testing.T) {
 			Method:      "BAR",
 			URL:         "/v2/foo/manifests/latest",
 			WantCode:    http.StatusMethodNotAllowed,
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"405 Method Not Allowed: method not allowed"}]}`,
+			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"method not allowed"}]}`,
 		},
 		{
 			Description:   "Chunk_upload_start",
@@ -418,7 +418,7 @@ func TestCalls(t *testing.T) {
 			// TODO the original had 405 response here. Which is correct?
 			WantCode: http.StatusBadRequest,
 			Body:     "foo",
-			WantBody: `{"errors":[{"code":"UNSUPPORTED","message":"unsupported: we don't understand your Content-Range"}]}`,
+			WantBody: `{"errors":[{"code":"UNSUPPORTED","message":"we don't understand your Content-Range"}]}`,
 		},
 		{
 			Description:   "Chunk_upload_overlaps_previous_data",
@@ -448,7 +448,7 @@ func TestCalls(t *testing.T) {
 			Method:      "DELETE",
 			URL:         "/v2/test/honk/manifests/latest",
 			WantCode:    http.StatusNotFound,
-			WantBody:    `{"errors":[{"code":"NAME_UNKNOWN","message":"name unknown: repository name not known to registry"}]}`,
+			WantBody:    `{"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}`,
 		},
 		{
 			Description: "DELETE_Unknown_manifest",
@@ -456,7 +456,7 @@ func TestCalls(t *testing.T) {
 			Method:      "DELETE",
 			URL:         "/v2/honk/manifests/tag-honk",
 			WantCode:    http.StatusNotFound,
-			WantBody:    `{"errors":[{"code":"MANIFEST_UNKNOWN","message":"manifest unknown: manifest unknown to registry: tag does not exist"}]}`,
+			WantBody:    `{"errors":[{"code":"MANIFEST_UNKNOWN","message":"manifest unknown to registry: tag does not exist"}]}`,
 		},
 		{
 			Description: "DELETE_existing_manifest",
@@ -501,7 +501,7 @@ func TestCalls(t *testing.T) {
 			Method:      "GET",
 			URL:         "/v2/foo/tags/list?n=1000",
 			WantCode:    http.StatusNotFound,
-			WantBody:    `{"errors":[{"code":"NAME_UNKNOWN","message":"name unknown: repository name not known to registry"}]}`,
+			WantBody:    `{"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}`,
 		},
 		{
 			Description: "list_repos",
@@ -548,14 +548,14 @@ func TestCalls(t *testing.T) {
 			Method:      "GET",
 			URL:         "/v2/does-not-exist/referrers/" + digestOf("foo"),
 			WantCode:    http.StatusNotFound,
-			WantBody:    `{"errors":[{"code":"NAME_UNKNOWN","message":"name unknown: repository name not known to registry"}]}`,
+			WantBody:    `{"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}`,
 		},
 		{
 			Description: "fetch_references,_bad_target_(tag_vs._digest)",
 			Method:      "GET",
 			URL:         "/v2/foo/referrers/latest",
 			WantCode:    http.StatusBadRequest,
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"400 Bad Request: badly formed digest"}]}`,
+			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"badly formed digest"}]}`,
 		},
 		{
 			skip:        true,
@@ -659,7 +659,7 @@ func TestCalls(t *testing.T) {
 
 			if string(body) != tc.WantBody {
 				t.Logf("\n		WantBody: `%s`,", body)
-				t.Errorf("Incorrect response body, got %q, want %q", body, tc.WantBody)
+				t.Errorf("Incorrect response body.\ngot:\n\t%q\n\twant:\n\t%q", body, tc.WantBody)
 			}
 		}
 		t.Run(tc.Description, testf)

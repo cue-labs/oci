@@ -16,7 +16,7 @@ package ociserver
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -40,7 +40,7 @@ func TestHTTPStatusOverriddenByErrorCode(t *testing.T) {
 	resp, err := http.Get(s.URL + "/v2/foo/manifests/sometag")
 	qt.Assert(t, qt.IsNil(err))
 	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusNotFound))
 	qt.Assert(t, qt.JSONEquals(body, &ociregistry.WireErrors{
 		Errors: []ociregistry.WireError{{
@@ -64,12 +64,12 @@ func TestHTTPStatusUsedForUnknownErrorCode(t *testing.T) {
 	resp, err := http.Get(s.URL + "/v2/foo/manifests/sometag")
 	qt.Assert(t, qt.IsNil(err))
 	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusTeapot))
 	qt.Assert(t, qt.JSONEquals(body, &ociregistry.WireErrors{
 		Errors: []ociregistry.WireError{{
 			Code_:   "SOMECODE",
-			Message: "418 I'm a teapot: somecode: foo",
+			Message: "foo",
 		}},
 	}))
 }
