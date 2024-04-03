@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "990b0beb_59392b5f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-04-03T10:56:14Z",
+      "side": 1,
+      "message": "I find this quite hard to parse in plaintext. how about:\n\n``ociregistry/ociclient: add `knownDigest` to `Resolve*` methods``",
+      "revId": "cd924d280a3ae633d0b584db02b89147b5a9e00b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cf356eef_a8bc7167",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-04-03T10:56:14Z",
+      "side": 1,
+      "message": "Please wrap the paragraphs to 76 columns as per usual - in particular the paragraphs near the top are very, very long.",
+      "revId": "cd924d280a3ae633d0b584db02b89147b5a9e00b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "141ec3c0_e3fb358f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-04-03T10:56:14Z",
+      "side": 1,
+      "message": "SGTM but the commit message should be fixed up.",
+      "revId": "cd924d280a3ae633d0b584db02b89147b5a9e00b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
