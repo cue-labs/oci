@@ -90,15 +90,15 @@ func TestSub(t *testing.T) {
 			},
 		},
 	})
-	r1 := ocitest.NewRegistry(t, Sub(r.R, "foo"))
-	desc, err := r1.R.ResolveTag(ctx, "bar", "t1")
+	r1 := Sub(r.R, "foo")
+	desc, err := r1.ResolveTag(ctx, "bar", "t1")
 	qt.Assert(t, qt.IsNil(err))
 
-	m := getManifest(t, r1.R, "bar", desc.Digest)
-	b1Content := getBlob(t, r1.R, "bar", m.Layers[0].Digest)
+	m := getManifest(t, r1, "bar", desc.Digest)
+	b1Content := getBlob(t, r1, "bar", m.Layers[0].Digest)
 	qt.Assert(t, qt.Equals(string(b1Content), "hello"))
 
-	repos, err := ociregistry.All(r1.R.Repositories(ctx, ""))
+	repos, err := ociregistry.All(r1.Repositories(ctx, ""))
 	qt.Assert(t, qt.IsNil(err))
 	sort.Strings(repos)
 	qt.Assert(t, qt.DeepEquals(repos, []string{"bar"}))
