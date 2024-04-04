@@ -307,6 +307,52 @@ func Test401ResponseWithJustAcquiredToken(t *testing.T) {
 	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusForbidden))
 }
 
+func Test401ResponseWithNonAcquiredToken(t *testing.T) {
+	// This tests the scenario where a server returns a 401 response
+	// when the client has provided credentials already present in
+	// the configuration file.
+	//
+	// In this case, we don't want to trigger the fake-403-response
+	// behaviour test for in Test401ResponseWithJustAcquiredToken.
+
+	ts := newTargetServer(t, func(req *http.Request) *httpError {
+		if req.Header.Get("Authorization") == "" {
+			return &httpError{
+				statusCode: http.StatusUnauthorized,
+				header: http.Header{
+					"Www-Authenticate": []string{"Basic"},
+				},
+				body: "no auth creds provided",
+			}
+		}
+		return &httpError{
+			statusCode: http.StatusUnauthorized,
+			header: http.Header{
+				"Www-Authenticate": []string{"Basic"},
+			},
+			body: "password mismatch",
+		}
+	})
+	client := &http.Client{
+		Transport: NewStdTransport(StdTransportParams{
+			Config: configFunc(func(host string) (ConfigEntry, error) {
+				return ConfigEntry{
+					Username: "someuser",
+					Password: "somepassword",
+				}, nil
+			}),
+		}),
+	}
+	req, err := http.NewRequestWithContext(context.Background(), "GET", ts.String()+"/test", nil)
+	qt.Assert(t, qt.IsNil(err))
+	resp, err := client.Do(req)
+	qt.Assert(t, qt.IsNil(err))
+	defer resp.Body.Close()
+	data, _ := io.ReadAll(resp.Body)
+	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusUnauthorized))
+	qt.Assert(t, qt.Equals(string(data), "password mismatch"))
+}
+
 func TestConfigHasAccessToken(t *testing.T) {
 	accessToken := "somevalue"
 	ts := newTargetServer(t, func(req *http.Request) *httpError {
