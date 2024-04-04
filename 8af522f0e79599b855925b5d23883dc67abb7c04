@@ -18,6 +18,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3b9fb6a3_b3909f72",
+        "filename": "ociregistry/error.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-04-04T08:17:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7e064e5c_058a7432",
+      "revId": "8af522f0e79599b855925b5d23883dc67abb7c04",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9cdb66fe_4f39e30f",
@@ -43,6 +61,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0334e50a_e571c4b9",
+        "filename": "ociregistry/ociclient/error_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-04-04T08:17:58Z",
+      "side": 1,
+      "message": "I think this is OK, as technically the code (MANIFEST_UNKNOWN) is independent of the message (\"manifest unknown to registry\"). We _could_ do some more sophisticated elision of the error code if it\u0027s sufficiently similar to the message, but for now I think it\u0027s reasonable to include the code always even if the two are similar.\n\nThe stuttering I\u0027m trying to avoid is when the error code itself is exactly repeated.",
+      "parentUuid": "9cdb66fe_4f39e30f",
+      "range": {
+        "startLine": 35,
+        "startChar": 50,
+        "endLine": 35,
+        "endChar": 84
+      },
+      "revId": "8af522f0e79599b855925b5d23883dc67abb7c04",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "f9bc268f_4a65c39f",
         "filename": "ociregistry/ociclient/error_test.go",
         "patchSetId": 4
@@ -54,6 +96,30 @@
       "writtenOn": "2024-04-04T04:25:01Z",
       "side": 1,
       "message": "ditto, this still feels like a stutter",
+      "range": {
+        "startLine": 43,
+        "startChar": 50,
+        "endLine": 43,
+        "endChar": 89
+      },
+      "revId": "8af522f0e79599b855925b5d23883dc67abb7c04",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c3132d7c_3ced4d3b",
+        "filename": "ociregistry/ociclient/error_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2024-04-04T08:17:58Z",
+      "side": 1,
+      "message": "One could say that about many (or arguably all) of the standard errors (https://pkg.go.dev/cuelabs.dev/go/oci/ociregistry#pkg-variables) - the message is just a long form of the code. However I still think it\u0027s worth including the code, as that\u0027s the magic string that is actually used to determine the kind of an error.",
+      "parentUuid": "f9bc268f_4a65c39f",
       "range": {
         "startLine": 43,
         "startChar": 50,
