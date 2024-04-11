@@ -16,17 +16,9 @@ package ociserver
 
 import (
 	"fmt"
-	"net/http"
 
 	"cuelabs.dev/go/oci/ociregistry"
 )
-
-func writeError(resp http.ResponseWriter, err error) {
-	data, httpStatus := ociregistry.MarshalError(err)
-	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteHeader(httpStatus)
-	resp.Write(data)
-}
 
 func withHTTPCode(statusCode int, err error) error {
 	return ociregistry.NewHTTPError(err, statusCode, nil, nil)

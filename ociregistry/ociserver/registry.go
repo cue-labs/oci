@@ -41,6 +41,12 @@ var v2 = ocispecroot.Versioned{
 
 // Options holds options for the server.
 type Options struct {
+	// WriteError is used to write error responses. It is passed the
+	// error an API call has returned and is responsible for writing
+	// it to w. If WriteError is nil, [ociregistry.WriteError] will
+	// be used.
+	WriteError func(w http.ResponseWriter, err error) error
+
 	// DisableReferrersAPI, when true, causes the registry to behave as if
 	// it does not understand the referrers API.
 	DisableReferrersAPI bool
@@ -133,6 +139,9 @@ func New(backend ociregistry.Interface, opts *Options) http.Handler {
 	if r.opts.DebugID == "" {
 		r.opts.DebugID = fmt.Sprintf("ociserver%d", atomic.AddInt32(&debugID, 1))
 	}
+	if r.opts.WriteError == nil {
+		r.opts.WriteError = ociregistry.WriteError
+	}
 	return r
 }
 
@@ -167,7 +176,7 @@ var handlers = []func(r *registry, ctx context.Context, w http.ResponseWriter, r
 
 func (r *registry) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	if rerr := r.v2(resp, req); rerr != nil {
-		writeError(resp, rerr)
+		r.opts.WriteError(resp, rerr)
 		return
 	}
 }

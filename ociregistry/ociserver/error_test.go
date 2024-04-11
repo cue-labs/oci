@@ -26,6 +26,24 @@ import (
 	"github.com/go-quicktest/qt"
 )
 
+func TestCustomErrorWriter(t *testing.T) {
+	// Test that if an Interface method returns an HTTPError error, the
+	// HTTP status code is derived from the OCI error code in preference
+	// to the HTTPError status code.
+	r := New(&ociregistry.Funcs{}, &Options{
+		WriteError: func(w http.ResponseWriter, err error) error {
+			w.Header().Set("Some-Header", "a value")
+			return ociregistry.WriteError(w, err)
+		},
+	})
+	s := httptest.NewServer(r)
+	defer s.Close()
+	resp, err := http.Get(s.URL + "/v2/foo/manifests/sometag")
+	qt.Assert(t, qt.IsNil(err))
+	defer resp.Body.Close()
+	qt.Assert(t, qt.Equals(resp.Header.Get("Some-Header"), "a value"))
+}
+
 func TestHTTPStatusOverriddenByErrorCode(t *testing.T) {
 	// Test that if an Interface method returns an HTTPError error, the
 	// HTTP status code is derived from the OCI error code in preference
