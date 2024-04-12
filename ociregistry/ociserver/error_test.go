@@ -31,9 +31,9 @@ func TestCustomErrorWriter(t *testing.T) {
 	// HTTP status code is derived from the OCI error code in preference
 	// to the HTTPError status code.
 	r := New(&ociregistry.Funcs{}, &Options{
-		WriteError: func(w http.ResponseWriter, err error) error {
+		WriteError: func(w http.ResponseWriter, _ *http.Request, err error) {
 			w.Header().Set("Some-Header", "a value")
-			return ociregistry.WriteError(w, err)
+			ociregistry.WriteError(w, err)
 		},
 	})
 	s := httptest.NewServer(r)
