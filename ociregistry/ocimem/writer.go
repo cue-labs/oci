@@ -20,6 +20,7 @@ import (
 	"io"
 
 	"cuelabs.dev/go/oci/ociregistry"
+	"cuelabs.dev/go/oci/ociregistry/ociref"
 	"github.com/opencontainers/go-digest"
 )
 
@@ -107,7 +108,7 @@ func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string
 		Size:      int64(len(data)),
 	}
 	if tag != "" {
-		if !ociregistry.IsValidTag(tag) {
+		if !ociref.IsValidTag(tag) {
 			return ociregistry.Descriptor{}, fmt.Errorf("invalid tag")
 		}
 		if r.cfg.ImmutableTags {
