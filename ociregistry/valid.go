@@ -3,7 +3,7 @@ package ociregistry
 import (
 	"regexp"
 
-	"github.com/opencontainers/go-digest"
+	"cuelabs.dev/go/oci/ociregistry/ociref"
 )
 
 var (
@@ -13,18 +13,23 @@ var (
 
 // IsValidRepoName reports whether the given repository
 // name is valid according to the specification.
+//
+// Deprecated: use [ociref.IsValidRepository].
 func IsValidRepoName(repoName string) bool {
-	return repoNamePattern.MatchString(repoName)
+	return ociref.IsValidRepository(repoName)
 }
 
 // IsValidTag reports whether the digest d is valid
 // according to the specification.
+//
+// Deprecated: use [ociref.IsValidTag].
 func IsValidTag(tag string) bool {
-	return tagPattern.MatchString(tag)
+	return ociref.IsValidTag(tag)
 }
 
 // IsValidDigest reports whether the digest d is well formed.
+//
+// Deprecated: use [ociref.IsValidDigest].
 func IsValidDigest(d string) bool {
-	_, err := digest.Parse(d)
-	return err == nil
+	return ociref.IsValidDigest(d)
 }
