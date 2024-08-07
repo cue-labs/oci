@@ -1,14 +1,7 @@
 package ociregistry
 
 import (
-	"regexp"
-
 	"cuelabs.dev/go/oci/ociregistry/ociref"
-)
-
-var (
-	tagPattern      = regexp.MustCompile(`^[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}$`)
-	repoNamePattern = regexp.MustCompile(`^[a-z0-9]+([._-][a-z0-9]+)*(/[a-z0-9]+([._-][a-z0-9]+)*)*$`)
 )
 
 // IsValidRepoName reports whether the given repository
