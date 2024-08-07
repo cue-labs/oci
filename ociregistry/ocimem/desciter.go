@@ -2,7 +2,6 @@ package ocimem
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"cuelabs.dev/go/oci/ociregistry"
@@ -30,8 +29,6 @@ var manifestIterators = map[string]func(data []byte) (descIter, error){
 	ocispec.MediaTypeImageManifest: descIterForType(imageDescIter),
 	ocispec.MediaTypeImageIndex:    descIterForType(indexDescIter),
 }
-
-var errUnknownManifestMediaTypeForIteration = errors.New("cannot determine references in unknown media type")
 
 // manifestReferences returns an iterator that iterates over all
 // direct references inside the given manifest described byx the
