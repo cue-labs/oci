@@ -16,7 +16,8 @@ package ocimem
 
 import (
 	"context"
-	"sort"
+	"slices"
+	"strings"
 
 	"cuelabs.dev/go/oci/ociregistry"
 )
@@ -24,7 +25,7 @@ import (
 func (r *Registry) Repositories(ctx context.Context, startAfter string) ociregistry.Seq[string] {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return mapKeysIter(r.repos, stringLess, startAfter)
+	return mapKeysIter(r.repos, strings.Compare, startAfter)
 }
 
 func (r *Registry) Tags(ctx context.Context, repoName string, startAfter string) ociregistry.Seq[string] {
@@ -34,7 +35,7 @@ func (r *Registry) Tags(ctx context.Context, repoName string, startAfter string)
 	if err != nil {
 		return ociregistry.ErrorSeq[string](err)
 	}
-	return mapKeysIter(repo.tags, stringLess, startAfter)
+	return mapKeysIter(repo.tags, strings.Compare, startAfter)
 }
 
 func (r *Registry) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, artifactType string) ociregistry.Seq[ociregistry.Descriptor] {
@@ -52,29 +53,21 @@ func (r *Registry) Referrers(ctx context.Context, repoName string, digest ocireg
 		// TODO filter by artifact type
 		referrers = append(referrers, b.descriptor())
 	}
-	sort.Slice(referrers, func(i, j int) bool {
-		return descriptorLess(referrers[i], referrers[j])
-	})
+	slices.SortFunc(referrers, compareDescriptor)
 	return ociregistry.SliceSeq(referrers)
 }
 
-func mapKeysIter[K comparable, V any](m map[K]V, less func(K, K) bool, startAfter K) ociregistry.Seq[K] {
+func mapKeysIter[K comparable, V any](m map[K]V, cmp func(K, K) int, startAfter K) ociregistry.Seq[K] {
 	ks := make([]K, 0, len(m))
 	for k := range m {
-		if less(startAfter, k) {
+		if cmp(startAfter, k) < 0 {
 			ks = append(ks, k)
 		}
 	}
-	sort.Slice(ks, func(i, j int) bool {
-		return less(ks[i], ks[j])
-	})
+	slices.SortFunc(ks, cmp)
 	return ociregistry.SliceSeq(ks)
 }
 
-func stringLess(s1, s2 string) bool {
-	return s1 < s2
-}
-
-func descriptorLess(d1, d2 ociregistry.Descriptor) bool {
-	return d1.Digest < d2.Digest
+func compareDescriptor(d0, d1 ociregistry.Descriptor) int {
+	return strings.Compare(string(d0.Digest), string(d1.Digest))
 }

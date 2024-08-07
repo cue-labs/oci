@@ -15,6 +15,7 @@
 package ociunify
 
 import (
+	"cmp"
 	"testing"
 
 	"cuelabs.dev/go/oci/ociregistry"
@@ -46,20 +47,10 @@ var mergeIterTests = []struct {
 func TestMergeIter(t *testing.T) {
 	for _, test := range mergeIterTests {
 		t.Run(test.testName, func(t *testing.T) {
-			it := mergeIter(test.it0, test.it1, cmpInt)
+			it := mergeIter(test.it0, test.it1, cmp.Compare)
 			xs, err := ociregistry.All(it)
 			qt.Assert(t, qt.DeepEquals(xs, test.want))
 			qt.Assert(t, qt.Equals(err, test.wantErr))
 		})
 	}
-}
-
-func cmpInt(i, j int) int {
-	if i < j {
-		return -1
-	}
-	if i > j {
-		return 1
-	}
-	return 0
 }

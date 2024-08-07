@@ -152,12 +152,7 @@ func (w *unifiedBlobWriter) Size() int64 {
 func (w *unifiedBlobWriter) ChunkSize() int {
 	// ChunkSize can be derived from the server's required minimum, so take the maximum between both.
 	// ChunkSize is usually a cheap method, so there's no need to call both concurrently.
-	// TODO(mvdan): replace with max when we can assume Go 1.21
-	s1, s2 := w.w[0].ChunkSize(), w.w[1].ChunkSize()
-	if s2 > s1 {
-		return s2
-	}
-	return s1
+	return max(w.w[0].ChunkSize(), w.w[1].ChunkSize())
 }
 
 func (w *unifiedBlobWriter) ID() string {

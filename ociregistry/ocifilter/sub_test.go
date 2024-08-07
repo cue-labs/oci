@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"sort"
+	"slices"
 	"testing"
 
 	"github.com/go-quicktest/qt"
@@ -100,7 +100,7 @@ func TestSub(t *testing.T) {
 
 	repos, err := ociregistry.All(r1.Repositories(ctx, ""))
 	qt.Assert(t, qt.IsNil(err))
-	sort.Strings(repos)
+	slices.Sort(repos)
 	qt.Assert(t, qt.DeepEquals(repos, []string{"bar"}))
 }
 
