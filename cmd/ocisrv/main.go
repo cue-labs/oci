@@ -26,6 +26,7 @@ import (
 	"cuelabs.dev/go/oci/ociregistry/ociserver"
 	"github.com/cue-exp/cueconfig"
 	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 )
 
 var (
@@ -64,7 +65,7 @@ func main1() error {
 	// Don't decode into Go struct yet because we want to use
 	// json v2 for that so we can decode into the registry interface
 	// type.
-	var cfgRaw json.RawValue
+	var cfgRaw jsontext.Value
 	if err := cueconfig.Load(configFile, configSchema, configDefaults, nil, &cfgRaw); err != nil {
 		return err
 	}
@@ -89,25 +90,24 @@ func main1() error {
 }
 
 func unmarshalConfig(cfgRaw []byte) (*config, error) {
-	opts := &json.UnmarshalOptions{
-		Unmarshalers: json.UnmarshalFuncV2(unmarshalRegistry),
-	}
 	var cfg config
-	if err := opts.Unmarshal(json.DecodeOptions{}, cfgRaw, &cfg); err != nil {
+	if err := json.Unmarshal(cfgRaw, &cfg, json.WithUnmarshalers(
+		json.UnmarshalFuncV2(unmarshalRegistry),
+	)); err != nil {
 		return nil, err
 	}
 	return &cfg, nil
 }
 
-func unmarshalRegistry(opts json.UnmarshalOptions, dec *json.Decoder, rp *registry) error {
-	var data json.RawValue
-	if err := opts.UnmarshalNext(dec, &data); err != nil {
+func unmarshalRegistry(dec *jsontext.Decoder, rp *registry, opts json.Options) error {
+	var data jsontext.Value
+	if err := json.UnmarshalDecode(dec, &data, opts); err != nil {
 		return err
 	}
 	var kind struct {
 		Kind string `json:"kind"`
 	}
-	if err := opts.Unmarshal(json.DecodeOptions{}, data, &kind); err != nil {
+	if err := json.Unmarshal(data, &kind); err != nil {
 		return err
 	}
 	t := kindToRegistryType[kind.Kind]
@@ -115,7 +115,7 @@ func unmarshalRegistry(opts json.UnmarshalOptions, dec *json.Decoder, rp *regist
 		return fmt.Errorf("no registry type found for kind %q", kind.Kind)
 	}
 	r := reflect.New(t)
-	if err := opts.Unmarshal(json.DecodeOptions{}, data, r.Interface()); err != nil {
+	if err := json.Unmarshal(data, r.Interface()); err != nil {
 		return err
 	}
 	*rp = r.Elem().Interface().(registry)
