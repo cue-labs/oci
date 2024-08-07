@@ -13,11 +13,11 @@ replace cuelabs.dev/go/oci/ociregistry => ../..
 
 require (
 	cuelabs.dev/go/oci/ociregistry v0.0.0-00010101000000-000000000000
-	github.com/go-quicktest/qt v1.100.0
-	github.com/opencontainers/distribution-spec/conformance v0.0.0-20231101194043-f2182352d4cc
+	github.com/go-quicktest/qt v1.101.0
+	github.com/opencontainers/distribution-spec/conformance v0.0.0-20240718171242-11b8e3fba7d2
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.1.0-rc4
-	oras.land/oras-go/v2 v2.2.0
+	github.com/opencontainers/image-spec v1.1.0
+	oras.land/oras-go/v2 v2.5.0
 )
 
 require (
@@ -33,9 +33,9 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.11.0 // indirect
-	github.com/rogpeppe/go-internal v1.10.1-0.20230524175051-ec119421bb97 // indirect
-	golang.org/x/net v0.16.0 // indirect
-	golang.org/x/sync v0.4.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
+	github.com/rogpeppe/go-internal v1.12.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/sync v0.6.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect
 )
