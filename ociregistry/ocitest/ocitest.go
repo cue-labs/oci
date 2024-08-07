@@ -208,11 +208,7 @@ func completedManifests(repoc RepoContent, blobs map[string]ociregistry.Descript
 				*m1.Subject = mc.desc
 				madeProgress = true
 			}
-			m1.Config = fillBlobDescriptor(m.Config, blobs)
-			m1.Layers = make([]ociregistry.Descriptor, len(m.Layers))
-			for i, desc := range m.Layers {
-				m1.Layers[i] = fillBlobDescriptor(desc, blobs)
-			}
+			m1 = fillManifestDescriptors(m1, blobs)
 			data, err := json.Marshal(m1)
 			if err != nil {
 				panic(err)

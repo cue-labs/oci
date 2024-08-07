@@ -212,7 +212,7 @@ func TestAuthNotAvailableAfterChallenge(t *testing.T) {
 			return &httpError{
 				statusCode: http.StatusUnauthorized,
 				header: http.Header{
-					"Www-Authenticate": []string{fmt.Sprintf("Basic service=someService")},
+					"Www-Authenticate": []string{"Basic service=someService"},
 				},
 			}
 		}
@@ -788,7 +788,7 @@ func (tok token) String() string {
 func runNonFatal(t *testing.T, f func(t testing.TB)) (ok bool) {
 	defer func() {
 		switch e := recover(); e {
-		case failNow, skipNow:
+		case errFailNow, errSkipNow:
 			ok = false
 		case nil:
 		default:
@@ -800,8 +800,8 @@ func runNonFatal(t *testing.T, f func(t testing.TB)) (ok bool) {
 }
 
 var (
-	failNow = errors.New("failing now")
-	skipNow = errors.New("skipping now")
+	errFailNow = errors.New("failing now")
+	errSkipNow = errors.New("skipping now")
 )
 
 type nonFatalT struct {
@@ -811,7 +811,7 @@ type nonFatalT struct {
 func (t nonFatalT) FailNow() {
 	t.Helper()
 	t.Fail()
-	panic(failNow)
+	panic(errFailNow)
 }
 
 func (t nonFatalT) Fatal(args ...any) {
@@ -833,7 +833,7 @@ func (t nonFatalT) Skip(args ...any) {
 }
 
 func (t nonFatalT) SkipNow() {
-	panic(skipNow)
+	panic(errSkipNow)
 }
 
 func (t nonFatalT) Skipf(format string, args ...any) {

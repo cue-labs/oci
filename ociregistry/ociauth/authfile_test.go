@@ -433,8 +433,8 @@ func helperMain() int {
 		fmt.Printf(`
 {
 	"Username": "someuser",
-	"Secret": ` + fmt.Sprintf("%q", os.Getenv("TEST_SECRET")) + `
-}`)
+	"Secret": %q
+}`, os.Getenv("TEST_SECRET"))
 	case "registry-with-error.com":
 		fmt.Fprintf(os.Stderr, "some error\n")
 		return 1
