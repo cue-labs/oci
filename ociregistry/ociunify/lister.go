@@ -17,7 +17,7 @@ package ociunify
 import (
 	"context"
 	"errors"
-	"sort"
+	"slices"
 	"strings"
 
 	"cuelabs.dev/go/oci/ociregistry"
@@ -67,20 +67,11 @@ func mergeIter[T any](it0, it1 ociregistry.Seq[T], cmp func(T, T) int) ociregist
 	}
 	var xs []T
 	if len(xs0)+len(xs1) > 0 {
-		xs = make([]T, len(xs0)+len(xs1))
-		copy(xs, xs0)
-		copy(xs[len(xs0):], xs1)
-		sort.Slice(xs, func(i, j int) bool {
-			return cmp(xs[i], xs[j]) < 0
+		xs = slices.Concat(xs0, xs1)
+		slices.SortFunc(xs, cmp)
+		xs = slices.CompactFunc(xs, func(t1, t2 T) bool {
+			return cmp(t1, t2) == 0
 		})
-		j := 0
-		for i := 1; i < len(xs); i++ {
-			if cmp(xs[i], xs[j]) != 0 {
-				j++
-				xs[j] = xs[i]
-			}
-		}
-		xs = xs[:j+1]
 	}
 	err := err0
 	if err == nil {

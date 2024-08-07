@@ -27,6 +27,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -253,7 +254,7 @@ func testManyTags(t *testing.T, client *remote.Registry) {
 		tags = append(tags, tag)
 	}
 	t.Logf("XXXX pushed all content and tags")
-	sort.Strings(tags)
+	slices.Sort(tags)
 	var gotTags []string
 	err = repo.Tags(ctx, "", func(tags []string) error {
 		gotTags = append(gotTags, tags...)
@@ -274,7 +275,7 @@ func testManyRepos(t *testing.T, client *remote.Registry) {
 		repos = append(repos, repoName)
 	}
 	t.Logf("XXXX pushed all repos")
-	sort.Strings(repos)
+	slices.Sort(repos)
 	var gotRepos []string
 	err := client.Repositories(ctx, "", func(repos []string) error {
 		gotRepos = append(gotRepos, repos...)
@@ -303,7 +304,7 @@ func testCatalog(t *testing.T, client *remote.Registry) {
 		return nil
 	})
 	qt.Assert(t, qt.IsNil(err))
-	sort.Strings(repos)
+	slices.Sort(repos)
 	qt.Assert(t, qt.DeepEquals(gotRepos, repos))
 }
 
