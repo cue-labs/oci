@@ -16,6 +16,24 @@
       "message": "I\u0027d prefer to forward these calls to ociref instead of removing them.\nWe could deprecate the functions at the same time - even though we\u0027re not\nyet at v1, I think it\u0027s good to avoid breaking changes where it\u0027s straightforward to.\n\nAlthough ociref currently imports ociregistry, I think it would be worth reversing that dependency, as ociref is really a lower level, more focused, package.\nWe could define the `Digest` type inside `ociref` and import/alias it from ociregistry.",
       "revId": "fa95d0563666819a32034dc1016942c62b7183b8",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fcecf0a0_be2aa3a9",
+        "filename": "ociregistry/valid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2024-08-07T07:59:19Z",
+      "side": 0,
+      "message": "good point, done. I did briefly think about it but did not see any tags nor any deprecated APIs, so I initially assumed we didn\u0027t care about stability yet.",
+      "parentUuid": "ae2179d3_c7aa7158",
+      "revId": "fa95d0563666819a32034dc1016942c62b7183b8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
