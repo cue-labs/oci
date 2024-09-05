@@ -18,7 +18,7 @@ defaultBranch: "main"
 
 linuxMachine: "ubuntu-22.04"
 
-latestGo: "1.21.x"
+latestGo: "1.22.x"
 
 // modules is a list of Unix paths of go.mod files for go modules in this
 // repository

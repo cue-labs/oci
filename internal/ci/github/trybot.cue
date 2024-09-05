@@ -38,6 +38,10 @@ workflows: trybot: _repo.bashWorkflow & {
 
 			let runnerOSExpr = "runner.os"
 			let runnerOSVal = "${{ \(runnerOSExpr) }}"
+			let installGo = _repo.installGo & {
+				#setupGo: with: "go-version": _repo.latestGo
+				_
+			}
 			let _setupGoActionsCaches = _repo.setupGoActionsCaches & {
 				#goVersion: _repo.latestGo
 				#os:        runnerOSVal
@@ -52,10 +56,7 @@ workflows: trybot: _repo.bashWorkflow & {
 			steps: [
 				for v in _repo.checkoutCode {v},
 
-				_repo.installGo & {
-					with: "go-version": _repo.latestGo
-				},
-
+				for v in installGo {v},
 				for v in _setupGoActionsCaches {v},
 
 				_repo.earlyChecks,
@@ -82,7 +83,7 @@ workflows: trybot: _repo.bashWorkflow & {
 		for _, gowork in ["", if !modIsInternal {"off"}]
 		for _, step in [_#goGenerate, _#goTest, _#goCheck] {
 			step & {
-				#name:               modDir + [if gowork != "" {" with GOWORK=\(gowork)"}, ""][0]
+				#name: modDir + [if gowork != "" {" with GOWORK=\(gowork)"}, ""][0]
 				"working-directory": modDir
 				env: {
 					GOWORK: gowork
@@ -99,8 +100,8 @@ workflows: trybot: _repo.bashWorkflow & {
 		#goModDir: string
 
 		let pathElems = path.Split(#goModDir)
-		let isInternal = [ for _, v in pathElems {v == "internal"}]
-		_res: [ for i, v in isInternal {[ if i == 0 {false}, _res[i-1]][0] || v}]
+		let isInternal = [for _, v in pathElems {v == "internal"}]
+		_res: [for i, v in isInternal {[if i == 0 {false}, _res[i-1]][0] || v}]
 
 		// In case the root is a module
 		*_res[0] | false
