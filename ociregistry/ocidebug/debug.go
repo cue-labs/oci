@@ -262,18 +262,17 @@ func logIterReturn[T any](r *logger, initialMsg string, it ociregistry.Seq[T]) o
 		r.logf("%s {", initialMsg)
 		items := []T{}
 		var _err error
-		it(func(item T, err error) bool {
+		for item, err := range it {
 			if err != nil {
 				yield(*new(T), err)
 				_err = err
-				return false
+				break
 			}
-			ok := yield(item, err)
-			if ok {
-				items = append(items, item)
+			if !yield(item, nil) {
+				break
 			}
-			return ok
-		})
+			items = append(items, item)
+		}
 		if _err != nil {
 			if len(items) > 0 {
 				r.logf("} -> %#v, %v", items, _err)

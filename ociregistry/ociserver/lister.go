@@ -80,7 +80,7 @@ func (r *registry) handleCatalogList(ctx context.Context, resp http.ResponseWrit
 }
 
 // TODO: implement handling of artifactType querystring
-func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) (_err error) {
+func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	if r.opts.DisableReferrersAPI {
 		return withHTTPCode(http.StatusNotFound, fmt.Errorf("referrers API has been disabled"))
 	}
@@ -91,18 +91,11 @@ func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWr
 	}
 
 	// TODO support artifactType filtering
-	it := r.backend.Referrers(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest), "")
-	// TODO(go1.23) for desc, err := range it {
-	it(func(desc ociregistry.Descriptor, err error) bool {
+	for desc, err := range r.backend.Referrers(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest), "") {
 		if err != nil {
-			_err = err
-			return false
+			return err
 		}
 		im.Manifests = append(im.Manifests, desc)
-		return true
-	})
-	if _err != nil {
-		return _err
 	}
 	msg, err := json.Marshal(im)
 	if err != nil {
@@ -115,7 +108,7 @@ func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWr
 	return nil
 }
 
-func (r *registry) nextListResults(req *http.Request, rreq *ocirequest.Request, itemsIter ociregistry.Seq[string]) (items []string, link string, _err error) {
+func (r *registry) nextListResults(req *http.Request, rreq *ocirequest.Request, itemsIter ociregistry.Seq[string]) (items []string, link string, _ error) {
 	if r.opts.MaxListPageSize > 0 && rreq.ListN > r.opts.MaxListPageSize {
 		return nil, "", ociregistry.NewError(fmt.Sprintf("query parameter n is too large (n=%d, max=%d)", rreq.ListN, r.opts.MaxListPageSize), ociregistry.ErrUnsupported.Code(), nil)
 	}
@@ -124,24 +117,18 @@ func (r *registry) nextListResults(req *http.Request, rreq *ocirequest.Request, 
 		n = maxPageSize
 	}
 	truncated := false
-	// TODO(go1.23) for repo, err := range itemsIter {
-	itemsIter(func(item string, err error) bool {
+	for item, err := range itemsIter {
 		if err != nil {
-			_err = err
-			return false
+			return nil, "", err
 		}
 		if rreq.ListN > 0 && len(items) >= rreq.ListN {
 			truncated = true
-			return false
+			break
 		}
 		// TODO we might want some way to limit on the total number
 		// of items returned in the absence of a ListN limit.
 		items = append(items, item)
 		// TODO sanity check that the items are in lexical order?
-		return true
-	})
-	if _err != nil {
-		return nil, "", _err
 	}
 	if truncated && !r.opts.OmitLinkHeaderFromResponses {
 		link = r.makeNextLink(req, items[len(items)-1])
