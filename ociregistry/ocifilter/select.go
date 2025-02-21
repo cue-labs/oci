@@ -198,17 +198,18 @@ func (r *accessCheckerRegistry) Repositories(ctx context.Context, startAfter str
 		return ociregistry.ErrorSeq[string](err)
 	}
 	return func(yield func(string, error) bool) {
-		// TODO(go1.23): for name, err := range r.r.Repositories(ctx)
-		r.r.Repositories(ctx, startAfter)(func(repo string, err error) bool {
+		for repo, err := range r.r.Repositories(ctx, startAfter) {
 			if err != nil {
 				yield("", err)
-				return false
+				break
 			}
 			if r.check(repo, AccessRead) != nil {
-				return true
+				continue
 			}
-			return yield(repo, nil)
-		})
+			if !yield(repo, nil) {
+				break
+			}
+		}
 	}
 }
 

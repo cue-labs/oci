@@ -143,17 +143,15 @@ func (r *subRegistry) Repositories(ctx context.Context, startAfter string) ocire
 	ctx = r.mapScopes(ctx)
 	p := r.prefix + "/"
 	return func(yield func(string, error) bool) {
-		// TODO(go1.23): for name, err := range r.r.Repositories(ctx)
-		r.r.Repositories(ctx, startAfter)(func(repo string, err error) bool {
+		for repo, err := range r.r.Repositories(ctx, startAfter) {
 			if err != nil {
 				yield("", err)
-				return false
+				break
 			}
-			if p, ok := strings.CutPrefix(repo, p); ok {
-				return yield(p, nil)
+			if p, ok := strings.CutPrefix(repo, p); ok && !yield(p, nil) {
+				break
 			}
-			return true
-		})
+		}
 	}
 }
 
@@ -178,13 +176,12 @@ func (r *subRegistry) mapScopes(ctx context.Context) context.Context {
 	// that took an iterator, which could avoid the intermediate
 	// slice allocation.
 	scopes := make([]ociauth.ResourceScope, 0, scope.Len())
-	scope.Iter()(func(rs ociauth.ResourceScope) bool {
+	for rs := range scope.Iter() {
 		if rs.ResourceType == ociauth.TypeRepository {
 			rs.Resource = r.repo(rs.Resource)
 		}
 		scopes = append(scopes, rs)
-		return true
-	})
+	}
 	return ociauth.ContextWithScope(ctx, ociauth.NewScope(scopes...))
 }
 
