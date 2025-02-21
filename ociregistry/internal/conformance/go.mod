@@ -3,7 +3,9 @@
 
 module cuelabs.dev/go/oci/ociregistry/internal/conformance
 
-go 1.22
+go 1.23
+
+toolchain go1.24.0
 
 // Note that we use a replace directive for the ociregistry module
 // even though we're using a go.work workspace as well,
@@ -26,16 +28,16 @@ require (
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-resty/resty/v2 v2.7.0 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/pprof v0.0.0-20230602150820-91b7bce49751 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.11.0 // indirect
-	github.com/rogpeppe/go-internal v1.12.0 // indirect
-	golang.org/x/net v0.23.0 // indirect
-	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
-	golang.org/x/tools v0.14.0 // indirect
+	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	golang.org/x/net v0.26.0 // indirect
+	golang.org/x/sync v0.7.0 // indirect
+	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/tools v0.22.0 // indirect
 )
