@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2fd08c26_40826e4f",
+        "filename": "internal/ci/repo/repo.cue",
+        "patchSetId": 3
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-02-24T10:13:17Z",
+      "side": 1,
+      "message": "this should be 1.24.x now; `go 1.23` on go.mod should already restrict which language and std features we can reach. we just didn\u0027t do a very good job at updating this last cycle I think.",
+      "revId": "0be3758f22a7afdf511d69faf69ec30b11b485f2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
