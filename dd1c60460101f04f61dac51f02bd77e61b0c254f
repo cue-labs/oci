@@ -16,6 +16,24 @@
       "message": "surely you can do this now?",
       "revId": "dd1c60460101f04f61dac51f02bd77e61b0c254f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "163e32e9_06312043",
+        "filename": "ociregistry/iter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-02-24T12:14:26Z",
+      "side": 1,
+      "message": "or, if you want to leave this for now, at the very least the TODO is now incorrect.",
+      "parentUuid": "ec0e192d_28e69bb4",
+      "revId": "dd1c60460101f04f61dac51f02bd77e61b0c254f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
