@@ -34,6 +34,24 @@
       "parentUuid": "ec0e192d_28e69bb4",
       "revId": "dd1c60460101f04f61dac51f02bd77e61b0c254f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0fd01b17_babad5f1",
+        "filename": "ociregistry/iter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2025-02-24T12:42:36Z",
+      "side": 1,
+      "message": "As discussed online, I don\u0027t think I can remove this yet as Go 1.23 doesn\u0027t fully support generic type aliases.",
+      "parentUuid": "163e32e9_06312043",
+      "revId": "dd1c60460101f04f61dac51f02bd77e61b0c254f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
