@@ -242,7 +242,7 @@ func completedManifests(repoc RepoContent, blobs map[string]ociregistry.Descript
 
 func fillManifestDescriptors(m ociregistry.Manifest, blobs map[string]ociregistry.Descriptor) ociregistry.Manifest {
 	m.Config = fillBlobDescriptor(m.Config, blobs)
-	m.Layers = append([]ociregistry.Descriptor(nil), m.Layers...)
+	m.Layers = slices.Clone(m.Layers)
 	for i, desc := range m.Layers {
 		m.Layers[i] = fillBlobDescriptor(desc, blobs)
 	}

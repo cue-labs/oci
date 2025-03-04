@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -607,7 +608,7 @@ func TestAuthRequestUsesRefreshTokenFromAuthServer(t *testing.T) {
 	// make another request to the auth server, which will return
 	// a new refresh token each time.
 	numRequests := 4
-	for i := 0; i < numRequests; i++ {
+	for i := range numRequests {
 		repo := fmt.Sprintf("foo%d", i)
 		assertRequest(context.Background(), t, ts, fmt.Sprintf("/test/foo%d", i), client, NewScope(ResourceScope{
 			ResourceType: TypeRepository,
@@ -725,9 +726,7 @@ type httpError struct {
 }
 
 func (e *httpError) send(w http.ResponseWriter) {
-	for k, v := range e.header {
-		w.Header()[k] = v
-	}
+	maps.Copy(w.Header(), e.header)
 	w.WriteHeader(e.statusCode)
 	w.Write([]byte(e.body))
 }
