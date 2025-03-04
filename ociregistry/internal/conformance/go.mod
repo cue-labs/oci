@@ -16,7 +16,7 @@ require (
 	github.com/go-quicktest/qt v1.101.0
 	github.com/opencontainers/distribution-spec/conformance v0.0.0-20231101194043-f2182352d4cc
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.1.0
+	github.com/opencontainers/image-spec v1.1.1
 	oras.land/oras-go/v2 v2.5.0
 )
 
@@ -33,9 +33,10 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.11.0 // indirect
-	github.com/rogpeppe/go-internal v1.13.1 // indirect
-	golang.org/x/net v0.26.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.21.0 // indirect
-	golang.org/x/tools v0.22.0 // indirect
+	github.com/rogpeppe/go-internal v1.14.1 // indirect
+	github.com/stretchr/testify v1.7.0 // indirect
+	golang.org/x/net v0.30.0 // indirect
+	golang.org/x/sync v0.8.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/tools v0.26.0 // indirect
 )
