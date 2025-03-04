@@ -22,6 +22,7 @@ import (
 	"cuelabs.dev/go/oci/ociregistry"
 	"cuelabs.dev/go/oci/ociregistry/ociref"
 	"github.com/opencontainers/go-digest"
+	"slices"
 )
 
 // This file implements the ociregistry.Writer methods.
@@ -126,7 +127,7 @@ func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string
 		}
 	}
 	// make a copy of the data to avoid potential corruption.
-	data = append([]byte(nil), data...)
+	data = slices.Clone(data)
 	if err := CheckDescriptor(desc, data); err != nil {
 		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor: %v", err)
 	}
