@@ -3,7 +3,7 @@ module cuelabs.dev/go/oci/cmd/ocisrv
 go 1.23
 
 require (
-	cuelabs.dev/go/oci/ociregistry v0.0.0-20230928144906-bef4f4e03886
+	cuelabs.dev/go/oci/ociregistry v0.0.0-20250224124241-b27552d3e05c
 	github.com/cue-exp/cueconfig v0.0.1
 	github.com/go-json-experiment/json v0.0.0-20240524174822-2d9f40f7385b
 	github.com/opencontainers/go-digest v1.0.0
@@ -15,7 +15,6 @@ require (
 	cuelang.org/go v0.6.0-alpha.2.0.20230628162133-7be6224cbc4f // indirect
 	github.com/cockroachdb/apd/v3 v3.2.0 // indirect
 	github.com/emicklei/proto v1.10.0 // indirect
-	github.com/go-quicktest/qt v1.101.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
