@@ -16,8 +16,8 @@ package ocirequest
 
 import (
 	"encoding/base64"
-	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -27,26 +27,19 @@ import (
 	"cuelabs.dev/go/oci/ociregistry/ociref"
 )
 
-// ParseError represents an error that can happen when parsing.
-// The Err field holds one of the possible error values below.
-type ParseError struct {
-	Err error
-}
-
-func (e *ParseError) Error() string {
-	return e.Err.Error()
-}
-
-func (e *ParseError) Unwrap() error {
-	return e.Err
-}
-
 var (
-	ErrNotFound          = errors.New("page not found")
-	ErrBadlyFormedDigest = errors.New("badly formed digest")
-	ErrMethodNotAllowed  = errors.New("method not allowed")
-	ErrBadRequest        = errors.New("bad request")
+	errBadlyFormedDigest = ociregistry.NewError("badly formed digest", ociregistry.ErrDigestInvalid.Code(), nil)
+	errMethodNotAllowed  = httpErrorf(http.StatusMethodNotAllowed, "method not allowed")
+	errNotFound          = httpErrorf(http.StatusNotFound, "page not found")
 )
+
+func badRequestf(f string, a ...any) error {
+	return httpErrorf(http.StatusBadRequest, f, a...)
+}
+
+func httpErrorf(statusCode int, f string, a ...any) error {
+	return ociregistry.NewHTTPError(fmt.Errorf(f, a...), statusCode, nil, nil)
+}
 
 type Request struct {
 	Kind Kind
@@ -185,22 +178,14 @@ const (
 // Parse parses the given HTTP method and URL as an OCI registry request.
 // It understands the endpoints described in the [distribution spec].
 //
-// If it returns an error, it will be of type *ParseError.
+// If it returns an error, it will be of type [ociregistry.Error] or [ociregistry.HTTPError].
 //
 // [distribution spec]: https://github.com/opencontainers/distribution-spec/blob/main/spec.md#endpoints
 func Parse(method string, u *url.URL) (*Request, error) {
-	req, err := parse(method, u)
-	if err != nil {
-		return nil, &ParseError{err}
-	}
-	return req, nil
-}
-
-func parse(method string, u *url.URL) (*Request, error) {
 	path := u.Path
 	urlq, err := url.ParseQuery(u.RawQuery)
 	if err != nil {
-		return nil, err
+		return nil, badRequestf("invalid query parameters: %v", err)
 	}
 
 	var rreq Request
@@ -214,7 +199,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 	}
 	if path == "_catalog" {
 		if method != "GET" {
-			return nil, ErrMethodNotAllowed
+			return nil, errMethodNotAllowed
 		}
 		rreq.Kind = ReqCatalogList
 		setListQueryParams(&rreq, urlq)
@@ -230,7 +215,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 			return nil, ociregistry.ErrNameInvalid
 		}
 		if method != "POST" {
-			return nil, ErrMethodNotAllowed
+			return nil, errMethodNotAllowed
 		}
 		if d := urlq.Get("mount"); d != "" {
 			// end-11
@@ -257,7 +242,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 			// end-4b
 			rreq.Digest = d
 			if !ociref.IsValidDigest(d) {
-				return nil, ErrBadlyFormedDigest
+				return nil, errBadlyFormedDigest
 			}
 			rreq.Kind = ReqBlobUploadBlob
 			return &rreq, nil
@@ -268,17 +253,17 @@ func parse(method string, u *url.URL) (*Request, error) {
 	}
 	path, last, ok := cutLast(path, "/")
 	if !ok {
-		return nil, ErrNotFound
+		return nil, errNotFound
 	}
 	path, lastButOne, ok := cutLast(path, "/")
 	if !ok {
-		return nil, ErrNotFound
+		return nil, errNotFound
 	}
 	switch lastButOne {
 	case "blobs":
 		rreq.Repo = path
 		if !ociref.IsValidDigest(last) {
-			return nil, ErrBadlyFormedDigest
+			return nil, errBadlyFormedDigest
 		}
 		if !ociref.IsValidRepository(rreq.Repo) {
 			return nil, ociregistry.ErrNameInvalid
@@ -292,7 +277,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 		case "DELETE":
 			rreq.Kind = ReqBlobDelete
 		default:
-			return nil, ErrMethodNotAllowed
+			return nil, errMethodNotAllowed
 		}
 		return &rreq, nil
 	case "uploads":
@@ -300,7 +285,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 		// isn't part of the OCI registry spec.
 		repo, ok := strings.CutSuffix(path, "/blobs")
 		if !ok {
-			return nil, ErrNotFound
+			return nil, errNotFound
 		}
 		rreq.Repo = repo
 		if !ociref.IsValidRepository(rreq.Repo) {
@@ -308,14 +293,14 @@ func parse(method string, u *url.URL) (*Request, error) {
 		}
 		uploadID64 := last
 		if uploadID64 == "" {
-			return nil, ErrNotFound
+			return nil, errNotFound
 		}
 		uploadID, err := base64.RawURLEncoding.DecodeString(uploadID64)
 		if err != nil {
-			return nil, fmt.Errorf("invalid upload ID %q (cannot decode)", uploadID64)
+			return nil, badRequestf("invalid upload ID %q (cannot decode)", uploadID64)
 		}
 		if !utf8.Valid(uploadID) {
-			return nil, fmt.Errorf("upload ID %q decoded to invalid utf8", uploadID64)
+			return nil, badRequestf("upload ID %q decoded to invalid utf8", uploadID64)
 		}
 		rreq.UploadID = string(uploadID)
 
@@ -328,10 +313,10 @@ func parse(method string, u *url.URL) (*Request, error) {
 			rreq.Kind = ReqBlobCompleteUpload
 			rreq.Digest = urlq.Get("digest")
 			if !ociref.IsValidDigest(rreq.Digest) {
-				return nil, ErrBadlyFormedDigest
+				return nil, errBadlyFormedDigest
 			}
 		default:
-			return nil, ErrMethodNotAllowed
+			return nil, errMethodNotAllowed
 		}
 		return &rreq, nil
 	case "manifests":
@@ -345,7 +330,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 		case ociref.IsValidTag(last):
 			rreq.Tag = last
 		default:
-			return nil, ErrNotFound
+			return nil, errNotFound
 		}
 		switch method {
 		case "GET":
@@ -357,19 +342,19 @@ func parse(method string, u *url.URL) (*Request, error) {
 		case "DELETE":
 			rreq.Kind = ReqManifestDelete
 		default:
-			return nil, ErrMethodNotAllowed
+			return nil, errMethodNotAllowed
 		}
 		return &rreq, nil
 
 	case "tags":
 		if last != "list" {
-			return nil, ErrNotFound
+			return nil, errNotFound
 		}
 		if err := setListQueryParams(&rreq, urlq); err != nil {
 			return nil, err
 		}
 		if method != "GET" {
-			return nil, ErrMethodNotAllowed
+			return nil, errMethodNotAllowed
 		}
 		rreq.Repo = path
 		if !ociref.IsValidRepository(rreq.Repo) {
@@ -379,10 +364,10 @@ func parse(method string, u *url.URL) (*Request, error) {
 		return &rreq, nil
 	case "referrers":
 		if !ociref.IsValidDigest(last) {
-			return nil, ErrBadlyFormedDigest
+			return nil, errBadlyFormedDigest
 		}
 		if method != "GET" {
-			return nil, ErrMethodNotAllowed
+			return nil, errMethodNotAllowed
 		}
 		rreq.Repo = path
 		if !ociref.IsValidRepository(rreq.Repo) {
@@ -395,7 +380,7 @@ func parse(method string, u *url.URL) (*Request, error) {
 		rreq.Kind = ReqReferrersList
 		return &rreq, nil
 	}
-	return nil, ErrNotFound
+	return nil, errNotFound
 }
 
 func setListQueryParams(rreq *Request, urlq url.Values) error {
@@ -403,7 +388,7 @@ func setListQueryParams(rreq *Request, urlq url.Values) error {
 	if nstr := urlq.Get("n"); nstr != "" {
 		n, err := strconv.Atoi(nstr)
 		if err != nil {
-			return fmt.Errorf("n is not a valid integer: %w", ErrBadRequest)
+			return badRequestf("query parameter n is not a valid integer")
 		}
 		rreq.ListN = n
 	}

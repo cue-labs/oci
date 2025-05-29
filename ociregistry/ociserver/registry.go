@@ -21,7 +21,6 @@ package ociserver
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -202,7 +201,7 @@ func (r *registry) v2(resp http.ResponseWriter, req *http.Request) (_err error) 
 	rreq, err := ocirequest.Parse(req.Method, req.URL)
 	if err != nil {
 		resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
-		return handlerErrorForRequestParseError(err)
+		return err
 	}
 	handle := handlers[rreq.Kind]
 	return handle(r, req.Context(), resp, req, rreq)
@@ -231,31 +230,4 @@ func (r *registry) setLocationHeader(resp http.ResponseWriter, isManifest bool, 
 	resp.Header().Set("Location", loc)
 	resp.Header().Set("Docker-Content-Digest", string(desc.Digest))
 	return nil
-}
-
-// ParseError represents an error that can happen when parsing.
-// The Err field holds one of the possible error values below.
-type ParseError struct {
-	error
-}
-
-func handlerErrorForRequestParseError(err error) error {
-	if err == nil {
-		return nil
-	}
-	var perr *ocirequest.ParseError
-	if !errors.As(err, &perr) {
-		return err
-	}
-	switch perr.Err {
-	case ocirequest.ErrNotFound:
-		return withHTTPCode(http.StatusNotFound, err)
-	case ocirequest.ErrBadlyFormedDigest:
-		return withHTTPCode(http.StatusBadRequest, err)
-	case ocirequest.ErrMethodNotAllowed:
-		return withHTTPCode(http.StatusMethodNotAllowed, err)
-	case ocirequest.ErrBadRequest:
-		return withHTTPCode(http.StatusBadRequest, err)
-	}
-	return err
 }

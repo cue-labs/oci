@@ -57,7 +57,7 @@ var parseRequestTests = []struct {
 	testName:  "getBlobInvalidDigest",
 	method:    "GET",
 	url:       "/v2/foo/bar/blobs/sha256:wrong",
-	wantError: `badly formed digest`,
+	wantError: `digest invalid: badly formed digest`,
 }, {
 	testName:  "getBlobInvalidRepo",
 	method:    "GET",
@@ -93,7 +93,7 @@ var parseRequestTests = []struct {
 	testName:  "badlyFormedUploadDigest",
 	method:    "POST",
 	url:       "/v2/foo/blobs/uploads?digest=sha256:fake",
-	wantError: "badly formed digest",
+	wantError: `digest invalid: badly formed digest`,
 }, {
 	testName: "getUploadInfo",
 	method:   "GET",
