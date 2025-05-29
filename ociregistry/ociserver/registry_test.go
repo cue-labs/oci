@@ -108,7 +108,7 @@ func TestCalls(t *testing.T) {
 			Method:      "GET",
 			URL:         "/v2/foo/blobs/sha256:asd",
 			WantCode:    http.StatusBadRequest,
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"badly formed digest"}]}`,
+			WantBody:    `{"errors":[{"code":"DIGEST_INVALID","message":"badly formed digest"}]}`,
 		},
 		{
 			Description: "HEAD_bad_digest",
@@ -235,7 +235,7 @@ func TestCalls(t *testing.T) {
 			Method:      "PUT",
 			URL:         "/v2/foo/blobs/uploads/MQ",
 			WantCode:    http.StatusBadRequest,
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"badly formed digest"}]}`,
+			WantBody:    `{"errors":[{"code":"DIGEST_INVALID","message":"badly formed digest"}]}`,
 		},
 		{
 			Description: "monolithic_upload_good_digest",
@@ -251,7 +251,7 @@ func TestCalls(t *testing.T) {
 			URL:         "/v2/foo/blobs/uploads?digest=sha256:fake",
 			Body:        "foo",
 			WantCode:    http.StatusBadRequest,
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"badly formed digest"}]}`,
+			WantBody:    `{"errors":[{"code":"DIGEST_INVALID","message":"badly formed digest"}]}`,
 		},
 		{
 			Description: "upload_good_digest",
@@ -267,7 +267,7 @@ func TestCalls(t *testing.T) {
 			URL:         "/v2/foo/blobs/uploads/MQ?digest=sha256:baddigest",
 			WantCode:    http.StatusBadRequest,
 			Body:        "foo",
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"badly formed digest"}]}`,
+			WantBody:    `{"errors":[{"code":"DIGEST_INVALID","message":"badly formed digest"}]}`,
 		},
 		{
 			Description: "stream_upload",
@@ -507,8 +507,8 @@ func TestCalls(t *testing.T) {
 			Description: "list_tags_bad_request",
 			Method:      "GET",
 			URL:         "/v2/foo/tags/list?n=INVALID",
-			WantCode:    http.StatusInternalServerError,
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"n is not a valid integer: bad request"}]}`,
+			WantCode:    http.StatusBadRequest,
+			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"query parameter n is not a valid integer"}]}`,
 		},
 		{
 			Description: "list_repos",
@@ -562,7 +562,7 @@ func TestCalls(t *testing.T) {
 			Method:      "GET",
 			URL:         "/v2/foo/referrers/latest",
 			WantCode:    http.StatusBadRequest,
-			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"badly formed digest"}]}`,
+			WantBody:    `{"errors":[{"code":"DIGEST_INVALID","message":"badly formed digest"}]}`,
 		},
 		{
 			skip:        true,
