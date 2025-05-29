@@ -504,6 +504,13 @@ func TestCalls(t *testing.T) {
 			WantBody:    `{"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known to registry"}]}`,
 		},
 		{
+			Description: "list_tags_bad_request",
+			Method:      "GET",
+			URL:         "/v2/foo/tags/list?n=INVALID",
+			WantCode:    http.StatusInternalServerError,
+			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"n is not a valid integer: bad request"}]}`,
+		},
+		{
 			Description: "list_repos",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo", "bar/manifests/latest": "bar"},
 			Method:      "GET",
