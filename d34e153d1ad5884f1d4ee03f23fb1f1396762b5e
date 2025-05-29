@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3be70d90_0a794ba8",
+        "filename": "ociregistry/ociserver/registry.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2025-05-29T15:52:31Z",
+      "side": 1,
+      "message": "I\u0027m not sure that this is the right fix. ISTM that the `ocirequest` package is the one that\u0027s getting things wrong here: it\u0027s a bit mixed up.\n\nSpecifically, the docs for that package say:\n\n```\n// ParseError represents an error that can happen when parsing.\n// The Err field holds one of the possible error values below.\n```\nbut that\u0027s manifestly untrue because there are various places that\njust return arbitrary errors, and at least one that wraps the error.\n\nI _think_ my initial idea here was to avoid `ocirequest` returning `ociregistry.Error` values directly, reasoning that it\u0027s something of\na layer violation, but that\u0027s definitely not the case any more (for example it returns a wrapper around `ociregistry.ErrNameInvalid`).\n\nSo... I think the right solution here is to remove `ocirequest.ParseError` and all those sentinel error values and just return `ociregistry.Error` values (or wrappers thereof) directly, losing this shim layer.\n\nI also think that the default error for ParseRequest should be a \"bad request\" error so then there\u0027s never any reason for it to return any error that\u0027s not (or wraps) an ociregistry.Error, and this `handlerErrorForRequestParseError` function can go away entirely.\n\nWDYT?",
+      "revId": "d34e153d1ad5884f1d4ee03f23fb1f1396762b5e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
