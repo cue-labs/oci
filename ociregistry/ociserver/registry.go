@@ -247,14 +247,16 @@ func handlerErrorForRequestParseError(err error) error {
 	if !errors.As(err, &perr) {
 		return err
 	}
-	switch perr.Err {
-	case ocirequest.ErrNotFound:
+	// Some errors may wrap the sentinel values below to add context,
+	// such as a request being bad due to an invalid URL query parameter.
+	switch {
+	case errors.Is(perr.Err, ocirequest.ErrNotFound):
 		return withHTTPCode(http.StatusNotFound, err)
-	case ocirequest.ErrBadlyFormedDigest:
+	case errors.Is(perr.Err, ocirequest.ErrBadlyFormedDigest):
 		return withHTTPCode(http.StatusBadRequest, err)
-	case ocirequest.ErrMethodNotAllowed:
+	case errors.Is(perr.Err, ocirequest.ErrMethodNotAllowed):
 		return withHTTPCode(http.StatusMethodNotAllowed, err)
-	case ocirequest.ErrBadRequest:
+	case errors.Is(perr.Err, ocirequest.ErrBadRequest):
 		return withHTTPCode(http.StatusBadRequest, err)
 	}
 	return err

@@ -507,7 +507,7 @@ func TestCalls(t *testing.T) {
 			Description: "list_tags_bad_request",
 			Method:      "GET",
 			URL:         "/v2/foo/tags/list?n=INVALID",
-			WantCode:    http.StatusInternalServerError,
+			WantCode:    http.StatusBadRequest,
 			WantBody:    `{"errors":[{"code":"UNKNOWN","message":"n is not a valid integer: bad request"}]}`,
 		},
 		{
