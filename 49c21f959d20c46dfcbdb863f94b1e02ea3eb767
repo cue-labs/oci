@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ec7a1211_7bdd0273",
+        "filename": "ociregistry/ociclient/badname_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-05-29T16:58:39Z",
+      "side": 1,
+      "message": "these errors stutter a little now, no? I guess not much we can do about that given how the error JSON splits \"code\" from \"message\".",
+      "revId": "49c21f959d20c46dfcbdb863f94b1e02ea3eb767",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a9ecefe4_51c34eda",
+        "filename": "ociregistry/ociserver/registry_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 565,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-05-29T16:58:39Z",
+      "side": 1,
+      "message": "nice.",
+      "revId": "49c21f959d20c46dfcbdb863f94b1e02ea3eb767",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
