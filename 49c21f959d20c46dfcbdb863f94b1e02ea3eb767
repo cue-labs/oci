@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "2b93b861_a4c40e52",
+        "filename": "ociregistry/ociclient/badname_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2025-05-30T08:01:11Z",
+      "side": 1,
+      "message": "yeah, that\u0027s just how it is; and I\u0027d say that although it\u0027s a bit stuttery, the stutter does have information (we can see what the actual error code is; there can be several ways a digest can be bad (the usual one is a content mismatch); it\u0027s sometimes useful to know the actual HTTP status code of the response), so I\u0027d say this is on balance an improvement.",
+      "parentUuid": "ec7a1211_7bdd0273",
+      "revId": "49c21f959d20c46dfcbdb863f94b1e02ea3eb767",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "a9ecefe4_51c34eda",
         "filename": "ociregistry/ociserver/registry_test.go",
         "patchSetId": 2
