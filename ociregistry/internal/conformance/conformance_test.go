@@ -319,21 +319,30 @@ func testReferrers(t *testing.T, client *remote.Registry) {
 		Config:    withMediaType(configDesc, "artifact1"),
 		Layers:    []ociregistry.Descriptor{layer0Desc},
 	})
+	annotations0 := map[string]string{
+		"foo": "bar",
+		"baz": "khroomph",
+	}
 	referrer0 := pushJSON(t, repo.Manifests(), ocispec.MediaTypeImageManifest, ociregistry.Manifest{
-		MediaType: ocispec.MediaTypeImageManifest,
-		Config:    withMediaType(configDesc, "referrer0"),
-		Subject:   &manifestDesc,
+		MediaType:   ocispec.MediaTypeImageManifest,
+		Config:      withMediaType(configDesc, "referrer0"),
+		Subject:     &manifestDesc,
+		Annotations: annotations0,
 	})
+	referrer0.ArtifactType = "referrer0"
+	referrer0.Annotations = annotations0
 	referrer1 := pushJSON(t, repo.Manifests(), ocispec.MediaTypeImageManifest, ociregistry.Manifest{
 		MediaType: ocispec.MediaTypeImageManifest,
 		Config:    withMediaType(configDesc, "referrer1"),
 		Subject:   &manifestDesc,
 	})
+	referrer1.ArtifactType = "referrer1"
 	referrer2 := pushJSON(t, repo.Manifests(), ocispec.MediaTypeImageManifest, ociregistry.Manifest{
 		MediaType: ocispec.MediaTypeImageManifest,
 		Config:    withMediaType(configDesc, "referrer2"),
 		Subject:   &referrer1,
 	})
+	referrer2.ArtifactType = "referrer2"
 	var gotReferrers []ocispec.Descriptor
 	err = repo.Referrers(ctx, manifestDesc, "", func(referrers []ocispec.Descriptor) error {
 		gotReferrers = append(gotReferrers, referrers...)
