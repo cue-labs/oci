@@ -47,10 +47,12 @@ func (r *Registry) Referrers(ctx context.Context, repoName string, digest ocireg
 	}
 	var referrers []ociregistry.Descriptor
 	for _, b := range repo.manifests {
-		if b.subject != digest {
+		if b.info.subject != digest {
 			continue
 		}
-		// TODO filter by artifact type
+		if artifactType != "" && b.info.artifactType != artifactType {
+			continue
+		}
 		referrers = append(referrers, b.descriptor())
 	}
 	slices.SortFunc(referrers, compareDescriptor)

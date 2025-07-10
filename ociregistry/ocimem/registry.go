@@ -44,14 +44,16 @@ type repository struct {
 type blob struct {
 	mediaType string
 	data      []byte
-	subject   digest.Digest
+	info      manifestInfo
 }
 
 func (b *blob) descriptor() ociregistry.Descriptor {
 	return ociregistry.Descriptor{
-		MediaType: b.mediaType,
-		Size:      int64(len(b.data)),
-		Digest:    digest.FromBytes(b.data),
+		MediaType:    b.mediaType,
+		Size:         int64(len(b.data)),
+		Digest:       digest.FromBytes(b.data),
+		ArtifactType: b.info.artifactType,
+		Annotations:  b.info.annotations,
 	}
 }
 
