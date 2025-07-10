@@ -131,7 +131,7 @@ func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string
 	if err := CheckDescriptor(desc, data); err != nil {
 		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor: %v", err)
 	}
-	subject, err := r.checkManifest(repoName, desc.MediaType, data)
+	info, err := r.checkManifest(repoName, desc.MediaType, data)
 	if err != nil {
 		return ociregistry.Descriptor{}, fmt.Errorf("invalid manifest: %v", err)
 	}
@@ -139,7 +139,7 @@ func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string
 	repo.manifests[dig] = &blob{
 		mediaType: mediaType,
 		data:      data,
-		subject:   subject,
+		info:      info,
 	}
 	if tag != "" {
 		repo.tags[tag] = desc
@@ -147,40 +147,35 @@ func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string
 	return desc, nil
 }
 
-func (r *Registry) checkManifest(repoName string, mediaType string, data []byte) (subject ociregistry.Digest, retErr error) {
+func (r *Registry) checkManifest(repoName string, mediaType string, data []byte) (manifestInfo, error) {
 	repo, err := r.repo(repoName)
 	if err != nil {
-		return "", err
+		return manifestInfo{}, err
 	}
-	iter, err := manifestReferences(mediaType, data)
+	info, err := getManifestInfo(mediaType, data)
 	if err != nil {
 		// TODO decide what to do about errUnknownManifestMediaTypeForIteration
-		return "", err
+		return manifestInfo{}, err
 	}
-	iter(func(info descInfo) bool {
+	for info := range info.descriptors {
 		if err := CheckDescriptor(info.desc, nil); err != nil {
-			retErr = fmt.Errorf("bad descriptor in %s: %v", info.name, err)
-			return false
+			return manifestInfo{}, fmt.Errorf("bad descriptor in %s: %v", info.name, err)
 		}
 		switch info.kind {
 		case kindBlob:
 			if repo.blobs[info.desc.Digest] == nil {
-				retErr = fmt.Errorf("blob for %s not found", info.name)
-				return false
+				return manifestInfo{}, fmt.Errorf("blob for %s not found", info.name)
 			}
 		case kindManifest:
 			if repo.manifests[info.desc.Digest] == nil {
-				retErr = fmt.Errorf("manifest for %s not found", info.name)
-				return false
+				return manifestInfo{}, fmt.Errorf("manifest for %s not found", info.name)
 			}
 		case kindSubjectManifest:
-			subject = info.desc.Digest
 			// The standard explicitly specifies that we can have
 			// a dangling subject so don't check that it exists.
 		}
-		return true
-	})
-	return subject, retErr
+	}
+	return info, nil
 }
 
 // refersTo reports whether the given digest is referred to, directly or indirectly, by any item
@@ -188,10 +183,9 @@ func (r *Registry) checkManifest(repoName string, mediaType string, data []byte)
 // TODO currently this iterates through all tagged manifests. A better
 // algorithm could amortise that work and be considerably more efficient.
 func refersTo(repo *repository, iter descIter, digest ociregistry.Digest) (found bool, retErr error) {
-	iter(func(info descInfo) bool {
+	for info := range iter {
 		if info.desc.Digest == digest {
-			found = true
-			return false
+			return true, nil
 		}
 		switch info.kind {
 		case kindManifest, kindSubjectManifest:
@@ -199,17 +193,15 @@ func refersTo(repo *repository, iter descIter, digest ociregistry.Digest) (found
 			if b == nil {
 				break
 			}
-			miter, err := manifestReferences(info.desc.MediaType, b.data)
+			minfo, err := getManifestInfo(info.desc.MediaType, b.data)
 			if err != nil {
-				retErr = err
-				return false
+				return false, err
 			}
-			found, retErr = refersTo(repo, miter, digest)
-			if found || retErr != nil {
-				return false
+			found, err := refersTo(repo, minfo.descriptors, digest)
+			if found || err != nil {
+				return found, err
 			}
 		}
-		return true
-	})
-	return found, retErr
+	}
+	return false, nil
 }
