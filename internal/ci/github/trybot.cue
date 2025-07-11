@@ -18,7 +18,7 @@ import (
 	"list"
 	"path"
 
-	"github.com/SchemaStore/schemastore/src/schemas/json"
+	"cue.dev/x/githubactions"
 )
 
 // The trybot workflow.
@@ -67,7 +67,7 @@ workflows: trybot: _repo.bashWorkflow & {
 				// This way, if a "go test" command fails, it is much easier for the developer
 				// to reproduce on their machine without having to remember "go work sync".
 				// If "go work sync" makes any changes, then the git clean check below will fail anyway.
-				json.#step & {
+				githubactions.#Step & {
 					run: "go work sync"
 				},
 
@@ -76,21 +76,28 @@ workflows: trybot: _repo.bashWorkflow & {
 		}
 	}
 
-	let perModuleChecks = [
+	let perModuleChecks = list.FlattenN([
 		for _, goModPath in _repo.modules
 		let modDir = path.Dir(goModPath)
 		let modIsInternal = _#goModDirIsInternal & {#goModDir: modDir, _}
 		for _, gowork in ["", if !modIsInternal {"off"}]
-		for _, step in [_#goGenerate, _#goTest, _#goCheck] {
-			step & {
-				#name: modDir + [if gowork != "" {" with GOWORK=\(gowork)"}, ""][0]
-				"working-directory": modDir
-				env: {
-					GOWORK: gowork
+		let stepName = modDir + [if gowork != "" {" with GOWORK=\(gowork)"}, ""][0] {[
+			[for step in [_#goGenerate, _#goTest, _#goCheck] {
+				step & {
+					#name:               stepName
+					"working-directory": modDir
+					env: {
+						GOWORK: gowork
+					}
 				}
-			}
-		},
-	]
+			}],
+			// Note: "uses" steps don't require or allow the other fields added above.
+			[_#goStaticCheck & {
+				#name: stepName
+				with: "working-directory": modDir
+			}],
+		]},
+	], 2)
 
 	// _#goModIsInternal determins whether a repo root-relative directory path
 	// to a go.mod filepath is internal from a Go modules perspective.
@@ -107,19 +114,19 @@ workflows: trybot: _repo.bashWorkflow & {
 		*_res[0] | false
 	}
 
-	_#goGenerate: json.#step & {
+	_#goGenerate: githubactions.#Step & {
 		#name: string
 		name:  "Generate \(#name)"
 		run:   "go generate ./..."
 	}
 
-	_#goTest: json.#step & {
+	_#goTest: githubactions.#Step & {
 		#name: string
 		name:  "Test \(#name)"
 		run:   "go test ./..."
 	}
 
-	_#goCheck: json.#step & {
+	_#goCheck: githubactions.#Step & {
 		// These checks can vary between platforms, as different code can be built
 		// based on GOOS and GOARCH build tags.
 		// However, CUE does not have any such build tags yet, and we don't use
@@ -129,5 +136,19 @@ workflows: trybot: _repo.bashWorkflow & {
 		#name: string
 		name:  "Check \(#name)"
 		run:   "go vet ./..."
+	}
+
+	_#goStaticCheck: githubactions.#Step & {
+		#name: string
+		name:  "Staticcheck \(#name)"
+		// TODO(mvdan): once we can do 'go tool staticcheck' with Go 1.24+,
+		// then using this action is probably no longer worthwhile.
+		// Note that we should then persist staticcheck's cache too.
+		uses: "dominikh/staticcheck-action@v1"
+		with: {
+			version:      "2025.1.1" // Pin a version for determinism.
+			"install-go": false      // We install Go ourselves.
+			"use-cache":  false      // We use a volume cache instead.
+		}
 	}
 }
