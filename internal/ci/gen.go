@@ -14,5 +14,4 @@
 
 package ci
 
-//go:generate go run cuelang.org/go/cmd/cue@v0.10.0 cmd importjsonschema ./vendor
-//go:generate go run cuelang.org/go/cmd/cue@v0.10.0 cmd gen
+//go:generate go run cuelang.org/go/cmd/cue@v0.13.2 cmd gen
