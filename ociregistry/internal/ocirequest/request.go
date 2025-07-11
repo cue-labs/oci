@@ -91,17 +91,22 @@ type Request struct {
 	// Valid for:
 	//	ReqTagsList
 	//	ReqCatalog
-	//	ReqReferrers
 	ListN int
 
-	// listLast holds the item to start just after
+	// ListLast holds the item to start just after
 	// when listing.
 	//
 	// Valid for:
 	//	ReqTagsList
 	//	ReqCatalog
-	//	ReqReferrers
 	ListLast string
+
+	// ArtifactType holds the artifact type to filter by when
+	// listing.
+	//
+	// Valid for:
+	//	ReqReferrersList
+	ArtifactType string
 }
 
 type Kind int
@@ -373,10 +378,11 @@ func Parse(method string, u *url.URL) (*Request, error) {
 		if !ociref.IsValidRepository(rreq.Repo) {
 			return nil, ociregistry.ErrNameInvalid
 		}
-		// TODO is there any kind of pagination for referrers?
-		// We'll set ListN to be future-proof.
+		// Unlike other list-oriented endpoints, there appears to be no defined way for the client
+		// to indicate the desired number of results, but set ListN anyway to be future-proof.
 		rreq.ListN = -1
 		rreq.Digest = last
+		rreq.ArtifactType = urlq.Get("artifactType")
 		rreq.Kind = ReqReferrersList
 		return &rreq, nil
 	}
