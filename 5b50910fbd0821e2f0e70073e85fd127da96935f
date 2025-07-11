@@ -16,6 +16,24 @@
       "message": "perhaps document why you avoided using the regexp package directly, with capturing groups? is it performance?",
       "revId": "5b50910fbd0821e2f0e70073e85fd127da96935f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f46ff238_6ff859ba",
+        "filename": "ociregistry/ociclient/lister.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2025-07-11T16:29:52Z",
+      "side": 1,
+      "message": "Because it seems like huge overkill for a very simple transformation, and the original regular expression isn\u0027t usable for this job anyway. I don\u0027t think it\u0027s really necessary to document why we\u0027re not using regexps to do the job rather than simple string manipulation.\n\nTBH I\u0027m tempted to avoid any of this mapping and just do:\n\n```\nreturn digest.Algorithm + \"-\" + truncate(digest.Encoded(), 64)\n```\n\nwhich I\u0027m pretty sure would be sufficient in practice until the end of time, but\nthis is perhaps a reasonable half-way house.",
+      "parentUuid": "2ab8b39d_b32063d8",
+      "revId": "5b50910fbd0821e2f0e70073e85fd127da96935f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }

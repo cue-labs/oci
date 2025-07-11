@@ -16,6 +16,24 @@
       "message": "Sorry to come back to it, but is a dot character allowed at the start or not? This comment suggests it\u0027s not, but the code allows it?",
       "revId": "68acd02c8529d2d127c6b006ed433f7334cebea0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c24ac730_7680df6a",
+        "filename": "ociregistry/ociclient/lister.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2025-07-11T16:29:52Z",
+      "side": 1,
+      "message": "If there\u0027s a dot character anywhere, it will be left in place. This does mean that if there\u0027s a hash algorithm that starts with a dot, we\u0027ll end up with an invalid tag, but in _practice_ the only algorithm that\u0027s ever used is \"sha256\" (many things would break if that changed), and any new algorithm will almost certainly have a short alphanumeric name) so I can\u0027t see this ever actually being an issue.",
+      "parentUuid": "4d1ff551_fb1aff19",
+      "revId": "68acd02c8529d2d127c6b006ed433f7334cebea0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
