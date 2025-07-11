@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2ab8b39d_b32063d8",
+        "filename": "ociregistry/ociclient/lister.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-07-11T15:12:10Z",
+      "side": 1,
+      "message": "perhaps document why you avoided using the regexp package directly, with capturing groups? is it performance?",
+      "revId": "5b50910fbd0821e2f0e70073e85fd127da96935f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
