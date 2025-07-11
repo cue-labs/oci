@@ -60,6 +60,20 @@ func TestMem(t *testing.T) {
 	})
 }
 
+func TestServerWithReferrersFilteringDisabled(t *testing.T) {
+	// Just run the distribution tests because the extra tests expect
+	// the referrers API to be enabled.
+	t.Run("distribution", func(t *testing.T) {
+		testDistribution(t, func(t *testing.T) string {
+			srv := httptest.NewServer(ociserver.New(ocidebug.New(ocimem.New(), t.Logf), &ociserver.Options{
+				DisableReferrersFiltering: true,
+			}))
+			t.Cleanup(srv.Close)
+			return srv.URL
+		})
+	})
+}
+
 func TestClientAsProxy(t *testing.T) {
 	runTests(t, func(t *testing.T) string {
 		direct := httptest.NewServer(ociserver.New(ocimem.New(), &ociserver.Options{
