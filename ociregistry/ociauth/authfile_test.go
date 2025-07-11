@@ -16,9 +16,9 @@ import (
 func TestMain(m *testing.M) {
 	// We're using testscript, not for txtar tests,
 	// but to access the test executable functionality.
-	os.Exit(testscript.RunMain(m, map[string]func() int{
+	testscript.Main(m, map[string]func(){
 		"docker-credential-test": helperMain,
-	}))
+	})
 }
 
 func TestLoadWithNoConfig(t *testing.T) {
@@ -406,7 +406,7 @@ func noRunner(helperName string, serverURL string) (ConfigEntry, error) {
 }
 
 // helperMain implements a docker credential command main function.
-func helperMain() int {
+func helperMain() {
 	flag.Parse()
 	if flag.NArg() != 1 || flag.Arg(0) != "get" {
 		log.Fatal("usage: docker-credential-test get")
@@ -437,10 +437,9 @@ func helperMain() int {
 }`, os.Getenv("TEST_SECRET"))
 	case "registry-with-error.com":
 		fmt.Fprintf(os.Stderr, "some error\n")
-		return 1
+		os.Exit(1)
 	default:
 		fmt.Printf("credentials not found in native keychain\n")
-		return 1
+		os.Exit(1)
 	}
-	return 0
 }
