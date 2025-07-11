@@ -19,11 +19,9 @@ import (
 )
 
 const (
-	mediaTypeOCIImageIndex                  = ocispec.MediaTypeImageIndex
-	mediaTypeOCIRestrictedLayer             = ocispec.MediaTypeImageLayerNonDistributableGzip
-	mediaTypeOCIUncompressedRestrictedLayer = ocispec.MediaTypeImageLayerNonDistributable
-	mediaTypeOCIManifestSchema1             = ocispec.MediaTypeImageManifest
-	mediaTypeOCIConfigJSON                  = ocispec.MediaTypeImageConfig
-	mediaTypeDockerConfigJSON               = "application/vnd.docker.container.image.v1+json"
-	mediaTypeOctetStream                    = "application/octet-stream"
+	mediaTypeOCIImageIndex      = ocispec.MediaTypeImageIndex
+	mediaTypeOCIManifestSchema1 = ocispec.MediaTypeImageManifest
+	mediaTypeOCIConfigJSON      = ocispec.MediaTypeImageConfig
+	mediaTypeDockerConfigJSON   = "application/vnd.docker.container.image.v1+json"
+	mediaTypeOctetStream        = "application/octet-stream"
 )

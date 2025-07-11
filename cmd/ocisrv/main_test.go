@@ -48,12 +48,9 @@ func init() {
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(testscript.RunMain(m, map[string]func() int{
-		"ocisrv": func() int {
-			main()
-			return 0
-		},
-	}))
+	testscript.Main(m, map[string]func(){
+		"ocisrv": main,
+	})
 }
 
 func TestScript(t *testing.T) {
@@ -65,6 +62,7 @@ func TestScript(t *testing.T) {
 		},
 		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
 			"pushblob": cmdPushBlob,
+			"getblob":  cmdGetBlob,
 		},
 	})
 }
