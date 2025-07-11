@@ -89,6 +89,13 @@ type Config struct {
 	// - no deletion of any blob or manifest that a tagged manifest
 	// refers to (TODO: not implemented yet)
 	ImmutableTags bool
+
+	// LaxChildReferences causes the usual child reference checks made
+	// by ocimem to be skipped. This includes references to blobs by
+	// manifests and by manifests (indexes) to other manifests, but not
+	// subject references, because the spec defines those to be always
+	// lax.
+	LaxChildReferences bool
 }
 
 func (r *Registry) repo(repoName string) (*repository, error) {
