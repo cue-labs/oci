@@ -79,10 +79,13 @@ func (r *registry) handleCatalogList(ctx context.Context, resp http.ResponseWrit
 	return nil
 }
 
-// TODO: implement handling of artifactType querystring
 func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	if r.opts.DisableReferrersAPI {
 		return withHTTPCode(http.StatusNotFound, fmt.Errorf("referrers API has been disabled"))
+	}
+	artifactType := rreq.ArtifactType
+	if r.opts.DisableReferrersFiltering {
+		artifactType = ""
 	}
 
 	im := &ocispec.Index{
@@ -90,8 +93,12 @@ func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWr
 		MediaType: mediaTypeOCIImageIndex,
 	}
 
-	// TODO support artifactType filtering
-	for desc, err := range r.backend.Referrers(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest), "") {
+	// TODO this could potentially end up with a very large response which we might
+	// want to limit. The spec does provide with a means to let a server respond with a partial
+	// request, linked to the next one with a Link header. However, arranging that is non-trivial
+	// because we'd need a way to return a link value to the client that enables a fresh
+	// call to Referrers to start where the old one left off. For now, we'll punt.
+	for desc, err := range r.backend.Referrers(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest), artifactType) {
 		if err != nil {
 			return err
 		}
@@ -103,6 +110,9 @@ func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWr
 	}
 	resp.Header().Set("Content-Length", strconv.Itoa(len(msg)))
 	resp.Header().Set("Content-Type", "application/vnd.oci.image.index.v1+json")
+	if artifactType != "" {
+		resp.Header().Set("OCI-Filters-Applied", "artifactType")
+	}
 	resp.WriteHeader(http.StatusOK)
 	resp.Write(msg)
 	return nil

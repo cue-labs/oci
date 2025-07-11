@@ -52,6 +52,11 @@ type Options struct {
 	// it does not understand the referrers API.
 	DisableReferrersAPI bool
 
+	// DisableReferrersFiltering, when true, cause the registry
+	// to behave as if it does not recognize the artifactType filter
+	// on the referrers API.
+	DisableReferrersFiltering bool
+
 	// DisableSinglePostUpload, when true, causes the registry
 	// to reject uploads with a single POST request.
 	// This is useful in combination with LocationsForDescriptor
