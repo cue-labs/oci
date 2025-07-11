@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4d1ff551_fb1aff19",
+        "filename": "ociregistry/ociclient/lister.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1037639
+      },
+      "writtenOn": "2025-07-11T16:01:18Z",
+      "side": 1,
+      "message": "Sorry to come back to it, but is a dot character allowed at the start or not? This comment suggests it\u0027s not, but the code allows it?",
+      "revId": "68acd02c8529d2d127c6b006ed433f7334cebea0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
