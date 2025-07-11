@@ -55,7 +55,7 @@ command: gen: {
 		for _workflowName, _workflow in github.workflows {
 			let _filename = _workflowName + repo.workflowFileExtension
 			"generate \(_filename)": file.Create & {
-				$after: [ for v in remove {v}]
+				$after: [for v in remove {v}]
 				filename: path.Join([_dir, _filename], _goos)
 				let donotedit = repo.doNotEditMessage & {#generatedBy: "internal/ci/ci_tool.cue", _}
 				contents: "# \(donotedit)\n\n\(yaml.Marshal(_workflow))"
@@ -65,7 +65,7 @@ command: gen: {
 }
 
 command: gen: codereviewcfg: file.Create & {
-	_dir:     path.FromSlash("../../", path.Unix)
+	_dir: path.FromSlash("../../", path.Unix)
 	filename: path.Join([_dir, "codereview.cfg"], _goos)
 	let res = repo.toCodeReviewCfg & {#input: repo.codeReview, _}
 	let donotedit = repo.doNotEditMessage & {#generatedBy: "internal/ci/ci_tool.cue", _}
