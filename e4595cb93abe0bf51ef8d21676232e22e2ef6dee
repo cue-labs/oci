@@ -121,6 +121,24 @@
       "message": "```suggestion\n\t// TODO this could potentially end up with a very large response which we might\n```",
       "revId": "e4595cb93abe0bf51ef8d21676232e22e2ef6dee",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b064584e_0126368a",
+        "filename": "ociregistry/ociserver/lister.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2025-07-11T14:45:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa9013c1_710c99da",
+      "revId": "e4595cb93abe0bf51ef8d21676232e22e2ef6dee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
