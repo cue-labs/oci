@@ -90,6 +90,28 @@ var pushManifestTests = []struct {
 	},
 	wantError: `invalid manifest: manifest for manifests\[0\] not found`,
 }, {
+	testName: "LaxReferences_NonExistentReference",
+	preload: ocitest.RepoContent{
+		Blobs: map[string]string{
+			"a": "{}",
+		},
+	},
+	config: Config{
+		LaxReferences: true,
+	},
+	mediaType: ocispec.MediaTypeImageManifest,
+	manifestData: func(content ocitest.PushedRepoContent) []byte {
+		return mustJSONMarshal(ociregistry.Manifest{
+			MediaType: ocispec.MediaTypeImageManifest,
+			Config:    content.Blobs["a"],
+			Layers: []ociregistry.Descriptor{{
+				MediaType: "application/something",
+				Size:      1,
+				Digest:    digest.FromString("b"),
+			}},
+		})
+	},
+}, {
 	testName:  "NonExistentImageIndexSubjectReference",
 	mediaType: ocispec.MediaTypeImageIndex,
 	manifestData: func(content ocitest.PushedRepoContent) []byte {

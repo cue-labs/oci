@@ -89,6 +89,11 @@ type Config struct {
 	// - no deletion of any blob or manifest that a tagged manifest
 	// refers to (TODO: not implemented yet)
 	ImmutableTags bool
+
+	// By default, the ocimem implementation checks that
+	// references are present when manifests are uploaded.
+	// Setting LaxReferences to true disables these checks.
+	LaxReferences bool
 }
 
 func (r *Registry) repo(repoName string) (*repository, error) {

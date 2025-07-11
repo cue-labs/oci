@@ -131,7 +131,7 @@ func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string
 	if err := CheckDescriptor(desc, data); err != nil {
 		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor: %v", err)
 	}
-	info, err := r.checkManifest(repoName, desc.MediaType, data)
+	info, err := r.checkManifestReferences(repoName, desc.MediaType, data)
 	if err != nil {
 		return ociregistry.Descriptor{}, fmt.Errorf("invalid manifest: %v", err)
 	}
@@ -147,14 +147,17 @@ func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string
 	return desc, nil
 }
 
-func (r *Registry) checkManifest(repoName string, mediaType string, data []byte) (manifestInfo, error) {
-	repo, err := r.repo(repoName)
-	if err != nil {
-		return manifestInfo{}, err
-	}
+func (r *Registry) checkManifestReferences(repoName string, mediaType string, data []byte) (manifestInfo, error) {
 	info, err := getManifestInfo(mediaType, data)
 	if err != nil {
 		// TODO decide what to do about errUnknownManifestMediaTypeForIteration
+		return manifestInfo{}, err
+	}
+	if r.cfg.LaxReferences {
+		return info, nil
+	}
+	repo, err := r.repo(repoName)
+	if err != nil {
 		return manifestInfo{}, err
 	}
 	for info := range info.descriptors {
