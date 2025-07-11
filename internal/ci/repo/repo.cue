@@ -27,5 +27,4 @@ modules: [
 	"./cmd/ocisrv/go.mod",
 	"./ociregistry/internal/conformance/go.mod",
 	"./ociregistry/go.mod",
-	"./internal/ci/go.mod",
 ]
