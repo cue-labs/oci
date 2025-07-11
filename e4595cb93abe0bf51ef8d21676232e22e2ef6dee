@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0ebd97ee_49436608",
+        "filename": "ociregistry/internal/ocirequest/request.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1037639
+      },
+      "writtenOn": "2025-07-11T14:15:04Z",
+      "side": 1,
+      "message": "```suggestion\n\t\t// Unlike other list-oriented endpoints, there appears to be no defined way for the client\n```",
+      "revId": "e4595cb93abe0bf51ef8d21676232e22e2ef6dee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1fd1204f_96176d3f",
+        "filename": "ociregistry/ociclient/lister.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1037639
+      },
+      "writtenOn": "2025-07-11T14:15:04Z",
+      "side": 1,
+      "message": "```suggestion\n// canUseLast is true.\n```",
+      "revId": "e4595cb93abe0bf51ef8d21676232e22e2ef6dee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "945cfd4c_a66f074d",
+        "filename": "ociregistry/ociclient/lister.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1037639
+      },
+      "writtenOn": "2025-07-11T14:15:04Z",
+      "side": 1,
+      "message": "This code doesn\u0027t seem to match the above mentioned regexp, as it allows a dot and a hyphen at the start.",
+      "revId": "e4595cb93abe0bf51ef8d21676232e22e2ef6dee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fa9013c1_710c99da",
+        "filename": "ociregistry/ociserver/lister.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1037639
+      },
+      "writtenOn": "2025-07-11T14:15:04Z",
+      "side": 1,
+      "message": "```suggestion\n\t// TODO this could potentially end up with a very large response which we might\n```",
+      "revId": "e4595cb93abe0bf51ef8d21676232e22e2ef6dee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
