@@ -18,6 +18,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f1cd6c52_087d1189",
+        "filename": "ociregistry/internal/ocirequest/request.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2025-07-11T14:40:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0ebd97ee_49436608",
+      "revId": "e4595cb93abe0bf51ef8d21676232e22e2ef6dee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1fd1204f_96176d3f",
@@ -35,6 +53,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "318b11bd_14e3e93a",
+        "filename": "ociregistry/ociclient/lister.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2025-07-11T14:40:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1fd1204f_96176d3f",
+      "revId": "e4595cb93abe0bf51ef8d21676232e22e2ef6dee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "945cfd4c_a66f074d",
@@ -48,6 +84,24 @@
       "writtenOn": "2025-07-11T14:15:04Z",
       "side": 1,
       "message": "This code doesn\u0027t seem to match the above mentioned regexp, as it allows a dot and a hyphen at the start.",
+      "revId": "e4595cb93abe0bf51ef8d21676232e22e2ef6dee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe9653b8_d8cbe854",
+        "filename": "ociregistry/ociclient/lister.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2025-07-11T14:40:11Z",
+      "side": 1,
+      "message": "See the comment in referrersTag above.",
+      "parentUuid": "945cfd4c_a66f074d",
       "revId": "e4595cb93abe0bf51ef8d21676232e22e2ef6dee",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
