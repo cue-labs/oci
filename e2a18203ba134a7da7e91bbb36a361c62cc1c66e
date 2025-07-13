@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2229e608_9fc2e52b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-07-13T15:28:30Z",
+      "side": 1,
+      "message": "Looks like you forgot to update go.work?",
+      "revId": "e2a18203ba134a7da7e91bbb36a361c62cc1c66e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
