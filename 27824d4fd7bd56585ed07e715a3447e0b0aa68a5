@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8fe2edc0_1800ac2f",
+        "filename": "ociregistry/ocimem/registry.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-07-13T15:26:50Z",
+      "side": 1,
+      "message": "nit: follow the godoc format to start the text with the field name",
+      "revId": "27824d4fd7bd56585ed07e715a3447e0b0aa68a5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
