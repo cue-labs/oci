@@ -16,6 +16,24 @@
       "message": "FYI: you still need this for `go generate ./internal/ci` to run `cue cmd gen`. So I don\u0027t think you should delete it, as `go generate ./...` is our standard for code generation.\n\nSo just delete the importjsonschema line, but leave the rest.",
       "revId": "89b48fa97ba5e7922c3bcd632aa2ecfee1ee45de",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7507f0fe_39afcb3d",
+        "filename": "internal/ci/gen.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2025-07-15T07:54:56Z",
+      "side": 0,
+      "message": "Yup. This wasn\u0027t actually ready for review yet - I was just getting it to pass when I had to leave for the weekend...",
+      "parentUuid": "629df6af_0a06e55f",
+      "revId": "89b48fa97ba5e7922c3bcd632aa2ecfee1ee45de",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
