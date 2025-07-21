@@ -5,8 +5,8 @@ jobs:
   push:
     defaults:
       run:
-        shell: bash
-    runs-on: ubuntu-22.04
+        shell: bash --noprofile --norc -euo pipefail {0}
+    runs-on: ns-linux-amd64
     if: ${{github.repository == 'cue-labs/oci'}}
     steps:
       - name: Write netrc file for porcuepine Gerrithub
