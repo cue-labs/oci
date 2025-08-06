@@ -16,8 +16,6 @@ botGitHubUserEmail: "cue.porcuepine@gmail.com"
 
 defaultBranch: "main"
 
-latestGo: "1.24.x"
-
 // modules is a list of Unix paths of go.mod files for go modules in this
 // repository
 modules: [...string]

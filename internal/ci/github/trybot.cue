@@ -21,10 +21,7 @@ import (
 	"cue.dev/x/githubactions"
 )
 
-// The trybot workflow.
 workflows: trybot: _repo.bashWorkflow & {
-	name: _repo.trybot.name
-
 	on: {
 		push: {
 			branches: list.Concat([[_repo.testDefaultBranch], _repo.protectedBranchPatterns]) // do not run PR branches
@@ -74,7 +71,7 @@ workflows: trybot: _repo.bashWorkflow & {
 		let modIsInternal = _#goModDirIsInternal & {#goModDir: modDir, _}
 		for _, gowork in ["", if !modIsInternal {"off"}]
 		let stepName = modDir + [if gowork != "" {" with GOWORK=\(gowork)"}, ""][0] {[
-			[for step in [_#goGenerate, _#goTest, _#goCheck] {
+			[for step in [_#goGenerate, _#goTest, _#goChecks] {
 				step & {
 					#name:               stepName
 					"working-directory": modDir
@@ -83,10 +80,11 @@ workflows: trybot: _repo.bashWorkflow & {
 					}
 				}
 			}],
-			// Note: "uses" steps don't require or allow the other fields added above.
-			[_#goStaticCheck & {
-				#name: stepName
-				with: "working-directory": modDir
+			[_repo.staticcheck & {
+				// We have many Go modules in this repo, so we track staticcheck in one.
+				#in: modfile: "${{ github.workspace }}/internal/ci/go.mod"
+				name: "Staticcheck \(stepName)"
+				"working-directory": modDir
 			}],
 		]},
 	], 2)
@@ -117,30 +115,8 @@ workflows: trybot: _repo.bashWorkflow & {
 		name:  "Test \(#name)"
 		run:   "go test ./..."
 	}
-
-	_#goCheck: githubactions.#Step & {
-		// These checks can vary between platforms, as different code can be built
-		// based on GOOS and GOARCH build tags.
-		// However, CUE does not have any such build tags yet, and we don't use
-		// dependencies that vary wildly between platforms.
-		// For now, to save CI resources, just run the checks on one matrix job.
-		// TODO: consider adding more checks as per https://github.com/golang/go/issues/42119.
+	_#goChecks: _repo.goChecks & {
 		#name: string
 		name:  "Check \(#name)"
-		run:   "go vet ./..."
-	}
-
-	_#goStaticCheck: githubactions.#Step & {
-		#name: string
-		name:  "Staticcheck \(#name)"
-		// TODO(mvdan): once we can do 'go tool staticcheck' with Go 1.24+,
-		// then using this action is probably no longer worthwhile.
-		// Note that we should then persist staticcheck's cache too.
-		uses: "dominikh/staticcheck-action@v1"
-		with: {
-			version:      "2025.1.1" // Pin a version for determinism.
-			"install-go": false      // We install Go ourselves.
-			"use-cache":  false      // We use a volume cache instead.
-		}
 	}
 }
