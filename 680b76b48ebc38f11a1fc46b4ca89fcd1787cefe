@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a3e2e29_c76bee6a",
+        "filename": "ociregistry/go.mod",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2025-08-06T14:57:25Z",
+      "side": 1,
+      "message": "This is repeated in three go.mod files. Also, adding the tool here grows the dependencies (visually at least) of what is otherwise a small dependency module. Perhaps a tools go.mod would be useful here?",
+      "revId": "680b76b48ebc38f11a1fc46b4ca89fcd1787cefe",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d4aad7a2_46e671e2",
+        "filename": "ociregistry/internal/conformance/go.mod",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2025-08-06T14:57:25Z",
+      "side": 1,
+      "message": "Sorry, 4 times!",
+      "revId": "680b76b48ebc38f11a1fc46b4ca89fcd1787cefe",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
