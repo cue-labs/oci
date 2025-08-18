@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4500b81b_94864be2",
+        "filename": "ociregistry/go.mod",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-08-18T10:31:22Z",
+      "side": 1,
+      "message": "So, a tools go.mod file is what I had gone for initially; see internal/ci/go.mod in PS3. However it doesn\u0027t work, because `-modfile` is not compatible with the use of a go.work workspace:\n\n\u003e go: -modfile cannot be used in workspace mode\n\nI guess that makes sense; the workspace mode works only when it\u0027s in control of what modules are involved in the build list.\n\nThe problem here is that we want to use a separate module to build the staticcheck tool, and then run the tool on the current module with workspace mode enabled. AFAICT that\u0027s not possible to do with a single `go tool` invocation.\n\nI see a few options:\n1) `go run honnef.co/go/tools/cmd/staticcheck@VERSION`, which causes slowness due to extra roundtrips with GOPROXY (https://github.com/golang/go/issues/72944)\n2) `GOWORK\u003doff go tool -modfile\u003d../internal/ci/go.mod staticcheck`, which causes the analysis to work without the workspace mode. For example, cmd/ocisrv would be checked against the pinned version of ociregistry rather than the local one.\n3) The solution I propose here. I honestly don\u0027t think the few added tool dependencies are a huge concern.\n4) A more complex solution like `cd internal/ci \u0026\u0026 go tool -n staticcheck` to get the path to the cached staticcheck binary, to later be used in the other modules. I think that\u0027s likely not worth it.",
+      "parentUuid": "8a3e2e29_c76bee6a",
+      "revId": "680b76b48ebc38f11a1fc46b4ca89fcd1787cefe",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d4aad7a2_46e671e2",
         "filename": "ociregistry/internal/conformance/go.mod",
         "patchSetId": 6
@@ -31,6 +49,24 @@
       "writtenOn": "2025-08-06T14:57:25Z",
       "side": 1,
       "message": "Sorry, 4 times!",
+      "revId": "680b76b48ebc38f11a1fc46b4ca89fcd1787cefe",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8f461345_42cb7ecf",
+        "filename": "ociregistry/internal/conformance/go.mod",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-08-18T10:31:22Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "d4aad7a2_46e671e2",
       "revId": "680b76b48ebc38f11a1fc46b4ca89fcd1787cefe",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
