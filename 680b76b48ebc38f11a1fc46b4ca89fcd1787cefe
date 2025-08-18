@@ -38,6 +38,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "04da1f49_c03ca557",
+        "filename": "ociregistry/go.mod",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-08-18T10:42:59Z",
+      "side": 1,
+      "message": "I guess a simpler form of 4 would be `cd internal/ci \u0026\u0026 go install honnef.co/go/tools/cmd/staticcheck`, to later be used from $PATH in the other modules. Slightly simpler, although still not particularly nice.",
+      "parentUuid": "4500b81b_94864be2",
+      "revId": "680b76b48ebc38f11a1fc46b4ca89fcd1787cefe",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d4aad7a2_46e671e2",
         "filename": "ociregistry/internal/conformance/go.mod",
         "patchSetId": 6
