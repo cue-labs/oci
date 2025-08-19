@@ -56,6 +56,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "79fec63f_c9cddf9a",
+        "filename": "ociregistry/go.mod",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1017723
+      },
+      "writtenOn": "2025-08-19T10:51:10Z",
+      "side": 1,
+      "message": "Ah I hadn\u0027t realised the go work \"feature\" - I\u0027ll defer to you on what\u0027s best here.\n\nBut I\u0027d suggest we don\u0027t want to be adding dependencies to this module; it\u0027s intentionally lightweight.",
+      "parentUuid": "04da1f49_c03ca557",
+      "revId": "680b76b48ebc38f11a1fc46b4ca89fcd1787cefe",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "d4aad7a2_46e671e2",
         "filename": "ociregistry/internal/conformance/go.mod",
         "patchSetId": 6
