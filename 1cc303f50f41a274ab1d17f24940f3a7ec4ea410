@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ad34ddfb_b9fdd544",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-12-10T21:32:03Z",
+      "side": 1,
+      "message": "I\u0027d briefly mention that this matches what Docker does, and link to the upstream PR/issue.",
+      "revId": "1cc303f50f41a274ab1d17f24940f3a7ec4ea410",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "52bd86c4_88f54bc6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-12-10T21:32:03Z",
+      "side": 1,
+      "message": "LGTM, just two nits",
+      "revId": "1cc303f50f41a274ab1d17f24940f3a7ec4ea410",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7fcafec8_5945ebb0",
+        "filename": "ociregistry/ociauth/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-12-10T21:32:03Z",
+      "side": 1,
+      "message": "```suggestion\n\t\t\treturn nil, fmt.Errorf(\"invalid inline config: %v\", err)\n```",
+      "revId": "1cc303f50f41a274ab1d17f24940f3a7ec4ea410",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
