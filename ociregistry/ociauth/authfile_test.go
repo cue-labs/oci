@@ -43,40 +43,56 @@ func TestLoad(t *testing.T) {
 		return getenv("HOME")
 	})
 	locations := []struct {
-		env  string
-		dir  string
-		file string
-	}{{
-		env:  "DOCKER_CONFIG",
-		dir:  "dockerconfig",
-		file: "config.json",
-	}, {
-		env:  "HOME",
-		dir:  "home",
-		file: ".docker/config.json",
-	}, {
-		env:  "XDG_RUNTIME_DIR",
-		dir:  "xdg",
-		file: "containers/auth.json",
-	}}
+		env      string
+		dir      string
+		file     string
+		isInline bool
+	}{
+		{
+			env:      "DOCKER_AUTH_CONFIG",
+			isInline: true,
+		},
+		{
+			env:  "DOCKER_CONFIG",
+			dir:  "dockerconfig",
+			file: "config.json",
+		},
+		{
+			env:  "HOME",
+			dir:  "home",
+			file: ".docker/config.json",
+		}, {
+			env:  "XDG_RUNTIME_DIR",
+			dir:  "xdg",
+			file: "containers/auth.json",
+		},
+	}
+
 	for _, loc := range locations {
-		epath := filepath.Join(d, loc.dir)
-		t.Setenv(loc.env, epath)
-		cfgPath := filepath.Join(epath, filepath.FromSlash(loc.file))
-		err := os.MkdirAll(filepath.Dir(cfgPath), 0o777)
-		qt.Assert(t, qt.IsNil(err))
-		// Write the config file with a username that
-		// reflects where it's stored.
-		err = os.WriteFile(cfgPath, []byte(`
+		c := []byte(`
 {
 	"auths": {
 		"someregistry.example.com": {
-			"username": `+fmt.Sprintf("%q", loc.env)+`,
+			"username": ` + fmt.Sprintf("%q", loc.env) + `,
 			"password": "somepassword"
 		}
 	}
-}`), 0o666)
-		qt.Assert(t, qt.IsNil(err))
+}`)
+		if loc.isInline {
+			// Inline config for DOCKER_AUTH_CONFIG.
+			t.Setenv(loc.env, string(c))
+		} else {
+			epath := filepath.Join(d, loc.dir)
+			t.Setenv(loc.env, epath)
+			cfgPath := filepath.Join(epath, filepath.FromSlash(loc.file))
+			err := os.MkdirAll(filepath.Dir(cfgPath), 0o777)
+			qt.Assert(t, qt.IsNil(err))
+
+			// Write the config file with a username that
+			// reflects where it's stored.
+			err = os.WriteFile(cfgPath, c, 0o666)
+			qt.Assert(t, qt.IsNil(err))
+		}
 	}
 	for _, loc := range locations {
 		t.Run(loc.env, func(t *testing.T) {
@@ -88,11 +104,19 @@ func TestLoad(t *testing.T) {
 				Username: loc.env,
 				Password: "somepassword",
 			}))
-			// Remove the directory containing the above
-			// config file so that the next level of precedence
-			// can be checked.
-			err = os.RemoveAll(filepath.Join(d, loc.dir))
-			qt.Assert(t, qt.IsNil(err))
+
+			if loc.isInline {
+				// Remove the DOCKER_AUTH_CONFIG so that the next
+				// level of precedence can be checked.
+				err := os.Unsetenv(loc.env)
+				qt.Assert(t, qt.IsNil(err))
+			} else {
+				// Remove the directory containing the above
+				// config file so that the next level of precedence
+				// can be checked.
+				err = os.RemoveAll(filepath.Join(d, loc.dir))
+				qt.Assert(t, qt.IsNil(err))
+			}
 		})
 	}
 	// When there's no config file available, it should return
