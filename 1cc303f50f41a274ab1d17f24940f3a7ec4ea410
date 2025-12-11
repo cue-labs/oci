@@ -18,6 +18,24 @@
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "0cc17226_bfbd61af",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1039131
+      },
+      "writtenOn": "2025-12-11T15:03:59Z",
+      "side": 1,
+      "message": "That\u0027s important - added it.",
+      "parentUuid": "ad34ddfb_b9fdd544",
+      "revId": "1cc303f50f41a274ab1d17f24940f3a7ec4ea410",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "52bd86c4_88f54bc6",
@@ -48,6 +66,24 @@
       "writtenOn": "2025-12-10T21:32:03Z",
       "side": 1,
       "message": "```suggestion\n\t\t\treturn nil, fmt.Errorf(\"invalid inline config: %v\", err)\n```",
+      "revId": "1cc303f50f41a274ab1d17f24940f3a7ec4ea410",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0ddc4ebb_c8628aec",
+        "filename": "ociregistry/ociauth/authfile.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1039131
+      },
+      "writtenOn": "2025-12-11T15:03:59Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "7fcafec8_5945ebb0",
       "revId": "1cc303f50f41a274ab1d17f24940f3a7ec4ea410",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
