@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ceebf332_476a87e3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1017720
+      },
+      "writtenOn": "2025-12-12T21:52:49Z",
+      "side": 1,
+      "message": "`go work sync` still had changes :) so I applied them.\n\nI also deprecated the Seq type for clarity. Otherwise LGTM",
+      "revId": "d90a14c016e59db61eb2ceba73b644f8cae23f19",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
