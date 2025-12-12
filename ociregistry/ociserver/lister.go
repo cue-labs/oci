@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"iter"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -79,7 +80,7 @@ func (r *registry) handleCatalogList(ctx context.Context, resp http.ResponseWrit
 	return nil
 }
 
-func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
+func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWriter, _ *http.Request, rreq *ocirequest.Request) error {
 	if r.opts.DisableReferrersAPI {
 		return withHTTPCode(http.StatusNotFound, fmt.Errorf("referrers API has been disabled"))
 	}
@@ -118,7 +119,7 @@ func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWr
 	return nil
 }
 
-func (r *registry) nextListResults(req *http.Request, rreq *ocirequest.Request, itemsIter ociregistry.Seq[string]) (items []string, link string, _ error) {
+func (r *registry) nextListResults(req *http.Request, rreq *ocirequest.Request, itemsIter iter.Seq2[string, error]) (items []string, link string, _ error) {
 	if r.opts.MaxListPageSize > 0 && rreq.ListN > r.opts.MaxListPageSize {
 		return nil, "", ociregistry.NewError(fmt.Sprintf("query parameter n is too large (n=%d, max=%d)", rreq.ListN, r.opts.MaxListPageSize), ociregistry.ErrUnsupported.Code(), nil)
 	}

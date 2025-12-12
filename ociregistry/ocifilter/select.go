@@ -17,6 +17,7 @@ package ocifilter
 import (
 	"context"
 	"io"
+	"iter"
 
 	"cuelabs.dev/go/oci/ociregistry"
 )
@@ -193,7 +194,7 @@ func (r *accessCheckerRegistry) DeleteTag(ctx context.Context, repo string, name
 	return r.r.DeleteTag(ctx, repo, name)
 }
 
-func (r *accessCheckerRegistry) Repositories(ctx context.Context, startAfter string) ociregistry.Seq[string] {
+func (r *accessCheckerRegistry) Repositories(ctx context.Context, startAfter string) iter.Seq2[string, error] {
 	if err := r.check("*", AccessList); err != nil {
 		return ociregistry.ErrorSeq[string](err)
 	}
@@ -213,14 +214,14 @@ func (r *accessCheckerRegistry) Repositories(ctx context.Context, startAfter str
 	}
 }
 
-func (r *accessCheckerRegistry) Tags(ctx context.Context, repo, startAfter string) ociregistry.Seq[string] {
+func (r *accessCheckerRegistry) Tags(ctx context.Context, repo, startAfter string) iter.Seq2[string, error] {
 	if err := r.check(repo, AccessList); err != nil {
 		return ociregistry.ErrorSeq[string](err)
 	}
 	return r.r.Tags(ctx, repo, startAfter)
 }
 
-func (r *accessCheckerRegistry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) ociregistry.Seq[ociregistry.Descriptor] {
+func (r *accessCheckerRegistry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) iter.Seq2[ociregistry.Descriptor, error] {
 	if err := r.check(repo, AccessList); err != nil {
 		return ociregistry.ErrorSeq[ociregistry.Descriptor](err)
 	}

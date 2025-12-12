@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"iter"
 	"log"
 	"sync/atomic"
 
@@ -146,7 +147,7 @@ func (r *logger) PushManifest(ctx context.Context, repoName string, tag string, 
 	return desc, err
 }
 
-func (r *logger) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, artifactType string) ociregistry.Seq[ociregistry.Descriptor] {
+func (r *logger) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, artifactType string) iter.Seq2[ociregistry.Descriptor, error] {
 	return logIterReturn(
 		r,
 		fmt.Sprintf("Referrers %s %s %q", repoName, digest, artifactType),
@@ -154,7 +155,7 @@ func (r *logger) Referrers(ctx context.Context, repoName string, digest ociregis
 	)
 }
 
-func (r *logger) Repositories(ctx context.Context, startAfter string) ociregistry.Seq[string] {
+func (r *logger) Repositories(ctx context.Context, startAfter string) iter.Seq2[string, error] {
 	return logIterReturn(
 		r,
 		fmt.Sprintf("Repositories startAfter: %q", startAfter),
@@ -162,7 +163,7 @@ func (r *logger) Repositories(ctx context.Context, startAfter string) ociregistr
 	)
 }
 
-func (r *logger) Tags(ctx context.Context, repoName string, startAfter string) ociregistry.Seq[string] {
+func (r *logger) Tags(ctx context.Context, repoName string, startAfter string) iter.Seq2[string, error] {
 	return logIterReturn(
 		r,
 		fmt.Sprintf("Tags %s startAfter: %q", repoName, startAfter),
@@ -257,7 +258,7 @@ func (w blobWriter) Cancel() error {
 	return err
 }
 
-func logIterReturn[T any](r *logger, initialMsg string, it ociregistry.Seq[T]) ociregistry.Seq[T] {
+func logIterReturn[T any](r *logger, initialMsg string, it iter.Seq2[T, error]) iter.Seq2[T, error] {
 	return func(yield func(T, error) bool) {
 		r.logf("%s {", initialMsg)
 		items := []T{}
