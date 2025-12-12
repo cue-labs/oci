@@ -17,6 +17,7 @@ package ocifilter
 import (
 	"context"
 	"io"
+	"iter"
 	"path"
 	"strings"
 
@@ -139,7 +140,7 @@ func (r *subRegistry) DeleteTag(ctx context.Context, repo string, name string) e
 	return r.r.DeleteTag(ctx, r.repo(repo), name)
 }
 
-func (r *subRegistry) Repositories(ctx context.Context, startAfter string) ociregistry.Seq[string] {
+func (r *subRegistry) Repositories(ctx context.Context, startAfter string) iter.Seq2[string, error] {
 	ctx = r.mapScopes(ctx)
 	p := r.prefix + "/"
 	return func(yield func(string, error) bool) {
@@ -155,12 +156,12 @@ func (r *subRegistry) Repositories(ctx context.Context, startAfter string) ocire
 	}
 }
 
-func (r *subRegistry) Tags(ctx context.Context, repo, startAfter string) ociregistry.Seq[string] {
+func (r *subRegistry) Tags(ctx context.Context, repo, startAfter string) iter.Seq2[string, error] {
 	ctx = r.mapScopes(ctx)
 	return r.r.Tags(ctx, r.repo(repo), startAfter)
 }
 
-func (r *subRegistry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) ociregistry.Seq[ociregistry.Descriptor] {
+func (r *subRegistry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) iter.Seq2[ociregistry.Descriptor, error] {
 	ctx = r.mapScopes(ctx)
 	return r.r.Referrers(ctx, r.repo(repo), digest, artifactType)
 }

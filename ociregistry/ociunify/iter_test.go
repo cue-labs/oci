@@ -16,6 +16,7 @@ package ociunify
 
 import (
 	"cmp"
+	"iter"
 	"testing"
 
 	"cuelabs.dev/go/oci/ociregistry"
@@ -24,7 +25,7 @@ import (
 
 var mergeIterTests = []struct {
 	testName string
-	it0, it1 ociregistry.Seq[int]
+	it0, it1 iter.Seq2[int, error]
 	want     []int
 	wantErr  error
 }{{
