@@ -16,19 +16,20 @@ package ocimem
 
 import (
 	"context"
+	"iter"
 	"slices"
 	"strings"
 
 	"cuelabs.dev/go/oci/ociregistry"
 )
 
-func (r *Registry) Repositories(ctx context.Context, startAfter string) ociregistry.Seq[string] {
+func (r *Registry) Repositories(_ context.Context, startAfter string) iter.Seq2[string, error] {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return mapKeysIter(r.repos, strings.Compare, startAfter)
 }
 
-func (r *Registry) Tags(ctx context.Context, repoName string, startAfter string) ociregistry.Seq[string] {
+func (r *Registry) Tags(_ context.Context, repoName string, startAfter string) iter.Seq2[string, error] {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	repo, err := r.repo(repoName)
@@ -38,7 +39,7 @@ func (r *Registry) Tags(ctx context.Context, repoName string, startAfter string)
 	return mapKeysIter(repo.tags, strings.Compare, startAfter)
 }
 
-func (r *Registry) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, artifactType string) ociregistry.Seq[ociregistry.Descriptor] {
+func (r *Registry) Referrers(_ context.Context, repoName string, digest ociregistry.Digest, artifactType string) iter.Seq2[ociregistry.Descriptor, error] {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	repo, err := r.repo(repoName)
@@ -59,7 +60,7 @@ func (r *Registry) Referrers(ctx context.Context, repoName string, digest ocireg
 	return ociregistry.SliceSeq(referrers)
 }
 
-func mapKeysIter[K comparable, V any](m map[K]V, cmp func(K, K) int, startAfter K) ociregistry.Seq[K] {
+func mapKeysIter[K comparable, V any](m map[K]V, cmp func(K, K) int, startAfter K) iter.Seq2[K, error] {
 	ks := make([]K, 0, len(m))
 	for k := range m {
 		if cmp(startAfter, k) < 0 {
@@ -67,6 +68,7 @@ func mapKeysIter[K comparable, V any](m map[K]V, cmp func(K, K) int, startAfter 
 		}
 	}
 	slices.SortFunc(ks, cmp)
+
 	return ociregistry.SliceSeq(ks)
 }
 

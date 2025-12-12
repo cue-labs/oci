@@ -1,6 +1,6 @@
 module cuelabs.dev/go/oci/ociregistry
 
-go 1.23
+go 1.24.0
 
 require (
 	github.com/go-quicktest/qt v1.101.0
@@ -10,9 +10,9 @@ require (
 )
 
 require (
-	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/tools v0.26.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/tools v0.40.0 // indirect
 )
