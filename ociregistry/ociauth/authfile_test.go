@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/go-quicktest/qt"
+	"github.com/google/go-cmp/cmp"
 	"github.com/rogpeppe/go-internal/testscript"
 )
 
@@ -43,28 +44,34 @@ func TestLoad(t *testing.T) {
 		return getenv("HOME")
 	})
 	locations := []struct {
-		env      string
-		dir      string
-		file     string
-		isInline bool
+		extraHost string
+		env       string
+		dir       string
+		file      string
+		isInline  bool
 	}{
 		{
-			env:      "DOCKER_AUTH_CONFIG",
-			isInline: true,
+			extraHost: "inline-docker-auth-env.example.com",
+			env:       "DOCKER_AUTH_CONFIG",
+			isInline:  true,
 		},
 		{
-			env:  "DOCKER_CONFIG",
-			dir:  "dockerconfig",
-			file: "config.json",
+			extraHost: "overridden-dockerconfig.example.com",
+			env:       "DOCKER_CONFIG",
+			dir:       "dockerconfig",
+			file:      "config.json",
 		},
 		{
-			env:  "HOME",
-			dir:  "home",
-			file: ".docker/config.json",
-		}, {
-			env:  "XDG_RUNTIME_DIR",
-			dir:  "xdg",
-			file: "containers/auth.json",
+			extraHost: "default-dockerconfig.example.com",
+			env:       "HOME",
+			dir:       "home",
+			file:      ".docker/config.json",
+		},
+		{
+			extraHost: "runtime-containers-auth.example.com",
+			env:       "XDG_RUNTIME_DIR",
+			dir:       "xdg",
+			file:      "containers/auth.json",
 		},
 	}
 
@@ -73,6 +80,10 @@ func TestLoad(t *testing.T) {
 {
 	"auths": {
 		"someregistry.example.com": {
+			"username": ` + fmt.Sprintf("%q", loc.env) + `,
+			"password": "somepassword"
+		},
+		` + fmt.Sprintf("%q", loc.extraHost) + `: {
 			"username": ` + fmt.Sprintf("%q", loc.env) + `,
 			"password": "somepassword"
 		}
@@ -95,9 +106,23 @@ func TestLoad(t *testing.T) {
 		}
 	}
 	for _, loc := range locations {
-		t.Run(loc.env, func(t *testing.T) {
+		t.Run(loc.env+"/per-source", func(t *testing.T) {
 			c, err := Load(noRunner)
 			qt.Assert(t, qt.IsNil(err))
+
+			info, err := c.EntryForRegistry(loc.extraHost)
+			qt.Assert(t, qt.IsNil(err))
+			qt.Assert(t, qt.Equals(info, ConfigEntry{
+				Username: loc.env,
+				Password: "somepassword",
+			}))
+		})
+	}
+	for _, loc := range locations {
+		t.Run(loc.env+"/precedence", func(t *testing.T) {
+			c, err := Load(noRunner)
+			qt.Assert(t, qt.IsNil(err))
+
 			info, err := c.EntryForRegistry("someregistry.example.com")
 			qt.Assert(t, qt.IsNil(err))
 			qt.Assert(t, qt.Equals(info, ConfigEntry{
@@ -156,7 +181,7 @@ func TestWithMalformedBase64Auth(t *testing.T) {
 		}
 	}
 }`)
-	qt.Assert(t, qt.ErrorMatches(err, `invalid config file ".*": cannot decode auth field for "someregistry.example.com": invalid base64-encoded string`))
+	qt.Assert(t, qt.ErrorMatches(err, `invalid config file at \$DOCKER_CONFIG: cannot decode auth field for "someregistry.example.com": invalid base64-encoded string`))
 }
 
 func TestWithAuthAndUsername(t *testing.T) {
@@ -359,7 +384,7 @@ func TestWithDefaultHelperNotFound(t *testing.T) {
 func TestWithDefaultHelperOtherError(t *testing.T) {
 	// When there's a helper not associated with any specific
 	// host, it's still an error if it's any error other than HelperNotFound.
-	errHelper := func(helperName string, serverURL string) (ConfigEntry, error) {
+	errHelper := func(helperName, serverURL string) (ConfigEntry, error) {
 		return ConfigEntry{}, fmt.Errorf("some error")
 	}
 	c, err := load(t, errHelper, `
@@ -417,6 +442,138 @@ func TestWithHelperAndExplicitEnv(t *testing.T) {
 	}))
 }
 
+func TestConfigSourceRead(t *testing.T) {
+	tests := []struct {
+		name   string
+		source func(t *testing.T) configSource
+		want   []byte
+	}{
+		{
+			name: "zero",
+			source: func(t *testing.T) configSource {
+				return configSource{}
+			},
+			want: nil,
+		},
+		{
+			name: "raw",
+			source: func(t *testing.T) configSource {
+				return configSource{Raw: []byte("hello world")}
+			},
+			want: []byte("hello world"),
+		},
+		{
+			name: "valid file",
+			source: func(t *testing.T) configSource {
+				path := filepath.Join(t.TempDir(), "some-file.txt")
+				err := os.WriteFile(path, []byte("content of some file"), 0o600)
+				qt.Assert(t, qt.IsNil(err))
+				return configSource{Path: path}
+			},
+			want: []byte("content of some file"),
+		},
+		{
+			name: "file not found",
+			source: func(t *testing.T) configSource {
+				return configSource{Path: "/path/that/does/not/exist"}
+			},
+			want: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := test.source(t).Read()
+			qt.Assert(t, qt.IsNil(err))
+			qt.Assert(t, qt.DeepEquals(got, test.want))
+		})
+	}
+}
+
+func TestConfigSourceReadError(t *testing.T) {
+	source := configSource{Path: t.TempDir()}
+	_, err := source.Read()
+	qt.Assert(t, qt.IsNotNil(err))
+}
+
+func TestConfigDataMergeInto(t *testing.T) {
+	tests := []struct {
+		name   string
+		config configData
+		other  configData
+		want   configData
+	}{
+		{
+			name:   "zero",
+			config: configData{},
+			other:  configData{},
+			want:   configData{},
+		},
+		{
+			name: "set on empty",
+			config: configData{
+				Auths:       map[string]authConfig{"foo": {Username: "hello"}},
+				CredHelpers: map[string]string{"bar": "echo"},
+				CredsStore:  "cat",
+			},
+			other: configData{},
+			want: configData{
+				Auths:       map[string]authConfig{"foo": {Username: "hello"}},
+				CredHelpers: map[string]string{"bar": "echo"},
+				CredsStore:  "cat",
+			},
+		},
+		{
+			name: "keep original",
+			config: configData{
+				Auths:       map[string]authConfig{"foo": {Username: "hello"}},
+				CredHelpers: map[string]string{"bar": "echo"},
+				CredsStore:  "cat",
+			},
+			other: configData{
+				Auths:       map[string]authConfig{"foo": {Auth: "hmm", IdentityToken: "cool"}},
+				CredHelpers: map[string]string{"bar": "lorem"},
+				CredsStore:  "yes",
+			},
+			want: configData{
+				Auths:       map[string]authConfig{"foo": {Auth: "hmm", IdentityToken: "cool"}},
+				CredHelpers: map[string]string{"bar": "lorem"},
+				CredsStore:  "yes",
+			},
+		},
+		{
+			name: "merge",
+			config: configData{
+				Auths:       map[string]authConfig{"foo": {Username: "hello"}},
+				CredHelpers: map[string]string{"bar": "echo"},
+				CredsStore:  "cat",
+			},
+			other: configData{
+				Auths:       map[string]authConfig{"moo": {Auth: "hmm", IdentityToken: "cool"}},
+				CredHelpers: map[string]string{"doo": "ipsum"},
+			},
+			want: configData{
+				Auths: map[string]authConfig{
+					"foo": {Username: "hello"},
+					"moo": {Auth: "hmm", IdentityToken: "cool"},
+				},
+				CredHelpers: map[string]string{
+					"bar": "echo",
+					"doo": "ipsum",
+				},
+				CredsStore: "cat",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.config.mergeInto(&test.other)
+			qt.Assert(t, qt.CmpEquals(test.other, test.want, cmp.AllowUnexported(authConfig{})))
+		})
+	}
+}
+
 func load(t *testing.T, runner HelperRunner, cfgData string) (Config, error) {
 	d := t.TempDir()
 	t.Setenv("DOCKER_CONFIG", d)
@@ -425,7 +582,7 @@ func load(t *testing.T, runner HelperRunner, cfgData string) (Config, error) {
 	return Load(runner)
 }
 
-func noRunner(helperName string, serverURL string) (ConfigEntry, error) {
+func noRunner(helperName, serverURL string) (ConfigEntry, error) {
 	panic("no helpers available")
 }
 
