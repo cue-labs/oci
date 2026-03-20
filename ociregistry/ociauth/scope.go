@@ -143,7 +143,7 @@ func ParseScope(s string) Scope {
 			})
 			continue
 		}
-		for _, action := range strings.Split(parts[2], ",") {
+		for action := range strings.SplitSeq(parts[2], ",") {
 			rscopes = append(rscopes, ResourceScope{
 				ResourceType: parts[0],
 				Resource:     parts[1],
@@ -252,7 +252,7 @@ func (s Scope) Iter() func(yield func(ResourceScope) bool) {
 				continue
 			}
 			acts := s.actions[i]
-			for k := knownAction(0); k < numActions; k++ {
+			for k := range numActions {
 				if acts&(1<<k) == 0 {
 					continue
 				}
