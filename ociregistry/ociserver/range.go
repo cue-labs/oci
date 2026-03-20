@@ -43,7 +43,7 @@ func parseRange(s string) ([]httpRange, error) {
 		return nil, errors.New("invalid range")
 	}
 	ranges := make([]httpRange, 0, 1)
-	for _, ra := range strings.Split(s[len(b):], ",") {
+	for ra := range strings.SplitSeq(s[len(b):], ",") {
 		ra = textproto.TrimString(ra)
 		if ra == "" {
 			continue

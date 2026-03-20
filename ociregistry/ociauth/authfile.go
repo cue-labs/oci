@@ -289,10 +289,10 @@ func decodeConfigFile(data []byte) (configData, error) {
 // to keep the logic the same as that.
 func urlHost(url string) string {
 	stripped := url
-	if strings.HasPrefix(url, "http://") {
-		stripped = strings.TrimPrefix(url, "http://")
-	} else if strings.HasPrefix(url, "https://") {
-		stripped = strings.TrimPrefix(url, "https://")
+	if after, ok := strings.CutPrefix(url, "http://"); ok {
+		stripped = after
+	} else if after, ok := strings.CutPrefix(url, "https://"); ok {
+		stripped = after
 	}
 
 	hostName, _, _ := strings.Cut(stripped, "/")
