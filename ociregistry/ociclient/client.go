@@ -73,7 +73,7 @@ type Options struct {
 // it it's more than that.
 const DefaultListPageSize = 1000
 
-var debugID int32
+var debugID atomic.Int32
 
 // New returns a registry implementation that uses the OCI
 // HTTP API. A nil opts parameter is equivalent to a pointer
@@ -87,7 +87,7 @@ func New(host string, opts0 *Options) (ociregistry.Interface, error) {
 		opts = *opts0
 	}
 	if opts.DebugID == "" {
-		opts.DebugID = fmt.Sprintf("id%d", atomic.AddInt32(&debugID, 1))
+		opts.DebugID = fmt.Sprintf("id%d", debugID.Add(1))
 	}
 	if opts.Transport == nil {
 		opts.Transport = http.DefaultTransport

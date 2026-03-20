@@ -37,7 +37,7 @@ func New(r ociregistry.Interface, logf func(f string, a ...any)) ociregistry.Int
 	}
 }
 
-var blobWriterID int32
+var blobWriterID atomic.Int32
 
 type logger struct {
 	logf func(f string, a ...any)
@@ -113,7 +113,7 @@ func (r *logger) PushBlob(ctx context.Context, repoName string, desc ociregistry
 }
 
 func (r *logger) PushBlobChunked(ctx context.Context, repoName string, chunkSize int) (ociregistry.BlobWriter, error) {
-	bwid := fmt.Sprintf("bw%d", atomic.AddInt32(&blobWriterID, 1))
+	bwid := fmt.Sprintf("bw%d", blobWriterID.Add(1))
 	r.logf("PushBlobChunked %s chunkSize=%d {", repoName, chunkSize)
 	w, err := r.r.PushBlobChunked(ctx, repoName, chunkSize)
 	r.logf("} -> %T(%s), %v", w, bwid, err)
@@ -125,7 +125,7 @@ func (r *logger) PushBlobChunked(ctx context.Context, repoName string, chunkSize
 }
 
 func (r *logger) PushBlobChunkedResume(ctx context.Context, repoName, id string, offset int64, chunkSize int) (ociregistry.BlobWriter, error) {
-	bwid := fmt.Sprintf("bw%d", atomic.AddInt32(&blobWriterID, 1))
+	bwid := fmt.Sprintf("bw%d", blobWriterID.Add(1))
 	r.logf("PushBlobChunkedResume %s id=%q offset=%d chunkSize=%d {", repoName, id, offset, chunkSize)
 	w, err := r.r.PushBlobChunkedResume(ctx, repoName, id, offset, chunkSize)
 	r.logf("} -> %T(%s), %v", w, bwid, err)

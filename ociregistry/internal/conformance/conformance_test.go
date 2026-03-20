@@ -276,7 +276,7 @@ func testManyTags(t *testing.T, client *remote.Registry) {
 		Layers:    []ociregistry.Descriptor{layer0Desc},
 	})
 	var tags []string
-	for i := 0; i < 37; i++ {
+	for i := range 37 {
 		tag := fmt.Sprintf("tag%d", i)
 		err = repo.Manifests().Tag(ctx, manifestDesc, tag)
 		qt.Assert(t, qt.IsNil(err))
@@ -296,7 +296,7 @@ func testManyTags(t *testing.T, client *remote.Registry) {
 func testManyRepos(t *testing.T, client *remote.Registry) {
 	ctx := context.Background()
 	var repos []string
-	for i := 0; i < 37; i++ {
+	for i := range 37 {
 		repoName := fmt.Sprintf("repo%d", i)
 		repo, err := client.Repository(ctx, repoName)
 		qt.Assert(t, qt.IsNil(err))

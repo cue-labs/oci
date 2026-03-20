@@ -145,8 +145,8 @@ func Load(runner HelperRunner) (*ConfigFile, error) {
 
 func getenvFunc(env []string) func(string) string {
 	return func(key string) string {
-		for i := len(env) - 1; i >= 0; i-- {
-			if e := env[i]; len(e) >= len(key)+1 && e[len(key)] == '=' && e[:len(key)] == key {
+		for _, e := range slices.Backward(env) {
+			if len(e) >= len(key)+1 && e[len(key)] == '=' && e[:len(key)] == key {
 				return e[len(key)+1:]
 			}
 		}
@@ -330,8 +330,8 @@ func urlHost(url string) string {
 	stripped := url
 	if after, ok := strings.CutPrefix(url, "http://"); ok {
 		stripped = after
-	} else if after0, ok0 := strings.CutPrefix(url, "https://"); ok0 {
-		stripped = after0
+	} else if after, ok := strings.CutPrefix(url, "https://"); ok {
+		stripped = after
 	}
 
 	hostName, _, _ := strings.Cut(stripped, "/")

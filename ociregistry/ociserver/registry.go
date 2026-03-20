@@ -119,7 +119,7 @@ type Options struct {
 	DebugID string
 }
 
-var debugID int32
+var debugID atomic.Int32
 
 // New returns a handler which implements the docker registry protocol
 // by making calls to the underlying registry backend r.
@@ -147,7 +147,7 @@ func New(backend ociregistry.Interface, opts *Options) http.Handler {
 		backend: backend,
 	}
 	if r.opts.DebugID == "" {
-		r.opts.DebugID = fmt.Sprintf("ociserver%d", atomic.AddInt32(&debugID, 1))
+		r.opts.DebugID = fmt.Sprintf("ociserver%d", debugID.Add(1))
 	}
 	if r.opts.WriteError == nil {
 		r.opts.WriteError = func(w http.ResponseWriter, _ *http.Request, err error) {
