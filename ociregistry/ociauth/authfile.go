@@ -134,9 +134,8 @@ func LoadWithEnv(runner HelperRunner, env []string) (*ConfigFile, error) {
 // In order, it loads:
 //
 //  1. $DOCKER_AUTH_CONFIG (inlined JSON)
-//  2. $DOCKER_CONFIG/config.json
-//  3. ~/.docker/config.json
-//  4. $XDG_RUNTIME_DIR/containers/auth.json
+//  2. $DOCKER_CONFIG/config.json, or ~/.docker/config.json if DOCKER_CONFIG is unset
+//  3. $XDG_RUNTIME_DIR/containers/auth.json
 //
 // When multiple of the above sources exist, then authentication for a given
 // registry hostname from earlier sources are prioritized.
@@ -163,13 +162,14 @@ func getConfigFileSources(getenv func(string) string) []configSource {
 			Raw:  []byte(data),
 		})
 	}
+	// DOCKER_CONFIG relocates the Docker config directory, so when set it
+	// replaces ~/.docker rather than supplementing it, matching the Docker CLI.
 	if d := getenv("DOCKER_CONFIG"); d != "" {
 		sources = append(sources, configSource{
 			Name: "file at $DOCKER_CONFIG",
 			Path: filepath.Join(d, "config.json"),
 		})
-	}
-	if home := userHomeDir(getenv); home != "" {
+	} else if home := userHomeDir(getenv); home != "" {
 		sources = append(sources, configSource{
 			Name: "file at ~/.docker/config.json",
 			Path: filepath.Join(home, ".docker", "config.json"),

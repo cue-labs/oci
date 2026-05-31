@@ -56,12 +56,6 @@ func TestLoad(t *testing.T) {
 			isInline:  true,
 		},
 		{
-			extraHost: "overridden-dockerconfig.example.com",
-			env:       "DOCKER_CONFIG",
-			dir:       "dockerconfig",
-			file:      "config.json",
-		},
-		{
 			extraHost: "default-dockerconfig.example.com",
 			env:       "HOME",
 			dir:       "home",
@@ -150,6 +144,40 @@ func TestLoad(t *testing.T) {
 	qt.Assert(t, qt.IsNil(err))
 
 	info, err := c.EntryForRegistry("someregistry.example.com")
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.Equals(info, ConfigEntry{}))
+}
+
+// TestLoadDockerConfigOverridesHome checks that $DOCKER_CONFIG replaces
+// ~/.docker rather than supplementing it, matching the Docker CLI.
+func TestLoadDockerConfigOverridesHome(t *testing.T) {
+	d := t.TempDir()
+	qt.Patch(t, &userHomeDir, func(getenv func(string) string) string {
+		return getenv("HOME")
+	})
+	homeCfg := filepath.Join(d, "home", ".docker", "config.json")
+	err := os.MkdirAll(filepath.Dir(homeCfg), 0o777)
+	qt.Assert(t, qt.IsNil(err))
+	err = os.WriteFile(homeCfg, []byte(`{"auths": {"home-only.example.com": {"username": "HOME", "password": "pw"}}}`), 0o666)
+	qt.Assert(t, qt.IsNil(err))
+
+	t.Setenv("HOME", filepath.Join(d, "home"))
+	t.Setenv("XDG_RUNTIME_DIR", "")
+	t.Setenv("DOCKER_AUTH_CONFIG", "")
+
+	// With DOCKER_CONFIG unset, ~/.docker/config.json is consulted.
+	t.Setenv("DOCKER_CONFIG", "")
+	c, err := Load(noRunner)
+	qt.Assert(t, qt.IsNil(err))
+	info, err := c.EntryForRegistry("home-only.example.com")
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.Equals(info, ConfigEntry{Username: "HOME", Password: "pw"}))
+
+	// With DOCKER_CONFIG set, ~/.docker is ignored even for home-only hosts.
+	t.Setenv("DOCKER_CONFIG", d)
+	c, err = Load(noRunner)
+	qt.Assert(t, qt.IsNil(err))
+	info, err = c.EntryForRegistry("home-only.example.com")
 	qt.Assert(t, qt.IsNil(err))
 	qt.Assert(t, qt.Equals(info, ConfigEntry{}))
 }
