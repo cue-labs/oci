@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "83dc8008_e443afc6",
+        "filename": "ociregistry/ociclient/lister.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2026-07-10T13:48:11Z",
+      "side": 1,
+      "message": "remove this newline?",
+      "revId": "d12e71f84c1339913a56a087558aaab31c880234",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
