@@ -481,6 +481,16 @@ func TestCalls(t *testing.T) {
 			WantBody:    `{"name":"foo","tags":["latest","tag1"]}`,
 		},
 		{
+			// Special case required in the OCI Distribution spec: When n is zero, this endpoint MUST return an empty list, and MUST NOT include a Link header.
+			Description: "zero_tags",
+			Manifests:   map[string]string{"foo/manifests/latest": "foo", "foo/manifests/tag1": "foo"},
+			Method:      "GET",
+			URL:         "/v2/foo/tags/list?n=0",
+			WantCode:    http.StatusOK,
+			WantBody:    `{"name":"foo","tags":[]}`,
+			WantHeader:  map[string]string{"Link": ""},
+		},
+		{
 			Description: "limit_tags",
 			Manifests:   map[string]string{"foo/manifests/latest": "foo", "foo/manifests/tag1": "foo"},
 			Method:      "GET",
