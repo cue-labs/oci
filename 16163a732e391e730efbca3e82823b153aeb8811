@@ -16,6 +16,24 @@
       "message": "should probably remove or change this check because it cannot be 0 anymore",
       "revId": "16163a732e391e730efbca3e82823b153aeb8811",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b1f67edf_c28cb857",
+        "filename": "ociregistry/ociserver/lister.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2026-07-10T13:50:02Z",
+      "side": 1,
+      "message": "Yeah, please change to `\u003c`.",
+      "parentUuid": "de9a380a_0ce972fa",
+      "revId": "16163a732e391e730efbca3e82823b153aeb8811",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
