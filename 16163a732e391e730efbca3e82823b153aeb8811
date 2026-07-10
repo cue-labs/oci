@@ -34,6 +34,24 @@
       "parentUuid": "de9a380a_0ce972fa",
       "revId": "16163a732e391e730efbca3e82823b153aeb8811",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9111c362_a49bef07",
+        "filename": "ociregistry/ociserver/lister.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1038219
+      },
+      "writtenOn": "2026-07-10T13:58:01Z",
+      "side": 1,
+      "message": "it turns the variable was not used at all. I removed the block.",
+      "parentUuid": "b1f67edf_c28cb857",
+      "revId": "16163a732e391e730efbca3e82823b153aeb8811",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
