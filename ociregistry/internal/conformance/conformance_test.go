@@ -142,6 +142,21 @@ func TestClientAsProxyWithOmittedTagGetDigest(t *testing.T) {
 	})
 }
 
+func TestClientAsProxyWithIgnoredPagination(t *testing.T) {
+	runTests(t, func(t *testing.T) string {
+		direct := httptest.NewServer(ociserver.New(ocimem.New(), &ociserver.Options{
+			DebugID:          "direct",
+			IgnorePagination: true,
+		}))
+		t.Cleanup(direct.Close)
+		proxy := httptest.NewServer(ociserver.New(mustNewOCIClient(direct.URL, nil), &ociserver.Options{
+			DebugID: "proxy",
+		}))
+		t.Cleanup(proxy.Close)
+		return proxy.URL
+	})
+}
+
 func TestSelectAll(t *testing.T) {
 	// Test that the Select filter works OK as a no-op when
 	// all repositories are allowed.
