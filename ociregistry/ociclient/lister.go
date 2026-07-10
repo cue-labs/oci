@@ -149,6 +149,15 @@ func pager[T any](ctx context.Context, c *client, initialReq *ocirequest.Request
 				return
 			}
 			for _, item := range items {
+				// Unfortunately it is not uncommon for registries to complete ignore pagination query parameters,
+				// most notably Google Container/Artifact Registry.
+				// Since we support pagination even without the Link response header,
+				// we kept looping trying to get the next page.
+
+				if canUseLast && initialReq.ListLast != "" && fmt.Sprint(item) <= initialReq.ListLast {
+					continue
+				}
+
 				if !yield(item, nil) {
 					return
 				}
@@ -160,6 +169,17 @@ func pager[T any](ctx context.Context, c *client, initialReq *ocirequest.Request
 				//     is less than <int>.
 				return
 			}
+			if len(items) > initialReq.ListN {
+				// It's a clear spec violation to return more results than requested:
+				//     Otherwise, the response MUST include <int> results.
+				// Unfortunately it is not uncommon for registries to complete ignore pagination query parameters,
+				// most notably Google Container/Artifact Registry.
+				//
+				// This would already be sufficiently handled by the workaround in the loop above,
+				// but this check avoids an extra request that would just result in 0 items.
+				return
+			}
+
 			req, err = nextLink(ctx, resp, initialReq, canUseLast, items[len(items)-1])
 			if err != nil {
 				yield(*new(T), fmt.Errorf("invalid Link header in response: %v", err))
