@@ -70,6 +70,10 @@ type Options struct {
 	// page size > 1000.
 	MaxListPageSize int
 
+	// IgnorePagination causes the server to ignore the pagination query parameters,
+	// mimicking a common misbehavior in registries like Google's.
+	IgnorePagination bool
+
 	// OmitDigestFromTagGetResponse causes the registry
 	// to omit the Docker-Content-Digest header from a tag
 	// GET response, mimicking the behavior of registries that
@@ -208,6 +212,12 @@ func (r *registry) v2(resp http.ResponseWriter, req *http.Request) (_err error) 
 		resp.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
 		return err
 	}
+
+	if r.opts.IgnorePagination {
+		rreq.ListLast = ""
+		rreq.ListN = -1
+	}
+
 	handle := handlers[rreq.Kind]
 	return handle(r, req.Context(), resp, req, rreq)
 }
