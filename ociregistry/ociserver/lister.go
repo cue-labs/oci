@@ -120,6 +120,10 @@ func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWr
 }
 
 func (r *registry) nextListResults(req *http.Request, rreq *ocirequest.Request, itemsIter iter.Seq2[string, error]) (items []string, link string, _ error) {
+	if rreq.ListN == 0 {
+		return []string{}, "", nil
+	}
+
 	if r.opts.MaxListPageSize > 0 && rreq.ListN > r.opts.MaxListPageSize {
 		return nil, "", ociregistry.NewError(fmt.Sprintf("query parameter n is too large (n=%d, max=%d)", rreq.ListN, r.opts.MaxListPageSize), ociregistry.ErrUnsupported.Code(), nil)
 	}
