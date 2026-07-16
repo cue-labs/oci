@@ -16,6 +16,24 @@
       "message": "We\u0027re getting a CI failure now because the maxPageSize constant isn\u0027t used",
       "revId": "6befdbcb3cf6dac64329bea16a54f747ea419d92",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b2fb46a_de22db20",
+        "filename": "ociregistry/ociserver/lister.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1038219
+      },
+      "writtenOn": "2026-07-16T13:18:56Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "162e386a_491138d1",
+      "revId": "6befdbcb3cf6dac64329bea16a54f747ea419d92",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
