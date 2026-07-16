@@ -70,6 +70,24 @@
       "parentUuid": "9111c362_a49bef07",
       "revId": "16163a732e391e730efbca3e82823b153aeb8811",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2fc6fa46_df772325",
+        "filename": "ociregistry/ociserver/lister.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1007275
+      },
+      "writtenOn": "2026-07-16T08:53:15Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "c07291e8_a7197ac9",
+      "revId": "16163a732e391e730efbca3e82823b153aeb8811",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
