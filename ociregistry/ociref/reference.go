@@ -209,6 +209,9 @@ func checkTag(s string) error {
 	if len(s) > 128 {
 		return fmt.Errorf("tag too long")
 	}
+	if len(s) == 0 {
+		return fmt.Errorf("tag is empty")
+	}
 	if !isWord(s[0]) {
 		return fmt.Errorf("tag %q does not start with word character", s)
 	}

@@ -517,6 +517,9 @@ var isValidTagTests = []struct {
 }, {
 	tag:  "xxx",
 	want: true,
+}, {
+	tag:  "",
+	want: false,
 }}
 
 func TestIsValidTag(t *testing.T) {
