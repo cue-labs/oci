@@ -23,7 +23,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/go-quicktest/qt"
 	"github.com/opencontainers/image-spec/specs-go"
@@ -134,7 +133,6 @@ func TestMissingContentLength(t *testing.T) {
 	}}
 
 	const errNoLength = `.*unknown content length`
-	const errBlocked = `.*context deadline exceeded`
 	const errGzip = `.*unexpected Content-Encoding "gzip"`
 	servers := []struct {
 		name string
@@ -149,14 +147,6 @@ func TestMissingContentLength(t *testing.T) {
 		name: "NoContentLengthOnGET",
 		wrap: func(h http.Handler) http.Handler {
 			return withoutHeaders(h, []string{"GET"}, "Content-Length")
-		},
-		wantErrors: map[string]string{
-			// These should read manifests into memory,
-			// or fall back to a HEAD request.
-			"GetBlob":     errNoLength,
-			"GetManifest": errNoLength,
-			"GetTag":      errNoLength,
-			"GetTagLarge": errNoLength,
 		},
 	}, {
 		name: "NoContentLengthOnHEAD",
@@ -178,9 +168,6 @@ func TestMissingContentLength(t *testing.T) {
 		wantErrors: map[string]string{
 			"GetTagLarge":     errNoLength,
 			"ResolveTagLarge": errNoLength,
-			// These should read the manifests into memory.
-			"GetManifest": errNoLength,
-			"GetTag":      errNoLength,
 			// These should fall back to GET requests, ranged for blobs.
 			"GetBlob":         errNoLength,
 			"ResolveBlob":     errNoLength,
@@ -195,9 +182,6 @@ func TestMissingContentLength(t *testing.T) {
 		wantErrors: map[string]string{
 			"GetTagLarge":     errNoLength,
 			"ResolveTagLarge": errNoLength,
-			// These should read the manifests into memory.
-			"GetManifest": errNoLength,
-			"GetTag":      errNoLength,
 			// These should fall back to GET requests, ranged for blobs.
 			"GetBlob":         errNoLength,
 			"ResolveBlob":     errNoLength,
@@ -211,11 +195,9 @@ func TestMissingContentLength(t *testing.T) {
 			return withoutHeaders(h, []string{"GET"}, "Docker-Content-Digest")
 		},
 		wantErrors: map[string]string{
-			// The client holds the GET response open while making
-			// a HEAD request, which blocks with one connection per host.
-			"GetTagLarge": errBlocked,
 			// These should fall back to GET requests, ranged for blobs,
 			// and by the digest from the HEAD response for tags.
+			"GetTagLarge":     errNoLength,
 			"ResolveBlob":     errNoLength,
 			"ResolveManifest": errNoLength,
 			"ResolveTag":      errNoLength,
@@ -246,10 +228,7 @@ func TestMissingContentLength(t *testing.T) {
 			client := mustNewOCIClient(hsrv.URL, &ociclient.Options{Transport: transport})
 			for _, op := range ops {
 				t.Run(op.name, func(t *testing.T) {
-					// Some operations block; see errBlocked.
-					ctx, cancel := context.WithTimeout(t.Context(), time.Second)
-					defer cancel()
-					got, err := op.do(ctx, client)
+					got, err := op.do(t.Context(), client)
 					if wantErr := srv.wantErrors[op.name]; wantErr != "" {
 						qt.Assert(t, qt.ErrorMatches(err, wantErr))
 						return

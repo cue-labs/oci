@@ -126,66 +126,109 @@ func (c *client) GetTag(ctx context.Context, repo string, tagName string) (ocire
 }
 
 // inMemThreshold holds the maximum number of bytes of manifest content
-// that we'll hold in memory to obtain a digest before falling back do
-// doing a HEAD request.
+// that we'll hold in memory to obtain its size or digest before falling
+// back to doing a HEAD request.
 //
 // This is hopefully large enough to be considerably larger than most
 // manifests but small enough to fit comfortably into RAM on most
 // platforms.
 //
 // Note: this is only used when talking to registries that fail to return
-// a digest when doing a GET on a tag.
+// a Content-Length, or a digest when doing a GET on a tag.
 const inMemThreshold = 128 * 1024
 
-func (c *client) read(ctx context.Context, rreq *ocirequest.Request) (_ ociregistry.BlobReader, _err error) {
+// get issues a GET request and returns a reader for its content.
+// If the response lacks the size or digest of the content,
+// get reads manifests of a reasonable size into memory to determine them;
+// failing that, it closes the response and returns a nil reader
+// along with the partial descriptor.
+func (c *client) get(ctx context.Context, rreq *ocirequest.Request) (_ ociregistry.BlobReader, _ ociregistry.Descriptor, _err error) {
 	resp, err := c.doRequest(ctx, rreq)
+	if err != nil {
+		return nil, ociregistry.Descriptor{}, err
+	}
+	defer closeOnError(&_err, resp.Body)
+	desc, err := descriptorFromResponse(resp, ociregistry.Digest(rreq.Digest), 0)
+	if err != nil {
+		return nil, ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor in response: %v", err)
+	}
+	// The size is unknown when the response has no Content-Length,
+	// which HTTP does not guarantee; for example, with chunked encoding.
+	desc.Size = resp.ContentLength
+	if desc.Size >= 0 && desc.Digest != "" {
+		return newBlobReader(resp.Body, desc), desc, nil
+	}
+	// Returning a digest isn't mandatory according to the spec, and
+	// at least one registry (AWS's ECR) fails to return a digest
+	// when doing a GET of a tag.
+	// We know the request must be a tag-getting
+	// request because all other requests take a digest not a tag
+	// but sanity check anyway.
+	isManifest := rreq.Kind == ocirequest.ReqManifestGet
+	if desc.Digest == "" && !isManifest {
+		return nil, ociregistry.Descriptor{}, fmt.Errorf("internal error: no digest available for non-tag request")
+	}
+	if isManifest && (desc.Size < 0 || desc.Size <= inMemThreshold) {
+		// If the manifest is of a reasonable size, just read it into memory
+		// and calculate the size and digest that way.
+		data, err := io.ReadAll(io.LimitReader(resp.Body, inMemThreshold+1))
+		if err != nil {
+			return nil, ociregistry.Descriptor{}, fmt.Errorf("failed to read body to determine size and digest: %v", err)
+		}
+		if desc.Size >= 0 && int64(len(data)) != desc.Size {
+			return nil, ociregistry.Descriptor{}, fmt.Errorf("body size mismatch")
+		}
+		if len(data) <= inMemThreshold {
+			desc.Size = int64(len(data))
+			if desc.Digest == "" {
+				desc.Digest = digest.FromBytes(data)
+			}
+			resp.Body.Close()
+			return newBlobReader(io.NopCloser(bytes.NewReader(data)), desc), desc, nil
+		}
+	}
+	// Close the response rather than leaving it to the caller,
+	// as holding its connection open could block further requests
+	// when the transport limits connections per host.
+	resp.Body.Close()
+	return nil, desc, nil
+}
+
+// read issues a GET request, falling back to a HEAD request
+// when [client.get] cannot determine the size or digest of the content.
+func (c *client) read(ctx context.Context, rreq *ocirequest.Request) (ociregistry.BlobReader, error) {
+	r, desc, err := c.get(ctx, rreq)
+	if r != nil || err != nil {
+		return r, err
+	}
+	// Issue a HEAD request which should hopefully
+	// (and does in the ECR case) give us what we need,
+	// and then GET the content again by its digest,
+	// which ensures that the content matches the HEAD response
+	// even if the tag is updated between the requests.
+	hreq := byDigest(rreq, desc.Digest)
+	if rreq.Kind == ocirequest.ReqManifestGet {
+		hreq.Kind = ocirequest.ReqManifestHead
+	} else {
+		hreq.Kind = ocirequest.ReqBlobHead
+	}
+	hdesc, err := c.resolve(ctx, hreq)
 	if err != nil {
 		return nil, err
 	}
-	defer closeOnError(&_err, resp.Body)
-	desc, err := descriptorFromResponse(resp, ociregistry.Digest(rreq.Digest), requireSize)
+	resp, err := c.doRequest(ctx, byDigest(rreq, hdesc.Digest))
 	if err != nil {
-		return nil, fmt.Errorf("invalid descriptor in response: %v", err)
+		return nil, err
 	}
-	if desc.Digest == "" {
-		// Returning a digest isn't mandatory according to the spec, and
-		// at least one registry (AWS's ECR) fails to return a digest
-		// when doing a GET of a tag.
-		// We know the request must be a tag-getting
-		// request because all other requests take a digest not a tag
-		// but sanity check anyway.
-		if rreq.Kind != ocirequest.ReqManifestGet {
-			return nil, fmt.Errorf("internal error: no digest available for non-tag request")
-		}
+	return newBlobReader(resp.Body, hdesc), nil
+}
 
-		// If the manifest is of a reasonable size, just read it into memory
-		// and calculate the digest that way, otherwise issue a HEAD
-		// request which should hopefully (and does in the ECR case)
-		// give us the digest we need.
-		if desc.Size <= inMemThreshold {
-			data, err := io.ReadAll(io.LimitReader(resp.Body, desc.Size+1))
-			if err != nil {
-				return nil, fmt.Errorf("failed to read body to determine digest: %v", err)
-			}
-			if int64(len(data)) != desc.Size {
-				return nil, fmt.Errorf("body size mismatch")
-			}
-			desc.Digest = digest.FromBytes(data)
-			resp.Body.Close()
-			resp.Body = io.NopCloser(bytes.NewReader(data))
-		} else {
-			rreq1 := rreq
-			rreq1.Kind = ocirequest.ReqManifestHead
-			resp1, err := c.doRequest(ctx, rreq1)
-			if err != nil {
-				return nil, err
-			}
-			resp1.Body.Close()
-			desc, err = descriptorFromResponse(resp1, ociregistry.Digest(rreq1.Digest), requireSize|requireDigest)
-			if err != nil {
-				return nil, err
-			}
-		}
+// byDigest returns a copy of rreq which asks for the given digest
+// rather than a tag, unless the digest is empty.
+func byDigest(rreq *ocirequest.Request, dig ociregistry.Digest) *ocirequest.Request {
+	rreq1 := *rreq
+	if dig != "" {
+		rreq1.Tag, rreq1.Digest = "", string(dig)
 	}
-	return newBlobReader(resp.Body, desc), nil
+	return &rreq1
 }
