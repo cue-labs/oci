@@ -118,22 +118,11 @@ func assertAuthScope(t *testing.T, host string, scope string, f func(ctx context
 	})
 	qt.Assert(t, qt.IsNil(err))
 	f(ctx, client)
-	qt.Assert(t, qt.HasLen(requestedScopes, 1))
-	t.Logf("requested scopes: %v", requestedScopes)
-	qt.Assert(t, qt.Equals(mapsKeys(requestedScopes)[0], scope))
+	qt.Assert(t, qt.DeepEquals(requestedScopes, map[string]bool{scope: true}))
 }
 
 type transportFunc func(req *http.Request) (*http.Response, error)
 
 func (f transportFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
-}
-
-// TODO: replace with maps.Keys once Go adds it
-func mapsKeys[M ~map[K]V, K comparable, V any](m M) []K {
-	r := make([]K, 0, len(m))
-	for k := range m {
-		r = append(r, k)
-	}
-	return r
 }

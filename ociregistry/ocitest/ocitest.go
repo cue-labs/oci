@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -234,7 +235,7 @@ func completedManifests(repoc RepoContent, blobs map[string]ociregistry.Descript
 					delete(required, m)
 				}
 			}
-			return nil, nil, fmt.Errorf("no manifest found for ids %s", strings.Join(mapKeys(required), ", "))
+			return nil, nil, fmt.Errorf("no manifest found for ids %s", strings.Join(slices.Sorted(maps.Keys(required)), ", "))
 		}
 	}
 }
@@ -356,13 +357,4 @@ func (c contentChecker) Check(note func(key string, value any)) error {
 		return fmt.Errorf("media type mismatch")
 	}
 	return nil
-}
-
-func mapKeys[V any](m map[string]V) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	slices.Sort(keys)
-	return keys
 }

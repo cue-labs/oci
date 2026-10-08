@@ -1,6 +1,7 @@
 package ociauth
 
 import (
+	"iter"
 	"math/bits"
 	"slices"
 	"strings"
@@ -226,7 +227,7 @@ func (s Scope) IsEmpty() bool {
 // ordering.
 //
 // The unlimited scope does not yield any scopes.
-func (s Scope) Iter() func(yield func(ResourceScope) bool) {
+func (s Scope) Iter() iter.Seq[ResourceScope] {
 	return func(yield0 func(ResourceScope) bool) {
 		if s.unlimited {
 			return
@@ -456,27 +457,25 @@ func (s Scope) String() string {
 	}
 	var buf strings.Builder
 	var prev ResourceScope
-	// TODO use range when we can use range-over-func.
-	s.Iter()(func(s ResourceScope) bool {
+	for rs := range s.Iter() {
 		prev0 := prev
-		prev = s
-		if s.ResourceType == TypeRepository && prev0.ResourceType == TypeRepository && s.Resource == prev0.Resource {
+		prev = rs
+		if rs.ResourceType == TypeRepository && prev0.ResourceType == TypeRepository && rs.Resource == prev0.Resource {
 			buf.WriteByte(',')
-			buf.WriteString(s.Action)
-			return true
+			buf.WriteString(rs.Action)
+			continue
 		}
 		if buf.Len() > 0 {
 			buf.WriteByte(' ')
 		}
-		buf.WriteString(s.ResourceType)
-		if s.Resource != "" || s.Action != "" {
+		buf.WriteString(rs.ResourceType)
+		if rs.Resource != "" || rs.Action != "" {
 			buf.WriteByte(':')
-			buf.WriteString(s.Resource)
+			buf.WriteString(rs.Resource)
 			buf.WriteByte(':')
-			buf.WriteString(s.Action)
+			buf.WriteString(rs.Action)
 		}
-		return true
-	})
+	}
 	return buf.String()
 }
 

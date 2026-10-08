@@ -1,6 +1,8 @@
 package ociauth
 
 import (
+	"iter"
+	"slices"
 	"testing"
 
 	"github.com/go-quicktest/qt"
@@ -146,7 +148,7 @@ func TestParseScope(t *testing.T) {
 			t.Logf("parsed scope: %#v", scope)
 			qt.Check(t, qt.Equals(scope.Canonical().String(), test.canonicalString))
 			qt.Check(t, qt.Equals(scope.String(), test.in))
-			qt.Check(t, qt.DeepEquals(all(scope.Iter()), test.wantScopes))
+			qt.Check(t, qt.DeepEquals(slices.Collect(scope.Iter()), test.wantScopes))
 			checkStrictOrder(t, scope.Iter(), ResourceScope.Compare)
 			// Check that it does actually preserve identity on round-trip.
 			scope1 := ParseScope(scope.String())
@@ -402,30 +404,14 @@ func parseScopeMaybeUnlimited(s string) Scope {
 	return ParseScope(s)
 }
 
-func checkStrictOrder[T any](t *testing.T, iter func(func(T) bool), cmp func(T, T) int) {
-	hasPrev := false
+func checkStrictOrder[T any](t *testing.T, seq iter.Seq[T], cmp func(T, T) int) {
 	var prev T
-	i := -1
-	iter(func(x T) bool {
-		i++
-		if !hasPrev {
-			prev = x
-			hasPrev = true
-			return true
-		}
-		if c := cmp(prev, x); c != -1 {
+	i := 0
+	for x := range seq {
+		if i > 0 && cmp(prev, x) != -1 {
 			t.Fatalf("unexpected ordering at index %d: %v >= %v", i, prev, x)
 		}
 		prev = x
-		return true
-	})
-}
-
-func all[T any](iter func(func(T) bool)) []T {
-	xs := []T{}
-	iter(func(x T) bool {
-		xs = append(xs, x)
-		return true
-	})
-	return xs
+		i++
+	}
 }

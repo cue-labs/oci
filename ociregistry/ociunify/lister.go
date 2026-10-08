@@ -50,7 +50,10 @@ func compareDescriptor(d0, d1 ociregistry.Descriptor) int {
 }
 
 func mergeIter[T any](it0, it1 iter.Seq2[T, error], cmp func(T, T) int) iter.Seq2[T, error] {
-	// TODO streaming merge sort
+	// TODO: both iterators are sorted, so merge them as they stream
+	// via iter.Pull2 rather than collecting them in full first.
+	// Note that ErrNameUnknown must only be an error when both
+	// registries report it, which is harder to tell when streaming.
 	xs0, err0 := ociregistry.All(it0)
 	xs1, err1 := ociregistry.All(it1)
 	if err0 != nil || err1 != nil {
