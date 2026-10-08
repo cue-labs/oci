@@ -52,6 +52,10 @@ type Options struct {
 	// [ociauth.RequestInfo] value added, suitable for consumption
 	// by the transport created by [ociauth.NewStdTransport]. If
 	// Transport is nil, [http.DefaultTransport] will be used.
+	//
+	// Clients should use Transport to set a meaningful User-Agent header,
+	// particularly when talking to registries they do not control;
+	// see the userAgent example.
 	Transport http.RoundTripper
 
 	// Insecure specifies whether an http scheme will be used to

@@ -41,7 +41,9 @@ type StdTransportParams struct {
 	// to which the HTTP requests are made.
 	Config Config
 
-	// HTTPClient is used to make the underlying HTTP requests.
+	// Transport is used to make the underlying HTTP requests,
+	// including those to obtain authorization tokens, so it is the place
+	// to set headers such as User-Agent on all requests.
 	// If it's nil, [http.DefaultTransport] will be used.
 	Transport http.RoundTripper
 }
