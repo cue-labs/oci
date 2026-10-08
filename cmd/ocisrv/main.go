@@ -43,10 +43,10 @@ type config struct {
 }
 
 func main() {
-	if err := main1(); err != nil {
-		fmt.Fprintf(os.Stderr, "ociregistry: %v\n", err)
-		os.Exit(1)
-	}
+	// main1 only returns once the server stops, which is always an error.
+	err := main1()
+	fmt.Fprintf(os.Stderr, "ociregistry: %v\n", err)
+	os.Exit(1)
 }
 
 var writeNetAddr func(l net.Listener)
