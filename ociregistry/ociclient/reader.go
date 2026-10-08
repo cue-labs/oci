@@ -102,10 +102,49 @@ func (c *client) resolve(ctx context.Context, rreq *ocirequest.Request) (ociregi
 		return ociregistry.Descriptor{}, err
 	}
 	resp.Body.Close()
+	if resp.ContentLength < 0 {
+		// Content-Length is not guaranteed in HEAD responses,
+		// so fall back to a GET request to determine the size.
+		// GET by the digest in this response if any,
+		// as the GET response for a tag might lack a digest.
+		desc, err := descriptorFromResponse(resp, ociregistry.Digest(rreq.Digest), 0)
+		if err != nil {
+			return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor in response: %v", err)
+		}
+		return c.resolveWithGet(ctx, *byDigest(rreq, desc.Digest))
+	}
 	desc, err := descriptorFromResponse(resp, ociregistry.Digest(rreq.Digest), requireSize|requireDigest)
 	if err != nil {
 		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor in response: %v", err)
 	}
+	return desc, nil
+}
+
+// resolveWithGet resolves a HEAD request via a GET request instead.
+// Blobs can be large, so for those it only asks for the first byte,
+// as the response's Content-Range includes the size of the whole blob.
+// Manifests are small, so they can be read into memory if needed.
+func (c *client) resolveWithGet(ctx context.Context, rreq ocirequest.Request) (ociregistry.Descriptor, error) {
+	if rreq.Kind == ocirequest.ReqBlobHead {
+		r, err := c.GetBlobRange(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest), 0, 1)
+		if err != nil {
+			return ociregistry.Descriptor{}, err
+		}
+		r.Close()
+		return r.Descriptor(), nil
+	}
+	rreq.Kind = ocirequest.ReqManifestGet
+	r, desc, err := c.get(ctx, &rreq)
+	if err != nil {
+		return ociregistry.Descriptor{}, err
+	}
+	if r == nil {
+		if desc.Size < 0 {
+			return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor in response: unknown content length")
+		}
+		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor in response: no digest found in response")
+	}
+	r.Close()
 	return desc, nil
 }
 
