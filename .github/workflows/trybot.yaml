@@ -81,6 +81,8 @@ jobs:
         run: go env -w GOFLAGS=-count=1
       - name: Early git and code sanity checks
         run: go run cuelang.org/go/internal/ci/checks@v0.16.0
+      - name: Install staticcheck
+        run: echo "$(dirname "$(GOWORK=off go -C internal/tools tool -n staticcheck)")" >> "$GITHUB_PATH"
       - working-directory: cmd/ocisrv
         name: Generate cmd/ocisrv
         run: go generate ./...
@@ -96,13 +98,12 @@ jobs:
         run: go vet ./...
         env:
           GOWORK: ""
-      - name: Staticcheck cmd/ocisrv
-        uses: dominikh/staticcheck-action@v1
-        with:
-          version: 2026.2.1
-          install-go: false
-          use-cache: false
-          working-directory: cmd/ocisrv
+      - working-directory: cmd/ocisrv
+        name: Staticcheck cmd/ocisrv
+        env:
+          GOWORK: ""
+          STATICCHECK_CACHE: /cache/staticcheck
+        run: staticcheck ./...
       - working-directory: cmd/ocisrv
         name: Generate cmd/ocisrv with GOWORK=off
         run: go generate ./...
@@ -118,13 +119,6 @@ jobs:
         run: go vet ./...
         env:
           GOWORK: "off"
-      - name: Staticcheck cmd/ocisrv with GOWORK=off
-        uses: dominikh/staticcheck-action@v1
-        with:
-          version: 2026.2.1
-          install-go: false
-          use-cache: false
-          working-directory: cmd/ocisrv
       - working-directory: ociregistry/internal/conformance
         name: Generate ociregistry/internal/conformance
         run: go generate ./...
@@ -140,13 +134,12 @@ jobs:
         run: go vet ./...
         env:
           GOWORK: ""
-      - name: Staticcheck ociregistry/internal/conformance
-        uses: dominikh/staticcheck-action@v1
-        with:
-          version: 2026.2.1
-          install-go: false
-          use-cache: false
-          working-directory: ociregistry/internal/conformance
+      - working-directory: ociregistry/internal/conformance
+        name: Staticcheck ociregistry/internal/conformance
+        env:
+          GOWORK: ""
+          STATICCHECK_CACHE: /cache/staticcheck
+        run: staticcheck ./...
       - working-directory: ociregistry/internal/conformance
         name: Generate ociregistry/internal/conformance with GOWORK=off
         run: go generate ./...
@@ -162,13 +155,6 @@ jobs:
         run: go vet ./...
         env:
           GOWORK: "off"
-      - name: Staticcheck ociregistry/internal/conformance with GOWORK=off
-        uses: dominikh/staticcheck-action@v1
-        with:
-          version: 2026.2.1
-          install-go: false
-          use-cache: false
-          working-directory: ociregistry/internal/conformance
       - working-directory: ociregistry
         name: Generate ociregistry
         run: go generate ./...
@@ -184,13 +170,12 @@ jobs:
         run: go vet ./...
         env:
           GOWORK: ""
-      - name: Staticcheck ociregistry
-        uses: dominikh/staticcheck-action@v1
-        with:
-          version: 2026.2.1
-          install-go: false
-          use-cache: false
-          working-directory: ociregistry
+      - working-directory: ociregistry
+        name: Staticcheck ociregistry
+        env:
+          GOWORK: ""
+          STATICCHECK_CACHE: /cache/staticcheck
+        run: staticcheck ./...
       - working-directory: ociregistry
         name: Generate ociregistry with GOWORK=off
         run: go generate ./...
@@ -206,13 +191,6 @@ jobs:
         run: go vet ./...
         env:
           GOWORK: "off"
-      - name: Staticcheck ociregistry with GOWORK=off
-        uses: dominikh/staticcheck-action@v1
-        with:
-          version: 2026.2.1
-          install-go: false
-          use-cache: false
-          working-directory: ociregistry
       - working-directory: internal/ci
         name: Generate internal/ci
         run: go generate ./...
@@ -228,13 +206,12 @@ jobs:
         run: go vet ./...
         env:
           GOWORK: ""
-      - name: Staticcheck internal/ci
-        uses: dominikh/staticcheck-action@v1
-        with:
-          version: 2026.2.1
-          install-go: false
-          use-cache: false
-          working-directory: internal/ci
+      - working-directory: internal/ci
+        name: Staticcheck internal/ci
+        env:
+          GOWORK: ""
+          STATICCHECK_CACHE: /cache/staticcheck
+        run: staticcheck ./...
       - working-directory: internal/ci
         name: Generate internal/ci with GOWORK=off
         run: go generate ./...
@@ -250,13 +227,6 @@ jobs:
         run: go vet ./...
         env:
           GOWORK: "off"
-      - name: Staticcheck internal/ci with GOWORK=off
-        uses: dominikh/staticcheck-action@v1
-        with:
-          version: 2026.2.1
-          install-go: false
-          use-cache: false
-          working-directory: internal/ci
       - run: go work sync
       - if: always()
         name: Check that git is clean at the end of the job
