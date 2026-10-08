@@ -204,8 +204,7 @@ func completedManifests(repoc RepoContent, blobs map[string]ociregistry.Descript
 					need(m1.Subject.Digest)
 					continue
 				}
-				m1.Subject = ref(*m1.Subject)
-				*m1.Subject = mc.desc
+				m1.Subject = new(mc.desc)
 				madeProgress = true
 			}
 			m1 = fillManifestDescriptors(m1, blobs)
@@ -357,10 +356,6 @@ func (c contentChecker) Check(note func(key string, value any)) error {
 		return fmt.Errorf("media type mismatch")
 	}
 	return nil
-}
-
-func ref[T any](x T) *T {
-	return &x
 }
 
 func mapKeys[V any](m map[string]V) []string {

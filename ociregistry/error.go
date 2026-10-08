@@ -177,7 +177,7 @@ func NewHTTPError(err error, statusCode int, response *http.Response, body []byt
 		statusCode: statusCode,
 	}
 	if response != nil {
-		herr.response = ref(*response)
+		herr.response = new(*response)
 		herr.response.Body = nil
 		herr.body = body
 	}
@@ -362,8 +362,4 @@ func appendErrorCodePrefix(buf []byte, code string) []byte {
 		}
 	}
 	return buf
-}
-
-func ref[T any](x T) *T {
-	return &x
 }
