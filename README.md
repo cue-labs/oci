@@ -1,8 +1,12 @@
 # OCI Go modules
 
 This repository holds functionality related to OCI (Open Container Initiative).
-Currently it holds only a single module: `ociregistry`.
-See the documentation for [that package](./ociregistry) for details.
+It holds the following public Go modules:
+
+* [`ociregistry`](./ociregistry): an abstraction of the OCI registry API,
+  along with HTTP client and server implementations and related packages.
+* [`cmd/ocisrv`](./cmd/ocisrv): an OCI registry server configured with CUE,
+  composing `ociregistry` implementations such as in-memory storage and proxying.
 
 ### Contributing
 
