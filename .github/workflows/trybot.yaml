@@ -15,17 +15,15 @@ jobs:
     defaults:
       run:
         shell: bash --noprofile --norc -euo pipefail {0}
-    runs-on: namespace-profile-linux-amd64
-    if: |-
-      (contains(github.event.head_commit.message, '
-      Dispatch-Trailer: {"type":"trybot"')) || ! (contains(github.event.head_commit.message, '
-      Dispatch-Trailer: {"type":"'))
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          persist-credentials: false
       - name: Reset git directory modification times
         run: touch -t 202211302355 $(find * -type d)
       - name: Restore git file modification times
@@ -59,13 +57,17 @@ jobs:
         uses: actions/setup-go@v6
         with:
           cache: false
-          go-version: 1.25.x
+          go-version: 1.26.x
       - name: Set common go env vars
         run: |-
           case $(go env GOARCH) in
           amd64) go env -w GOAMD64=v3 ;;   # 2013 and later; makes `go test -race` 15% faster
           arm64) go env -w GOARM64=v8.6 ;; # Apple M2 and later
           esac
+
+          # Otherwise `go test -race` sleeps for 1s on every package;
+          # see https://go.dev/issues/20364.
+          echo "GORACE=atexit_sleep_ms=10" >> $GITHUB_ENV
 
           # Dump env for good measure
           go env
@@ -78,7 +80,7 @@ jobs:
           Dispatch-Trailer: {"type":"')))) || (github.ref == 'refs/heads/ci/test'))
         run: go env -w GOFLAGS=-count=1
       - name: Early git and code sanity checks
-        run: go run cuelang.org/go/internal/ci/checks@v0.14.1
+        run: go run cuelang.org/go/internal/ci/checks@v0.16.0
       - working-directory: cmd/ocisrv
         name: Generate cmd/ocisrv
         run: go generate ./...
@@ -97,7 +99,7 @@ jobs:
       - name: Staticcheck cmd/ocisrv
         uses: dominikh/staticcheck-action@v1
         with:
-          version: 2025.1.1
+          version: 2026.2.1
           install-go: false
           use-cache: false
           working-directory: cmd/ocisrv
@@ -119,7 +121,7 @@ jobs:
       - name: Staticcheck cmd/ocisrv with GOWORK=off
         uses: dominikh/staticcheck-action@v1
         with:
-          version: 2025.1.1
+          version: 2026.2.1
           install-go: false
           use-cache: false
           working-directory: cmd/ocisrv
@@ -141,7 +143,7 @@ jobs:
       - name: Staticcheck ociregistry/internal/conformance
         uses: dominikh/staticcheck-action@v1
         with:
-          version: 2025.1.1
+          version: 2026.2.1
           install-go: false
           use-cache: false
           working-directory: ociregistry/internal/conformance
@@ -163,7 +165,7 @@ jobs:
       - name: Staticcheck ociregistry/internal/conformance with GOWORK=off
         uses: dominikh/staticcheck-action@v1
         with:
-          version: 2025.1.1
+          version: 2026.2.1
           install-go: false
           use-cache: false
           working-directory: ociregistry/internal/conformance
@@ -185,7 +187,7 @@ jobs:
       - name: Staticcheck ociregistry
         uses: dominikh/staticcheck-action@v1
         with:
-          version: 2025.1.1
+          version: 2026.2.1
           install-go: false
           use-cache: false
           working-directory: ociregistry
@@ -207,7 +209,7 @@ jobs:
       - name: Staticcheck ociregistry with GOWORK=off
         uses: dominikh/staticcheck-action@v1
         with:
-          version: 2025.1.1
+          version: 2026.2.1
           install-go: false
           use-cache: false
           working-directory: ociregistry
@@ -229,7 +231,7 @@ jobs:
       - name: Staticcheck internal/ci
         uses: dominikh/staticcheck-action@v1
         with:
-          version: 2025.1.1
+          version: 2026.2.1
           install-go: false
           use-cache: false
           working-directory: internal/ci
@@ -251,7 +253,7 @@ jobs:
       - name: Staticcheck internal/ci with GOWORK=off
         uses: dominikh/staticcheck-action@v1
         with:
-          version: 2025.1.1
+          version: 2026.2.1
           install-go: false
           use-cache: false
           working-directory: internal/ci
@@ -259,3 +261,8 @@ jobs:
       - if: always()
         name: Check that git is clean at the end of the job
         run: test -z "$(git status --porcelain)" || (git status; git diff; false)
+    runs-on: namespace-profile-linux-amd64
+    if: |-
+      (contains(github.event.head_commit.message, '
+      Dispatch-Trailer: {"type":"trybot"')) || ! (contains(github.event.head_commit.message, '
+      Dispatch-Trailer: {"type":"'))
