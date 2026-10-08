@@ -1,7 +1,6 @@
 package ociauth
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -365,25 +364,25 @@ func ExecHelper(helperName, serverURL string) (ConfigEntry, error) {
 // the current process's environment will be used.
 func ExecHelperWithEnv(env []string) HelperRunner {
 	return func(helperName, serverURL string) (ConfigEntry, error) {
-		var out bytes.Buffer
 		cmd := exec.Command("docker-credential-"+helperName, "get")
-		// TODO this doesn't produce a decent error message for
-		// other helpers such as gcloud that print errors to stderr.
 		cmd.Stdin = strings.NewReader(serverURL)
-		cmd.Stdout = &out
-		cmd.Stderr = &out
 		cmd.Env = env
-		if err := cmd.Run(); err != nil {
-			if !errors.As(err, new(*exec.ExitError)) {
+		// Helpers may print warnings or debug output to stderr,
+		// so only stdout holds the result.
+		out, err := cmd.Output()
+		if err != nil {
+			var exitErr *exec.ExitError
+			if !errors.As(err, &exitErr) {
 				if errors.Is(err, exec.ErrNotFound) {
 					return ConfigEntry{}, fmt.Errorf("%w: %v", ErrHelperNotFound, err)
 				}
 				return ConfigEntry{}, fmt.Errorf("cannot run auth helper: %v", err)
 			}
-			t := strings.TrimSpace(out.String())
-			if t == "credentials not found in native keychain" {
+			if strings.TrimSpace(string(out)) == "credentials not found in native keychain" {
 				return ConfigEntry{}, nil
 			}
+			// Helpers differ in which stream they report errors on.
+			t := strings.TrimSpace(string(out) + "\n" + string(exitErr.Stderr))
 			return ConfigEntry{}, fmt.Errorf("error getting credentials: %s", t)
 		}
 
@@ -394,7 +393,7 @@ func ExecHelperWithEnv(env []string) HelperRunner {
 			Secret   string
 		}
 		var creds helperCredentials
-		if err := json.Unmarshal(out.Bytes(), &creds); err != nil {
+		if err := json.Unmarshal(out, &creds); err != nil {
 			return ConfigEntry{}, err
 		}
 		if creds.Username == "<token>" {

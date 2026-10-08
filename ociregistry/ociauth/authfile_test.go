@@ -381,13 +381,14 @@ func TestWithHelperStderrWarning(t *testing.T) {
 `)
 	qt.Assert(t, qt.IsNil(err))
 	info, err := c.EntryForRegistry("registry-with-warning.com")
-	// The stderr warning is wrongly parsed as part of the JSON output.
-	qt.Assert(t, qt.ErrorMatches(err, `invalid character 'w' looking for beginning of value`))
-	qt.Assert(t, qt.Equals(info, ConfigEntry{}))
+	qt.Assert(t, qt.IsNil(err))
+	qt.Assert(t, qt.Equals(info, ConfigEntry{
+		Username: "someuser",
+		Password: "somesecret",
+	}))
 
 	info, err = c.EntryForRegistry("other-with-warning.com")
-	// The stderr warning hides the "credentials not found" output.
-	qt.Assert(t, qt.ErrorMatches(err, `error getting credentials: warning: some warning\ncredentials not found in native keychain`))
+	qt.Assert(t, qt.IsNil(err))
 	qt.Assert(t, qt.Equals(info, ConfigEntry{}))
 }
 
