@@ -95,7 +95,9 @@ jobs:
           GOWORK: ""
       - working-directory: cmd/ocisrv
         name: Check cmd/ocisrv
-        run: go vet ./...
+        run: |-
+          go mod tidy -diff
+          go vet ./...
         env:
           GOWORK: ""
       - working-directory: cmd/ocisrv
@@ -116,7 +118,9 @@ jobs:
           GOWORK: "off"
       - working-directory: cmd/ocisrv
         name: Check cmd/ocisrv with GOWORK=off
-        run: go vet ./...
+        run: |-
+          go mod tidy -diff
+          go vet ./...
         env:
           GOWORK: "off"
       - working-directory: ociregistry/internal/conformance
@@ -131,7 +135,9 @@ jobs:
           GOWORK: ""
       - working-directory: ociregistry/internal/conformance
         name: Check ociregistry/internal/conformance
-        run: go vet ./...
+        run: |-
+          go mod tidy -diff
+          go vet ./...
         env:
           GOWORK: ""
       - working-directory: ociregistry/internal/conformance
@@ -152,7 +158,9 @@ jobs:
           GOWORK: "off"
       - working-directory: ociregistry/internal/conformance
         name: Check ociregistry/internal/conformance with GOWORK=off
-        run: go vet ./...
+        run: |-
+          go mod tidy -diff
+          go vet ./...
         env:
           GOWORK: "off"
       - working-directory: ociregistry
@@ -167,7 +175,9 @@ jobs:
           GOWORK: ""
       - working-directory: ociregistry
         name: Check ociregistry
-        run: go vet ./...
+        run: |-
+          go mod tidy -diff
+          go vet ./...
         env:
           GOWORK: ""
       - working-directory: ociregistry
@@ -188,7 +198,9 @@ jobs:
           GOWORK: "off"
       - working-directory: ociregistry
         name: Check ociregistry with GOWORK=off
-        run: go vet ./...
+        run: |-
+          go mod tidy -diff
+          go vet ./...
         env:
           GOWORK: "off"
       - working-directory: internal/ci
@@ -203,7 +215,9 @@ jobs:
           GOWORK: ""
       - working-directory: internal/ci
         name: Check internal/ci
-        run: go vet ./...
+        run: |-
+          go mod tidy -diff
+          go vet ./...
         env:
           GOWORK: ""
       - working-directory: internal/ci
@@ -224,7 +238,9 @@ jobs:
           GOWORK: "off"
       - working-directory: internal/ci
         name: Check internal/ci with GOWORK=off
-        run: go vet ./...
+        run: |-
+          go mod tidy -diff
+          go vet ./...
         env:
           GOWORK: "off"
       - run: go work sync

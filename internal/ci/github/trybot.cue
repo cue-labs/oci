@@ -113,16 +113,9 @@ workflows: trybot: _repo.bashWorkflow & {
 		run:   "go test ./..."
 	}
 
-	_#goCheck: githubactions.#Step & {
-		// These checks can vary between platforms, as different code can be built
-		// based on GOOS and GOARCH build tags.
-		// However, CUE does not have any such build tags yet, and we don't use
-		// dependencies that vary wildly between platforms.
-		// For now, to save CI resources, just run the checks on one matrix job.
-		// TODO: consider adding more checks as per https://github.com/golang/go/issues/42119.
+	_#goCheck: _repo.goChecks & {
 		#name: string
 		name:  "Check \(#name)"
-		run:   "go vet ./..."
 	}
 
 	// _#installStaticCheck adds staticcheck to PATH, so that it can be run
