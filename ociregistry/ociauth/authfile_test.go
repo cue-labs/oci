@@ -368,6 +368,29 @@ func TestWithHelperRegistryOtherError(t *testing.T) {
 	qt.Assert(t, qt.ErrorMatches(err, `error getting credentials: some error`))
 }
 
+func TestWithHelperStderrWarning(t *testing.T) {
+	// Helpers may print to stderr, which must not be mixed with stdout.
+	// Note: "test" matches the executable installed using testscript in RunMain.
+	c, err := load(t, nil, `
+{
+	"credHelpers": {
+		"registry-with-warning.com": "test",
+		"other-with-warning.com": "test"
+	}
+}
+`)
+	qt.Assert(t, qt.IsNil(err))
+	info, err := c.EntryForRegistry("registry-with-warning.com")
+	// The stderr warning is wrongly parsed as part of the JSON output.
+	qt.Assert(t, qt.ErrorMatches(err, `invalid character 'w' looking for beginning of value`))
+	qt.Assert(t, qt.Equals(info, ConfigEntry{}))
+
+	info, err = c.EntryForRegistry("other-with-warning.com")
+	// The stderr warning hides the "credentials not found" output.
+	qt.Assert(t, qt.ErrorMatches(err, `error getting credentials: warning: some warning\ncredentials not found in native keychain`))
+	qt.Assert(t, qt.Equals(info, ConfigEntry{}))
+}
+
 func TestWithDefaultHelper(t *testing.T) {
 	// Note: "test" matches the executable installed using testscript in RunMain.
 	c, err := load(t, nil, `
@@ -655,6 +678,13 @@ func helperMain() {
 }`, os.Getenv("TEST_SECRET"))
 	case "registry-with-error.com":
 		fmt.Fprintf(os.Stderr, "some error\n")
+		os.Exit(1)
+	case "registry-with-warning.com":
+		fmt.Fprintf(os.Stderr, "warning: some warning\n")
+		fmt.Printf(`{"Username": "someuser", "Secret": "somesecret"}`)
+	case "other-with-warning.com":
+		fmt.Fprintf(os.Stderr, "warning: some warning\n")
+		fmt.Printf("credentials not found in native keychain\n")
 		os.Exit(1)
 	default:
 		fmt.Printf("credentials not found in native keychain\n")
