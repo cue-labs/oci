@@ -33,7 +33,7 @@ import (
 )
 
 func TestSub(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	r := ocitest.NewRegistry(t, ocimem.New())
 	r.MustPushContent(ocitest.RegistryContent{
 		"foo/bar": {
@@ -112,7 +112,7 @@ func TestSubMaintainsAuthScope(t *testing.T) {
 		},
 	}, "foo/bar")
 	scope := ociauth.ParseScope("other registry:catalog:* repository:a/b:pull,push repository:foo:delete,push")
-	ctx := ociauth.ContextWithScope(context.Background(), scope)
+	ctx := ociauth.ContextWithScope(t.Context(), scope)
 
 	// As the implementation is so uniform (and easily inspected in the source,
 	// we use the GetBlob entry point as a proxy for testing all the entry points.
@@ -135,7 +135,7 @@ func (r contextChecker) GetBlob(ctx context.Context, repo string, digest ociregi
 }
 
 func getManifest(t *testing.T, r ociregistry.Interface, repo string, dg digest.Digest) ociregistry.Manifest {
-	rd, err := r.GetManifest(context.Background(), repo, dg)
+	rd, err := r.GetManifest(t.Context(), repo, dg)
 	qt.Assert(t, qt.IsNil(err))
 	defer rd.Close()
 	var m ociregistry.Manifest
@@ -147,7 +147,7 @@ func getManifest(t *testing.T, r ociregistry.Interface, repo string, dg digest.D
 }
 
 func getBlob(t *testing.T, r ociregistry.Interface, repo string, dg digest.Digest) []byte {
-	rd, err := r.GetBlob(context.Background(), repo, dg)
+	rd, err := r.GetBlob(t.Context(), repo, dg)
 	qt.Assert(t, qt.IsNil(err))
 	defer rd.Close()
 	data, err := io.ReadAll(rd)

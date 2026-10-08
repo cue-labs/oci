@@ -2,7 +2,6 @@ package ociclient_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http/httptest"
@@ -22,7 +21,7 @@ import (
 )
 
 func TestReferrersFallback(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Test that the client falls back to using the referrers tag API
 	// when the referrers API is not enabled.
@@ -90,7 +89,7 @@ func pushScratchConfig(t *testing.T, client ociregistry.Interface, repo string) 
 		Digest: digest.FromBytes(content),
 		Size:   int64(len(content)),
 	}
-	_, err := client.PushBlob(context.Background(), repo, desc, bytes.NewReader(content))
+	_, err := client.PushBlob(t.Context(), repo, desc, bytes.NewReader(content))
 	qt.Assert(t, qt.IsNil(err))
 	return desc
 }
@@ -98,7 +97,7 @@ func pushScratchConfig(t *testing.T, client ociregistry.Interface, repo string) 
 func pushManifest(t *testing.T, client ociregistry.Interface, repo, tag string, content any, mediaType string) ociregistry.Descriptor {
 	data, err := json.Marshal(content)
 	qt.Assert(t, qt.IsNil(err))
-	desc, err := client.PushManifest(context.Background(), repo, tag, data, mediaType)
+	desc, err := client.PushManifest(t.Context(), repo, tag, data, mediaType)
 	qt.Assert(t, qt.IsNil(err))
 	return desc
 }

@@ -44,7 +44,7 @@ func TestBasicAuth(t *testing.T) {
 			}),
 		}),
 	}
-	assertRequest(context.Background(), t, ts, "/test", client, Scope{})
+	assertRequest(t.Context(), t, ts, "/test", client, Scope{})
 }
 
 func TestBearerAuth(t *testing.T) {
@@ -96,7 +96,7 @@ func TestBearerAuth(t *testing.T) {
 			}),
 		}),
 	}
-	assertRequest(context.Background(), t, ts, "/test", client, Scope{})
+	assertRequest(t.Context(), t, ts, "/test", client, Scope{})
 }
 
 func TestBearerAuthAdditionalScope(t *testing.T) {
@@ -148,7 +148,7 @@ func TestBearerAuthAdditionalScope(t *testing.T) {
 			}),
 		}),
 	}
-	ctx := ContextWithScope(context.Background(), additionalScope)
+	ctx := ContextWithScope(t.Context(), additionalScope)
 	assertRequest(ctx, t, ts, "/test", client, Scope{})
 }
 
@@ -200,7 +200,7 @@ func TestBearerAuthRequiresExactScope(t *testing.T) {
 			}),
 		}),
 	}
-	assertRequest(context.Background(), t, ts, "/test", client, requiredScope)
+	assertRequest(t.Context(), t, ts, "/test", client, requiredScope)
 }
 
 func TestAuthNotAvailableAfterChallenge(t *testing.T) {
@@ -227,7 +227,7 @@ func TestAuthNotAvailableAfterChallenge(t *testing.T) {
 			}),
 		}),
 	}
-	req, err := http.NewRequestWithContext(context.Background(), "GET", ts.String()+"/test", nil)
+	req, err := http.NewRequestWithContext(t.Context(), "GET", ts.String()+"/test", nil)
 	qt.Assert(t, qt.IsNil(err))
 	resp, err := client.Do(req)
 	qt.Assert(t, qt.IsNil(err))
@@ -300,7 +300,7 @@ func Test401ResponseWithJustAcquiredToken(t *testing.T) {
 			}),
 		}),
 	}
-	req, err := http.NewRequestWithContext(context.Background(), "GET", ts.String()+"/test", nil)
+	req, err := http.NewRequestWithContext(t.Context(), "GET", ts.String()+"/test", nil)
 	qt.Assert(t, qt.IsNil(err))
 	resp, err := client.Do(req)
 	qt.Assert(t, qt.IsNil(err))
@@ -344,7 +344,7 @@ func Test401ResponseWithNonAcquiredToken(t *testing.T) {
 			}),
 		}),
 	}
-	req, err := http.NewRequestWithContext(context.Background(), "GET", ts.String()+"/test", nil)
+	req, err := http.NewRequestWithContext(t.Context(), "GET", ts.String()+"/test", nil)
 	qt.Assert(t, qt.IsNil(err))
 	resp, err := client.Do(req)
 	qt.Assert(t, qt.IsNil(err))
@@ -378,7 +378,7 @@ func TestConfigHasAccessToken(t *testing.T) {
 			}),
 		}),
 	}
-	assertRequest(context.Background(), t, ts, "/test", client, Scope{})
+	assertRequest(t.Context(), t, ts, "/test", client, Scope{})
 }
 
 func TestConfigErrorNilRequestBody(t *testing.T) {
@@ -435,7 +435,7 @@ func TestLaterRequestCanUseEarlierTokenWithLargerScope(t *testing.T) {
 			}),
 		}),
 	}
-	ctx := ContextWithScope(context.Background(), ParseScope("repository:foo1:pull repository:foo2:pull"))
+	ctx := ContextWithScope(t.Context(), ParseScope("repository:foo1:pull repository:foo2:pull"))
 	assertRequest(ctx, t, ts, "/test/foo1", client, Scope{})
 	assertRequest(ctx, t, ts, "/test/foo2", client, Scope{})
 	// One token fetch should have been sufficient for both requests.
@@ -482,7 +482,7 @@ func TestAuthServerRejectsRequestsWithTooMuchScope(t *testing.T) {
 			}),
 		}),
 	}
-	ctx := ContextWithScope(context.Background(), ParseScope("repository:foo:pull repository:bar:pull"))
+	ctx := ContextWithScope(t.Context(), ParseScope("repository:foo:pull repository:bar:pull"))
 	assertRequest(ctx, t, ts, "/test", client, Scope{})
 }
 
@@ -536,7 +536,7 @@ func TestAuthRequestUsesRefreshTokenFromConfig(t *testing.T) {
 			}),
 		}),
 	}
-	assertRequest(context.Background(), t, ts, "/test", client, requiredScope)
+	assertRequest(t.Context(), t, ts, "/test", client, requiredScope)
 
 	// Let the original access token expire and then make another request,
 	// which should force the client to acquire another token using
@@ -544,7 +544,7 @@ func TestAuthRequestUsesRefreshTokenFromConfig(t *testing.T) {
 
 	// Note: the expiry algorithm always leaves at least a second leeway.
 	time.Sleep(1100 * time.Millisecond)
-	assertRequest(context.Background(), t, ts, "/test", client, requiredScope)
+	assertRequest(t.Context(), t, ts, "/test", client, requiredScope)
 	// Check that it actually has had to acquire two tokens.
 	qt.Assert(t, qt.Equals(authCount, 2))
 }
@@ -610,7 +610,7 @@ func TestAuthRequestUsesRefreshTokenFromAuthServer(t *testing.T) {
 	numRequests := 4
 	for i := range numRequests {
 		repo := fmt.Sprintf("foo%d", i)
-		assertRequest(context.Background(), t, ts, fmt.Sprintf("/test/foo%d", i), client, NewScope(ResourceScope{
+		assertRequest(t.Context(), t, ts, fmt.Sprintf("/test/foo%d", i), client, NewScope(ResourceScope{
 			ResourceType: TypeRepository,
 			Resource:     repo,
 			Action:       ActionPull,

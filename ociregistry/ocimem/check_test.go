@@ -1,7 +1,6 @@
 package ocimem
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"testing"
@@ -263,7 +262,7 @@ var pushManifestTests = []struct {
 func TestPushManifest(t *testing.T) {
 	for _, test := range pushManifestTests {
 		t.Run(test.testName, func(t *testing.T) {
-			ctx := context.Background()
+			ctx := t.Context()
 			r := ocitest.NewRegistry(t, NewWithConfig(&test.config))
 			content := r.MustPushContent(ocitest.RegistryContent{
 				"test": test.preload,
@@ -370,7 +369,7 @@ var deleteBlobTests = []struct {
 func TestDeleteBlob(t *testing.T) {
 	for _, test := range deleteBlobTests {
 		t.Run(test.testName, func(t *testing.T) {
-			ctx := context.Background()
+			ctx := t.Context()
 			r := ocitest.NewRegistry(t, NewWithConfig(&test.config))
 			content := r.MustPushContent(ocitest.RegistryContent{
 				"test": test.preload,
@@ -480,7 +479,7 @@ var deleteManifestTests = []struct {
 func TestDeleteManifest(t *testing.T) {
 	for _, test := range deleteManifestTests {
 		t.Run(test.testName, func(t *testing.T) {
-			ctx := context.Background()
+			ctx := t.Context()
 			r := ocitest.NewRegistry(t, NewWithConfig(&test.config))
 			content := r.MustPushContent(ocitest.RegistryContent{
 				"test": test.preload,
@@ -578,7 +577,7 @@ var deleteTagTests = []struct {
 func TestDeleteTag(t *testing.T) {
 	for _, test := range deleteTagTests {
 		t.Run(test.testName, func(t *testing.T) {
-			ctx := context.Background()
+			ctx := t.Context()
 			r := ocitest.NewRegistry(t, NewWithConfig(&test.config))
 			content := r.MustPushContent(ocitest.RegistryContent{
 				"test": test.preload,

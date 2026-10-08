@@ -17,7 +17,7 @@ package conformance
 import (
 	"bufio"
 	"bytes"
-	"context"
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -28,7 +28,6 @@ import (
 	"os"
 	"os/exec"
 	"slices"
-	"sort"
 	"strings"
 	"testing"
 
@@ -264,7 +263,7 @@ func testExtra(t *testing.T, startSrv func(*testing.T) string) {
 }
 
 func testManyTags(t *testing.T, client *remote.Registry) {
-	ctx := context.Background()
+	ctx := t.Context()
 	client.TagListPageSize = 5
 	repo, err := client.Repository(ctx, "some-repo")
 	qt.Assert(t, qt.IsNil(err))
@@ -294,7 +293,7 @@ func testManyTags(t *testing.T, client *remote.Registry) {
 }
 
 func testManyRepos(t *testing.T, client *remote.Registry) {
-	ctx := context.Background()
+	ctx := t.Context()
 	var repos []string
 	for i := range 37 {
 		repoName := fmt.Sprintf("repo%d", i)
@@ -320,7 +319,7 @@ func testCatalog(t *testing.T, client *remote.Registry) {
 		"zaphod",
 		"something123/longer/xx",
 	}
-	ctx := context.Background()
+	ctx := t.Context()
 	for _, repoName := range repos {
 		repo, err := client.Repository(ctx, repoName)
 		qt.Assert(t, qt.IsNil(err))
@@ -338,7 +337,7 @@ func testCatalog(t *testing.T, client *remote.Registry) {
 }
 
 func testReferrers(t *testing.T, client *remote.Registry) {
-	ctx := context.Background()
+	ctx := t.Context()
 	repo, err := client.Repository(ctx, "some/repo")
 	qt.Assert(t, qt.IsNil(err))
 	configDesc := push(t, repo.Blobs(), "application/json", []byte("{}"))
@@ -397,7 +396,7 @@ func testReferrers(t *testing.T, client *remote.Registry) {
 }
 
 func testLargeManifest(t *testing.T, client *remote.Registry) {
-	ctx := context.Background()
+	ctx := t.Context()
 	repo, err := client.Repository(ctx, "some/repo")
 	qt.Assert(t, qt.IsNil(err))
 	configDesc := push(t, repo.Blobs(), "application/json", []byte("{}"))
@@ -471,7 +470,7 @@ func mustNewOCIClient(srvURL string, opts *ociclient.Options) ociregistry.Interf
 }
 
 func testRangeInBounds(t *testing.T, reg ociregistry.Interface) {
-	ctx := context.Background()
+	ctx := t.Context()
 	data := []byte("hello world")
 	desc, err := reg.PushBlob(ctx, "foo/bar", ocispec.Descriptor{
 		MediaType: "application/octet-stream",
@@ -488,7 +487,7 @@ func testRangeInBounds(t *testing.T, reg ociregistry.Interface) {
 }
 
 func testRangeToEnd(t *testing.T, reg ociregistry.Interface) {
-	ctx := context.Background()
+	ctx := t.Context()
 	data := []byte("hello world")
 	desc, err := reg.PushBlob(ctx, "foo/bar", ocispec.Descriptor{
 		MediaType: "application/octet-stream",
@@ -505,7 +504,7 @@ func testRangeToEnd(t *testing.T, reg ociregistry.Interface) {
 }
 
 func testRangeBeyondEnd(t *testing.T, reg ociregistry.Interface) {
-	ctx := context.Background()
+	ctx := t.Context()
 	data := []byte("hello world")
 	desc, err := reg.PushBlob(ctx, "foo/bar", ocispec.Descriptor{
 		MediaType: "application/octet-stream",
@@ -522,8 +521,8 @@ func testRangeBeyondEnd(t *testing.T, reg ociregistry.Interface) {
 }
 
 func sortDescriptors(ds []ociregistry.Descriptor) {
-	sort.Slice(ds, func(i, j int) bool {
-		return ds[i].Digest < ds[j].Digest
+	slices.SortFunc(ds, func(a, b ociregistry.Descriptor) int {
+		return cmp.Compare(a.Digest, b.Digest)
 	})
 }
 
@@ -540,7 +539,7 @@ func pushJSON(t *testing.T, dst content.Pusher, mediaType string, content any) o
 
 func push(t *testing.T, dst content.Pusher, mediaType string, content []byte) ociregistry.Descriptor {
 	desc := newDescriptor(mediaType, content)
-	err := dst.Push(context.Background(), desc, bytes.NewReader(content))
+	err := dst.Push(t.Context(), desc, bytes.NewReader(content))
 	qt.Assert(t, qt.IsNil(err))
 	return desc
 }

@@ -28,7 +28,7 @@ import (
 )
 
 func TestAccessCheckerErrorReturn(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testErr := errors.New("some error")
 	r1 := AccessChecker(ocimem.New(), func(repoName string, access AccessKind) error {
 		qt.Check(t, qt.Equals(repoName, "foo/bar"))
@@ -51,7 +51,7 @@ func TestAccessCheckerAccessRequest(t *testing.T) {
 			gotAccess = append(gotAccess, accessCheck{repoName, access})
 			return nil
 		})
-		err := do(context.Background(), r)
+		err := do(t.Context(), r)
 		qt.Check(t, qt.ErrorIs(err, testErr))
 		qt.Check(t, qt.DeepEquals(gotAccess, wantAccess))
 	}

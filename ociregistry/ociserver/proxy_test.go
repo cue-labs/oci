@@ -158,7 +158,7 @@ func TestProxyRequests(t *testing.T) {
 			inputClient := testClient(t, proxyServer)
 
 			// Run the input client action, and compare the results.
-			err := test.clientDo(context.TODO(), inputClient)
+			err := test.clientDo(t.Context(), inputClient)
 			qt.Assert(t, qt.IsNil(err))
 
 			qt.Check(t, qt.DeepEquals(proxyReqs, test.proxyRequests))

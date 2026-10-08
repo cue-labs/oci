@@ -1,7 +1,6 @@
 package ociclient
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -10,7 +9,7 @@ import (
 )
 
 func TestBadRepoName(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	r, err := New("never.used", &Options{
 		Insecure:  true,
 		Transport: noTransport{},

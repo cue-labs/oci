@@ -30,7 +30,7 @@ func TestErrorStuttering(t *testing.T) {
 		Insecure: true,
 	})
 	qt.Assert(t, qt.IsNil(err))
-	_, err = r.GetTag(context.Background(), "foo", "sometag")
+	_, err = r.GetTag(t.Context(), "foo", "sometag")
 	qt.Check(t, qt.ErrorIs(err, ociregistry.ErrManifestUnknown))
 	qt.Check(t, qt.ErrorMatches(err, `404 Not Found: manifest unknown: manifest unknown to registry`))
 
@@ -38,7 +38,7 @@ func TestErrorStuttering(t *testing.T) {
 	// the path where a response with no body gets turned back into
 	// something vaguely resembling the original error, which is why
 	// the code and message have changed.
-	_, err = r.ResolveTag(context.Background(), "foo", "sometag")
+	_, err = r.ResolveTag(t.Context(), "foo", "sometag")
 	qt.Check(t, qt.ErrorIs(err, ociregistry.ErrNameUnknown))
 	qt.Check(t, qt.ErrorMatches(err, `404 Not Found: name unknown: repository name not known to registry`))
 }
@@ -56,7 +56,7 @@ func TestNonJSONErrorResponse(t *testing.T) {
 	})
 	qt.Assert(t, qt.IsNil(err))
 	assertStatusCode := func(f func(ctx context.Context, r ociregistry.Interface) error) {
-		err := f(context.Background(), r)
+		err := f(t.Context(), r)
 		herr, ok := errors.AsType[ociregistry.HTTPError](err)
 		qt.Assert(t, qt.IsTrue(ok))
 		qt.Assert(t, qt.Equals(herr.StatusCode(), http.StatusTeapot))

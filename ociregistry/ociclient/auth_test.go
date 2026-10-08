@@ -104,7 +104,7 @@ func assertAuthScope(t *testing.T, host string, scope string, f func(ctx context
 
 	// Check that the context is passed through with values intact.
 	type foo struct{}
-	ctx := context.WithValue(context.Background(), foo{}, true)
+	ctx := context.WithValue(t.Context(), foo{}, true)
 
 	client, err := New(host, &Options{
 		Insecure: true,
