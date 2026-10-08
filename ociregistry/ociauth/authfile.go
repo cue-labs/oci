@@ -371,8 +371,8 @@ func ExecHelperWithEnv(env []string) HelperRunner {
 		// so only stdout holds the result.
 		out, err := cmd.Output()
 		if err != nil {
-			var exitErr *exec.ExitError
-			if !errors.As(err, &exitErr) {
+			exitErr, ok := errors.AsType[*exec.ExitError](err)
+			if !ok {
 				if errors.Is(err, exec.ErrNotFound) {
 					return ConfigEntry{}, fmt.Errorf("%w: %v", ErrHelperNotFound, err)
 				}

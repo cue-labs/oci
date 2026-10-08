@@ -82,8 +82,8 @@ type WireError struct {
 // Is makes it possible for users to write `if errors.Is(err, ociregistry.ErrBlobUnknown)`
 // even when the error hasn't exactly wrapped that error.
 func (e *WireError) Is(err error) bool {
-	var rerr Error
-	return errors.As(err, &rerr) && rerr.Code() == e.Code()
+	rerr, ok := errors.AsType[Error](err)
+	return ok && rerr.Code() == e.Code()
 }
 
 // Error implements the [error] interface.
@@ -258,8 +258,7 @@ func MarshalError(err error) (errorBody []byte, httpStatus int) {
 	// TODO perhaps we should iterate through all the
 	// errors instead of just choosing one.
 	// See https://github.com/golang/go/issues/66455
-	var ociErr Error
-	if errors.As(err, &ociErr) {
+	if ociErr, ok := errors.AsType[Error](err); ok {
 		e.Code_ = ociErr.Code()
 		e.Detail_ = ociErr.Detail()
 	}
@@ -276,8 +275,7 @@ func MarshalError(err error) (errorBody []byte, httpStatus int) {
 	if status, ok := errorStatuses[e.Code_]; ok {
 		httpStatus = status
 	} else {
-		var httpErr HTTPError
-		if errors.As(err, &httpErr) {
+		if httpErr, ok := errors.AsType[HTTPError](err); ok {
 			httpStatus = httpErr.StatusCode()
 		}
 	}

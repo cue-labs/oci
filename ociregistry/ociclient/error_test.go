@@ -57,8 +57,7 @@ func TestNonJSONErrorResponse(t *testing.T) {
 	qt.Assert(t, qt.IsNil(err))
 	assertStatusCode := func(f func(ctx context.Context, r ociregistry.Interface) error) {
 		err := f(context.Background(), r)
-		var herr ociregistry.HTTPError
-		ok := errors.As(err, &herr)
+		herr, ok := errors.AsType[ociregistry.HTTPError](err)
 		qt.Assert(t, qt.IsTrue(ok))
 		qt.Assert(t, qt.Equals(herr.StatusCode(), http.StatusTeapot))
 	}

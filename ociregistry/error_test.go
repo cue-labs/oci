@@ -75,7 +75,7 @@ func TestError(t *testing.T) {
 			var errs *WireErrors
 			err := json.Unmarshal(data, &errs)
 			qt.Assert(t, qt.IsNil(err))
-			if ociErr := Error(nil); errors.As(test.err, &ociErr) {
+			if ociErr, ok := errors.AsType[Error](test.err); ok {
 				qt.Assert(t, qt.IsTrue(errors.Is(errs, NewError("something", ociErr.Code(), nil))))
 			}
 		})
