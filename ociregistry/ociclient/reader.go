@@ -59,6 +59,11 @@ func (c *client) GetBlobRange(ctx context.Context, repo string, digest ociregist
 	// TODO this is wrong when the server returns a 200 response.
 	// Fix that either by returning ErrUnsupported or by reading the whole
 	// blob and returning only the required portion.
+	// TODO the returned reader is not verified either: it only fails
+	// when reading more than the size of the whole blob, so a server
+	// which responds with the wrong number of bytes for the range
+	// goes unnoticed. We should check the range in Content-Range
+	// as well as the number of bytes read.
 	defer closeOnError(&_err, resp.Body)
 	desc, err := descriptorFromResponse(resp, ociregistry.Digest(rreq.Digest), requireSize)
 	if err != nil {
