@@ -93,8 +93,8 @@ func (r *registry) handleBlobGet(ctx context.Context, resp http.ResponseWriter, 
 		if rng.end == -1 || rng.end > desc.Size {
 			rng.end = desc.Size
 		}
-		if rng.start > desc.Size {
-			return withHTTPCode(http.StatusRequestedRangeNotSatisfiable, fmt.Errorf("range starts after end of blob"))
+		if rng.start >= desc.Size {
+			return withHTTPCode(http.StatusRequestedRangeNotSatisfiable, fmt.Errorf("range starts at or after end of blob"))
 		}
 		if rng.end < rng.start {
 			return withHTTPCode(http.StatusRequestedRangeNotSatisfiable, fmt.Errorf("range end is before start"))
