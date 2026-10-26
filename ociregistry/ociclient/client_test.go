@@ -249,6 +249,7 @@ func TestMissingContentLength(t *testing.T) {
 
 	const errNoLength = `.*unknown content length`
 	const errBlocked = `.*context deadline exceeded`
+	const errGzip = `.*unexpected Content-Encoding "gzip"`
 	servers := []struct {
 		name string
 		wrap func(http.Handler) http.Handler
@@ -348,14 +349,20 @@ func TestMissingContentLength(t *testing.T) {
 	}, {
 		name: "GzipWhenAccepted",
 		wrap: func(h http.Handler) http.Handler { return gzipped(h, false) },
-		// net/http transparently decompresses these responses,
-		// dropping their Content-Length.
+	}, {
+		name: "GzipAlways",
+		wrap: func(h http.Handler) http.Handler { return gzipped(h, true) },
 		wantErrors: map[string]string{
+			// These are decompressed, dropping their Content-Length,
+			// so they should read manifests into memory,
+			// or fall back to a HEAD request.
 			"GetBlob":      errNoLength,
 			"GetEmptyBlob": errNoLength,
 			"GetManifest":  errNoLength,
 			"GetTag":       errNoLength,
 			"GetTagLarge":  errNoLength,
+			// The range is over the compressed bytes.
+			"GetBlobRange": errGzip,
 		},
 	}}
 	for _, srv := range servers {
