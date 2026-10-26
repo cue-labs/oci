@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -138,6 +139,11 @@ const (
 	requireDigest
 )
 
+var (
+	errUnknownContentLength = errors.New("unknown content length")
+	errNoDigest             = errors.New("no digest found in response")
+)
+
 // descriptorFromResponse tries to form a descriptor from an HTTP response,
 // filling in the Digest field using knownDigest if it's not present.
 //
@@ -166,7 +172,7 @@ func descriptorFromResponse(resp *http.Response, knownDigest digest.Digest, requ
 			size = contentSize
 		} else {
 			if resp.ContentLength < 0 {
-				return ociregistry.Descriptor{}, fmt.Errorf("unknown content length")
+				return ociregistry.Descriptor{}, errUnknownContentLength
 			}
 			size = resp.ContentLength
 		}
@@ -180,7 +186,7 @@ func descriptorFromResponse(resp *http.Response, knownDigest digest.Digest, requ
 		digest = knownDigest
 	}
 	if (require&requireDigest) != 0 && digest == "" {
-		return ociregistry.Descriptor{}, fmt.Errorf("no digest found in response")
+		return ociregistry.Descriptor{}, errNoDigest
 	}
 	return ociregistry.Descriptor{
 		Digest:    digest,
