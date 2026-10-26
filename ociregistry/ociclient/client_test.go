@@ -269,15 +269,6 @@ func TestMissingContentLength(t *testing.T) {
 		wrap: func(h http.Handler) http.Handler {
 			return withoutHeaders(h, []string{"HEAD"}, "Content-Length")
 		},
-		wantErrors: map[string]string{
-			// These should fall back to GET requests, ranged for blobs.
-			"ResolveBlob":     errNoLength,
-			"ResolveManifest": errNoLength,
-			"ResolveTag":      errNoLength,
-			"ResolveTagLarge": errNoLength,
-			// The digest of an empty blob gives its size away.
-			"ResolveEmptyBlob": errNoLength,
-		},
 	}, {
 		name: "NoContentLength",
 		wrap: func(h http.Handler) http.Handler {
@@ -286,14 +277,6 @@ func TestMissingContentLength(t *testing.T) {
 		wantErrors: map[string]string{
 			"GetTagLarge":     errNoLength,
 			"ResolveTagLarge": errNoLength,
-			// These should fall back to GET requests, ranged for blobs.
-			"GetBlob":         errNoLength,
-			"ResolveBlob":     errNoLength,
-			"ResolveManifest": errNoLength,
-			"ResolveTag":      errNoLength,
-			// The digest of an empty blob gives its size away.
-			"GetEmptyBlob":     errNoLength,
-			"ResolveEmptyBlob": errNoLength,
 		},
 	}, {
 		name: "NoContentLengthOrDigest",
@@ -303,31 +286,12 @@ func TestMissingContentLength(t *testing.T) {
 		wantErrors: map[string]string{
 			"GetTagLarge":     errNoLength,
 			"ResolveTagLarge": errNoLength,
-			// These should fall back to GET requests, ranged for blobs.
-			"GetBlob":         errNoLength,
-			"ResolveBlob":     errNoLength,
-			"ResolveManifest": errNoLength,
-			"ResolveTag":      errNoLength,
-			// The digest of an empty blob gives its size away.
-			"GetEmptyBlob":     errNoLength,
-			"ResolveEmptyBlob": errNoLength,
 		},
 	}, {
 		name: "NoContentLengthOnHEADOrDigestOnGET",
 		wrap: func(h http.Handler) http.Handler {
 			h = withoutHeaders(h, []string{"HEAD"}, "Content-Length")
 			return withoutHeaders(h, []string{"GET"}, "Docker-Content-Digest")
-		},
-		wantErrors: map[string]string{
-			// These should fall back to GET requests, ranged for blobs,
-			// and by the digest from the HEAD response for tags.
-			"GetTagLarge":     errNoLength,
-			"ResolveBlob":     errNoLength,
-			"ResolveManifest": errNoLength,
-			"ResolveTag":      errNoLength,
-			"ResolveTagLarge": errNoLength,
-			// The digest of an empty blob gives its size away.
-			"ResolveEmptyBlob": errNoLength,
 		},
 	}, {
 		name: "TruncatedManifests",
@@ -336,11 +300,10 @@ func TestMissingContentLength(t *testing.T) {
 			"GetTagLarge":     errNoLength,
 			"ResolveTagLarge": errNoLength,
 			// The content does not match its digest.
-			"GetManifest": errDigest,
-			"GetTag":      errDigest,
-			// These should fail as the content does not match its digest.
-			"ResolveManifest": errNoLength,
-			"ResolveTag":      errNoLength,
+			"GetManifest":     errDigest,
+			"GetTag":          errDigest,
+			"ResolveManifest": errDigest,
+			"ResolveTag":      errDigest,
 		},
 	}, {
 		name: "GzipWhenAccepted",
