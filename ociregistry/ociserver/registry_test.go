@@ -178,6 +178,24 @@ func TestCalls(t *testing.T) {
 			WantBody: "lo world",
 		},
 		{
+			Description: "GET_blob_range_start_at_end",
+			Digests: map[string]string{
+				"sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9": "hello world",
+			},
+			Method: "GET",
+			RequestHeader: map[string]string{
+				"Range": "bytes=11-",
+			},
+			URL: "/v2/foo/blobs/sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+			// No byte of the blob is in range, so this should be a 416;
+			// the Content-Range below is invalid.
+			WantCode: http.StatusPartialContent,
+			WantHeader: map[string]string{
+				"Content-Length": "0",
+				"Content-Range":  "bytes 11-10/11",
+			},
+		},
+		{
 			Description: "GET_blob_range_invalid-range-start",
 			Digests: map[string]string{
 				"sha256:b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9": "hello world",
